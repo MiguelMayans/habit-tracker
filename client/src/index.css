@@ -13,11 +13,42 @@
   --color-ingenio: #00c2a8;
   --color-corazon: #e84393;
 
-  /* Tipografía display (Titan One) para títulos */
-  --font-display: "Titan One", system-ui, sans-serif;
+  /* Tipografía display (Dela Gothic One) para títulos */
+  --font-display: "Dela Gothic One", system-ui, sans-serif;
+}
+
+@theme {
+  /* Inclinación estándar del texto display */
+  --skew-display: -10deg;
 }
 
 body {
   background-color: var(--color-negro);
   color: var(--color-hueso);
+}
+
+/* Texto display inclinado con sombra dura doble (negro pegado + acento
+   desplazado). Es el recurso base del lenguaje visual Persona: sin blur. */
+@utility text-slam {
+  transform: skewX(var(--skew-display));
+  letter-spacing: -0.01em;
+  text-shadow:
+    5px 5px 0 var(--color-negro),
+    10px 10px 0 var(--color-cuerpo);
+}
+
+/* Igual que text-slam pero además girado, para títulos sueltos. */
+@utility text-slam-tilt {
+  transform: rotate(-3deg) skewX(var(--skew-display));
+  letter-spacing: -0.01em;
+  text-shadow:
+    5px 5px 0 var(--color-negro),
+    10px 10px 0 var(--color-cuerpo);
+}
+
+/* Panel inclinado con sombra sólida, para las casillas de categoría. El giro
+   propio de cada panel se aplica aparte (ver --rotacion). */
+@utility panel-slam {
+  transform: rotate(var(--rotacion, 0deg)) skewX(var(--skew-display));
+  box-shadow: 5px 5px 0 var(--color-negro);
 }
