@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db } from "../db/index.js";
+import { db, type DbOrTx } from "../db/index.js";
 import { focuses } from "../db/schema.js";
 
 export type Focus = typeof focuses.$inferSelect;
@@ -16,8 +16,11 @@ export async function getFocusesByCategory(
   return db.select().from(focuses).where(eq(focuses.categoryId, categoryId));
 }
 
-export async function getFocusById(id: number): Promise<Focus | null> {
-  const [focus] = await db
+export async function getFocusById(
+  id: number,
+  executor: DbOrTx = db,
+): Promise<Focus | null> {
+  const [focus] = await executor
     .select()
     .from(focuses)
     .where(eq(focuses.id, id))
@@ -31,5 +34,19 @@ export async function getFocusById(id: number): Promise<Focus | null> {
  */
 export async function createFocus(data: CreateFocusData): Promise<Focus> {
   const [focus] = await db.insert(focuses).values(data).returning();
+  return focus;
+}
+
+export async function updateFocusXp(
+  id: number,
+  values: { level: number; currentXp: number },
+  executor: DbOrTx = db,
+): Promise<Focus> {
+  const [focus] = await executor
+    .update(focuses)
+    .set(values)
+    .where(eq(focuses.id, id))
+    .returning();
+
   return focus;
 }

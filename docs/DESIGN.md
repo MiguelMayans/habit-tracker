@@ -23,7 +23,10 @@ Diseño v1 cerrado. Cualquier cambio aquí debe discutirse explícitamente, no i
 
 - Tags creados por el usuario (ej: Arduino, Inglés, Pareja) — sin fecha de fin
 - Nivel máximo: **20**, planteado como arcos estilo Confidant de Persona 5
-- Curva de XP: `base * nivel^exponente` (valores concretos TBD — pendiente de sesión de balanceo con hoja de cálculo)
+- Curva de XP: coste de **alcanzar** el nivel n = `floor(base * n^exponente)`, acumulando desde n=2 (el nivel 1 es el punto de partida y no cuesta nada). Implementada en `server/src/lib/xpCurve.ts`
+  - Focos: `base = 8`, `exponente = 1.35` → nivel 2 a 20 XP, nivel 20 a 4.099 XP acumulada
+  - `currentXp` se guarda siempre como XP acumulada total histórica; el nivel se deriva de ella, nunca se resetea
+  - Valores sujetos a revisión en la sesión de balanceo pendiente
 - 3 hitos narrativos en el camino a nivel 20
 - Al llegar a nivel 20: el Foco se congela como trofeo de maestría permanente; opción manual (no automática) de generar un Foco hijo más especializado empezando en nivel 1
 
@@ -31,6 +34,7 @@ Diseño v1 cerrado. Cualquier cambio aquí debe discutirse explícitamente, no i
 
 - Nivel máximo: **99** (arco largo, multi-año, sin techo de contenido)
 - Misma familia de curva de XP que los Focos pero con base/exponente distintos — más lenta, sostenible para 99 niveles sin tiempo desproporcionado en niveles altos (60+)
+  - Categorías: `base = 35`, `exponente = 0.7` → nivel 2 a 56 XP, nivel 99 a 51.185 XP acumulada
 - También tienen hitos narrativos cada N niveles — intervalo TBD
 
 ## Registro de actividades
