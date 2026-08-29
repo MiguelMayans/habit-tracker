@@ -2,16 +2,16 @@
 
 @theme {
   /* Colores de sistema */
-  --color-amarillo: #FFD400;
+  --color-amarillo: #ffd400;
   --color-negro: #141414;
-  --color-hueso: #F5F5F0;
+  --color-hueso: #f5f5f0;
 
   /* Colores de categoría */
-  --color-cuerpo: #E63946;
-  --color-disciplina: #F77F00;
-  --color-mente: #5B4E8C;
-  --color-ingenio: #00C2A8;
-  --color-corazon: #E84393;
+  --color-cuerpo: #e63946;
+  --color-disciplina: #f77f00;
+  --color-mente: #5b4e8c;
+  --color-ingenio: #00c2a8;
+  --color-corazon: #e84393;
 
   /* Tipografía display (Titan One) para títulos */
   --font-display: "Titan One", system-ui, sans-serif;

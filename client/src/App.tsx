@@ -1,10 +1,10 @@
 const categorias = [
-  { nombre: 'Cuerpo', clase: 'bg-cuerpo' },
-  { nombre: 'Disciplina', clase: 'bg-disciplina' },
-  { nombre: 'Mente', clase: 'bg-mente' },
-  { nombre: 'Ingenio', clase: 'bg-ingenio' },
-  { nombre: 'Corazón', clase: 'bg-corazon' },
-] as const
+  { nombre: "Cuerpo", clase: "bg-cuerpo" },
+  { nombre: "Disciplina", clase: "bg-disciplina" },
+  { nombre: "Mente", clase: "bg-mente" },
+  { nombre: "Ingenio", clase: "bg-ingenio" },
+  { nombre: "Corazón", clase: "bg-corazon" },
+] as const;
 
 function App() {
   return (
@@ -25,7 +25,7 @@ function App() {
         ))}
       </ul>
     </main>
-  )
+  );
 }
 
-export default App
+export default App;
