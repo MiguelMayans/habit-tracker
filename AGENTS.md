@@ -1,58 +1,56 @@
 # AGENTS.md — Proyecto Habits
 
-Contexto y reglas para cualquier agente de código (OpenCode + GLM 5.3 Flash) trabajando en este repo.
+Reglas obligatorias para cualquier agente (OpenCode, Claude Code, etc.) que trabaje en este repo.
 
-## Qué es esto
+## Package manager
 
-App personal de habit-tracking gamificada, inspirada estéticamente en Persona (P4/P5).
-Filosofía: presencia e intencionalidad > productividad. Ver diseño de sistema completo
-en `/docs/game-design.md` (categorías, Focos, curva de XP, intensidades) — no repetir
-esas reglas de diseño aquí, este archivo es solo sobre CÓMO se construye el código.
+- Usar **SIEMPRE `pnpm`**. Nunca `npm` ni `yarn`.
+- Comandos típicos: `pnpm install`, `pnpm add <pkg>`, `pnpm dev`, `pnpm build`.
 
-## Stack (decidido, no cambiar sin discutirlo)
+## Dependencias externas
 
-- **Client**: React + Vite + Tailwind → deploy en Netlify
-- **Server**: Node + Express → deploy en Render (free tier)
-- **BBDD**: Drizzle ORM + Turso (libSQL)
-- **PWA**: vite-plugin-pwa (target: instalable en Android)
+- Solo añadir librerías **muy establecidas**: muchas estrellas en GitHub, mantenimiento activo reciente.
+- Nada de paquetes oscuros, sin mantener, o con pocos usuarios. Si hay duda, preguntar antes de instalar.
+- Antes de añadir una dependencia nueva, comprobar si el problema se puede resolver con lo que ya está instalado.
 
-## Reglas duras
+## Stack técnico (decidido y cerrado)
 
-- **Usar siempre `pnpm`, nunca `npm`.** Cualquier comando de instalación o script debe
-  ser con pnpm (`pnpm install`, `pnpm add`, `pnpm run ...`).
-- **Librerías externas solo si están bien establecidas**: muchas estrellas en GitHub,
-  mantenimiento activo reciente. Nada de paquetes oscuros o sin mantener. Si hay duda,
-  preguntar antes de añadir una dependencia nueva.
-- No generar código de fases futuras del roadmap. Cada paso se implementa cuando toca,
-  no antes.
+- **Frontend:** React + Vite + Tailwind → deploy en Netlify
+- **Backend:** Node + Express → deploy en Render (free tier, cold starts aceptados)
+- **Base de datos:** Drizzle ORM + Turso/libSQL
+- **Mobile:** PWA vía `vite-plugin-pwa` (target: Android)
+- **Agente de código:** en pruebas entre dos opciones
+  - OpenCode CLI — modelo primary **GLM-5.3-Flash**, alternativa **Kimi K3**
+  - Claude Code — probándolo en paralelo para comparar
+  - (Antes se usaba Kimi K2.7-Code como primary y DeepSeek V4-Flash como alternativa en OpenCode — cambiado tras comparar lanzamientos recientes)
 
-## Estructura del monorepo
+## Estructura del repo
+
+Monorepo con pnpm workspaces:
 
 ```
-/
+proyecto-habits/
 ├── client/     # React + Vite + Tailwind
-├── server/     # Node + Express
-├── docs/       # diseño de juego, decisiones, mockups
-└── AGENTS.md
+├── server/     # Node + Express + Drizzle
+├── AGENTS.md
+└── docs/
+    ├── DESIGN.md
+    └── ROADMAP.md
 ```
 
-pnpm workspaces. `client/` y `server/` son paquetes independientes dentro del mismo repo;
-el monorepo es solo dónde vive el código, no dónde se despliega — cada uno se despliega
-por su lado (Netlify / Render / Turso, y más adelante self-hosted).
+El monorepo es solo dónde vive el código. Cada proveedor (Netlify, Render, Turso) apunta a su subdirectorio de forma independiente — monorepo ≠ monodeploy.
 
-## Modelos de código
+## Costes
 
-- **Primary**: GLM 5.3 Flash (vía OpenCode)
-- **Alternativa para tareas simples**: DeepSeek V4-Flash
+Todo el hosting actual (Netlify, Render, Turso) debe mantenerse en **tier gratuito**. Es un requisito duro mientras estemos en la fase cloud (pasos 1–10 del roadmap).
 
-## Fase actual del roadmap
+## Filosofía de diseño (resumen — ver docs/DESIGN.md para detalle)
 
-Estamos en el **paso 1: setup del monorepo** (pnpm workspaces, carpetas `client/`/`server/`,
-este mismo archivo). Sin lógica de negocio todavía.
+- Refuerzo positivo únicamente. **Nunca** restar XP ni bajar niveles.
+- Presencia e intencionalidad por encima de maximizar productividad.
+- Antes de tocar cualquier lógica de XP, categorías o Focos, consultar `docs/DESIGN.md`.
 
-Próximos pasos inmediatos:
-- Paso 2: cliente Vite arrancando en dev, sin Tailwind ni componentes propios todavía
-- Paso 3: Tailwind + estilos base (paleta, tipografía, pixel art)
+## Metodología de trabajo
 
-(El roadmap completo tiene 12 pasos, hasta self-hosting y integración con Arduino.
-No hace falta detallarlos todos aquí — se actualiza esta sección a medida que avanzamos.)
+- Cada paso del roadmap (`docs/ROADMAP.md`) debe quedar verificable de forma independiente antes de pasar al siguiente.
+- No generar código a bulto ni saltar pasos. Explicar antes de implementar.
