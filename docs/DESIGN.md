@@ -1,4 +1,4 @@
-# DESIGN.md — Sistema de juego de Proyecto Habits
+# DESIGN.md — Sistema de juego de Mike's Life
 
 Documento de referencia para toda la lógica de juego (XP, categorías, Focos, actividades).
 Diseño v1 cerrado. Cualquier cambio aquí debe discutirse explícitamente, no improvisarse durante la implementación.

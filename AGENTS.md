@@ -1,4 +1,4 @@
-# AGENTS.md — Proyecto Habits
+# AGENTS.md — Mike's Life
 
 Reglas obligatorias para cualquier agente (OpenCode, Claude Code, etc.) que trabaje en este repo.
 
@@ -29,7 +29,7 @@ Reglas obligatorias para cualquier agente (OpenCode, Claude Code, etc.) que trab
 Monorepo con pnpm workspaces:
 
 ```
-proyecto-habits/
+mikes-life/
 ├── client/     # React + Vite + Tailwind
 ├── server/     # Node + Express + Drizzle
 ├── AGENTS.md

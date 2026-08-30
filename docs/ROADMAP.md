@@ -1,4 +1,4 @@
-# ROADMAP.md — Proyecto Habits
+# ROADMAP.md — Mike's Life
 
 12 pasos acordados. Marcar `[x]` según se vayan completando y verificando de forma independiente.
 
