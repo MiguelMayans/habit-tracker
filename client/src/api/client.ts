@@ -10,7 +10,18 @@ export type Category = {
   name: string;
   slug: string;
   level: number;
+  /** XP acumulada total histórica; para la barra usa `progress`. */
   currentXp: number;
+  /** XP dentro del nivel actual. El backend lo calcula con la curva real. */
+  xpIntoLevel: number;
+  xpForNextLevel: number;
+  xpToNextLevel: number;
+  /** 0..1 */
+  progress: number;
+  atMaxLevel: boolean;
+  focusCount: number;
+  /** ISO, o null si la categoría no tiene actividades todavía. */
+  lastActivityAt: string | null;
 };
 
 export type Focus = {

@@ -93,8 +93,11 @@ export function LogActivityPage() {
   }
 
   return (
-    <div className="max-w-lg">
-      <h2 className="font-display text-3xl uppercase text-amarillo">
+    <div className="px-4 pt-8 pb-32">
+      <Link to="/" className="text-sm text-hueso/60 underline">
+        ← Categorías
+      </Link>
+      <h2 className="mt-4 font-display text-3xl uppercase text-amarillo">
         Registrar actividad
       </h2>
 

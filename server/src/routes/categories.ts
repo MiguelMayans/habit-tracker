@@ -1,15 +1,15 @@
 import { Router } from "express";
 import {
-  getAllCategories,
-  getCategoryById,
-} from "../repositories/categoriesRepository.js";
+  getCategoriesWithProgress,
+  getCategoryWithProgress,
+} from "../services/categoriesService.js";
 import { logger } from "../lib/logger.js";
 
 export const categoriesRouter = Router();
 
 categoriesRouter.get("/categories", async (req, res) => {
   try {
-    const categories = await getAllCategories();
+    const categories = await getCategoriesWithProgress();
     res.json(categories);
   } catch (error) {
     logger.error({ err: error }, "Error al listar categorías");
@@ -26,7 +26,7 @@ categoriesRouter.get("/categories/:id", async (req, res) => {
   }
 
   try {
-    const category = await getCategoryById(id);
+    const category = await getCategoryWithProgress(id);
     if (!category) {
       res.status(404).json({ message: "Categoría no encontrada" });
       return;

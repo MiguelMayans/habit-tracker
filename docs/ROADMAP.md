@@ -11,7 +11,7 @@
 - [x] **7. Cliente consumiendo la API** — pantallas mínimas, sin pulir, funcional end-to-end
 - [ ] **8. Deploy a producción** — cliente en Netlify, servidor en Render, variables de entorno de Turso. Pendiente además: `CORS_ORIGIN` en Render con el dominio de Netlify (ahora en local se permite cualquier origen) y `API_URL` de `client/src/api/client.ts` apuntando al backend de Render
 - [ ] **9. PWA** — `vite-plugin-pwa`, manifest, iconos, instalable en Android
-- [ ] **10. Pulido UX/UI completo** — feedback visual, "chute" de level-up, indicadores de inactividad
+- [ ] **10. Ajuste fino de UX/UI** — la base visual Persona ya está aplicada en la home (paso 7): paleta intensa, tipografías, texturas, animaciones de entrada, barra de XP e indicador de inactividad. Queda afinar sobre eso: llevar el mismo lenguaje al detalle de categoría y al registro de actividad, y el "chute" de level-up
 - [ ] **11. Migración a self-hosted** — una vez estable en Turso/Render
 - [ ] **12. Integración física con Arduino Nano 4 WiFi** — una vez estable el paso 11
 

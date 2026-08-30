@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 @theme {
-  /* Colores de sistema */
-  --color-amarillo: #ffd400;
-  --color-negro: #141414;
+  /* Colores de sistema. Negro puro: el contraste máximo es el recurso. */
+  --color-amarillo: #ffe500;
+  --color-negro: #000000;
   --color-hueso: #f5f5f0;
 
-  /* Colores de categoría */
-  --color-cuerpo: #e63946;
-  --color-disciplina: #f77f00;
-  --color-mente: #5b4e8c;
-  --color-ingenio: #00c2a8;
-  --color-corazon: #e84393;
+  /* Colores de categoría — croma alto sobre negro casi puro */
+  --color-cuerpo: #ff2036;
+  --color-disciplina: #ff8a00;
+  --color-mente: #9945ff;
+  --color-ingenio: #00f0c8;
+  --color-corazon: #ff2e88;
 
   /* Tipografía display (Dela Gothic One) para títulos */
   --font-display: "Dela Gothic One", system-ui, sans-serif;
-}
+  /* Tipografía de datos: Dela Gothic pesa demasiado por debajo de 14px */
+  --font-datos: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
 
-@theme {
   /* Inclinación estándar del texto display */
   --skew-display: -10deg;
 }
@@ -25,10 +25,16 @@
 body {
   background-color: var(--color-negro);
   color: var(--color-hueso);
+  font-family: var(--font-datos);
 }
 
+/* ------------------------------------------------------------------ *
+ * Lenguaje visual Persona: sombras duras sin blur, paneles inclinados,
+ * cortes de esquina y texturas en CSS puro (sin imágenes que mantener).
+ * ------------------------------------------------------------------ */
+
 /* Texto display inclinado con sombra dura doble (negro pegado + acento
-   desplazado). Es el recurso base del lenguaje visual Persona: sin blur. */
+   desplazado). El recurso base: sin blur. */
 @utility text-slam {
   transform: skewX(var(--skew-display));
   letter-spacing: -0.01em;
@@ -46,9 +52,240 @@ body {
     10px 10px 0 var(--color-cuerpo);
 }
 
-/* Panel inclinado con sombra sólida, para las casillas de categoría. El giro
-   propio de cada panel se aplica aparte (ver --rotacion). */
+/* Panel inclinado con sombra sólida. El giro propio de cada panel se pasa
+   con --rotacion. El contenido va contra-inclinado aparte, para que el
+   panel se lea diagonal pero el texto siga siendo legible. */
 @utility panel-slam {
   transform: rotate(var(--rotacion, 0deg)) skewX(var(--skew-display));
   box-shadow: 5px 5px 0 var(--color-negro);
+}
+
+/* ---- Texturas de fondo ---- */
+
+.textura-diagonales {
+  position: absolute;
+  inset: -120px -60px;
+  background-image: repeating-linear-gradient(
+    -52deg,
+    color-mix(in srgb, var(--color-cuerpo) 22%, transparent) 0 3px,
+    transparent 3px 26px
+  );
+  animation: correr 6s linear infinite;
+  pointer-events: none;
+}
+
+/* Halftone. Va DETRÁS del contenido, nunca encima: una textura superpuesta
+   sobre las tarjetas actúa como veladura y les come el color. */
+.textura-trama {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--color-hueso) 1px, transparent 1.4px);
+  background-size: 7px 7px;
+  opacity: 0.07;
+  pointer-events: none;
+}
+
+/* ---- Piezas ---- */
+
+/* Bloque roto que va detrás del título de pantalla. */
+.bloque-roto {
+  clip-path: polygon(0 6%, 100% 0, 96% 100%, 2% 92%);
+}
+
+/* Tarjeta de categoría: inclinada. Solo la transformación, sin recorte, para
+   que el nivel pueda sobresalir por arriba. La transformación vive aquí y no
+   en un style inline, porque los estilos inline ganan siempre y dejarían el
+   :hover muerto. */
+.tarjeta-categoria {
+  transform: rotate(var(--rotacion, 0deg)) skewX(-7deg);
+  transition: transform 0.12s steps(2);
+}
+
+.tarjeta-categoria:hover {
+  transform: rotate(var(--rotacion, 0deg)) skewX(-7deg) translate(-3px, -3px);
+}
+
+/* El recorte de la esquina va en una capa interior, no en la tarjeta entera.
+   La sombra dura se pinta con drop-shadow y no con box-shadow: clip-path
+   recorta también la box-shadow, así que en la silueta cortada no llegaba a
+   verse nunca. drop-shadow sí sigue el contorno recortado, y sigue sin blur. */
+.tarjeta-recorte {
+  overflow: hidden;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 12px),
+    calc(100% - 18px) 100%,
+    0 100%
+  );
+}
+
+/* Contenido de la tarjeta: contra-inclinado para que el texto se lea recto
+   aunque el panel siga siendo diagonal. Sin fondo: la tarjeta va a color
+   completo y el contraste lo dan los contornos de texto de abajo. */
+.contenido-slam {
+  transform: skewX(7deg);
+}
+
+/* Contorno negro duro en las cuatro direcciones. Es lo que hace legible el
+   texto claro sobre CUALQUIER color de categoría sin meter una placa de fondo:
+   blanco sobre Ingenio da 1.4:1 y sobre Disciplina 2.3:1, ilegible sin esto.
+   Sin desenfoque, como todo lo demás. */
+@utility texto-contorno {
+  text-shadow:
+    1px 1px 0 var(--color-negro),
+    -1px 1px 0 var(--color-negro),
+    1px -1px 0 var(--color-negro),
+    -1px -1px 0 var(--color-negro);
+}
+
+/* Igual pero además con sombra desplazada, para el nombre de categoría. */
+@utility texto-golpe {
+  text-shadow:
+    1px 1px 0 var(--color-negro),
+    -1px 1px 0 var(--color-negro),
+    1px -1px 0 var(--color-negro),
+    -1px -1px 0 var(--color-negro),
+    4px 4px 0 var(--color-negro);
+}
+
+/* Marca de agua del fondo de la tarjeta (icono de categoría). Contra-inclinada
+   como el resto del contenido: inclinada se vería deformada. */
+.marca-fondo {
+  transform: skewX(7deg);
+}
+
+/* Barra de XP y su relleno. */
+.barra-xp {
+  clip-path: polygon(0 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+}
+
+/* `backwards` y no `both`: con `both` el fotograma final quedaría fijado para
+   siempre y bloquearía cualquier :hover o cambio posterior. */
+.barra-xp-relleno {
+  animation: llenar 0.95s var(--retardo, 0s) cubic-bezier(0.2, 0.9, 0.25, 1)
+    backwards;
+}
+
+/* Destello que recorre la barra. Bordes duros, sin degradado: es una banda
+   sólida que cruza, no un brillo difuminado. */
+.barra-xp-relleno::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 0 44%,
+    var(--color-hueso) 44% 56%,
+    transparent 56% 100%
+  );
+  animation: brillo 3.4s steps(24) infinite;
+}
+
+/* Corte lateral de píldoras y botones. */
+.corte-pildora {
+  clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
+}
+
+/* ---- Movimiento ---- */
+
+@keyframes correr {
+  to {
+    background-position: 44px 0;
+  }
+}
+
+@keyframes llenar {
+  from {
+    width: 0;
+  }
+}
+
+@keyframes brillo {
+  0%,
+  74% {
+    transform: translateX(-100%);
+  }
+  92%,
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@keyframes entra-bloque {
+  from {
+    opacity: 0;
+    transform: rotate(-3.5deg) translateX(-70px);
+  }
+}
+
+@keyframes entra-titulo {
+  from {
+    opacity: 0;
+    transform: rotate(-3deg) skewX(-10deg) scale(1.7);
+  }
+}
+
+@keyframes entra-cinta {
+  from {
+    opacity: 0;
+    transform: skewX(-10deg) translateX(-30px);
+  }
+}
+
+@keyframes entra-tarjeta {
+  from {
+    opacity: 0;
+    transform: rotate(var(--rotacion, 0deg)) skewX(-18deg) translateX(-70px);
+  }
+}
+
+@keyframes entra-fab {
+  from {
+    opacity: 0;
+    transform: skewX(-10deg) translateY(26px) scale(0.86);
+  }
+}
+
+@keyframes latido {
+  0%,
+  100% {
+    box-shadow:
+      5px 5px 0 var(--color-negro),
+      10px 10px 0 var(--color-cuerpo);
+  }
+  50% {
+    box-shadow:
+      5px 5px 0 var(--color-negro),
+      15px 15px 0 var(--color-cuerpo);
+  }
+}
+
+.anim-bloque {
+  animation: entra-bloque 0.44s cubic-bezier(0.2, 1.35, 0.4, 1) backwards;
+}
+.anim-titulo {
+  animation: entra-titulo 0.5s 0.06s cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
+}
+.anim-cinta {
+  animation: entra-cinta 0.4s 0.16s cubic-bezier(0.2, 1.35, 0.4, 1) backwards;
+}
+.anim-tarjeta {
+  animation: entra-tarjeta 0.5s var(--retardo, 0s)
+    cubic-bezier(0.2, 1.35, 0.35, 1) backwards;
+}
+.anim-fab {
+  animation:
+    entra-fab 0.45s 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) backwards,
+    latido 2.8s 1.5s ease-in-out infinite;
+}
+
+/* Nadie debería marearse por una barra de XP. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

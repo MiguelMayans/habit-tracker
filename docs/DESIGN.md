@@ -9,7 +9,7 @@ Diseño v1 cerrado. Cualquier cambio aquí debe discutirse explícitamente, no i
 - **Consumo pasivo / scroll** es la "Sombra" implícita del sistema — se combate con refuerzo positivo, nunca con castigo.
 - **Refuerzo positivo únicamente**: un sistema punitivo (pérdida de XP, bajada de nivel) genera evitación y ansiedad en vez de motivación. Rechazado explícitamente.
 - **Los niveles NUNCA bajan.** Ni por inactividad ni por "recaídas". Esta es una decisión de diseño explícita y central.
-- En vez de castigo: indicador visual de "X días desde la última XP en esta categoría/Foco" — señal honesta, no punitiva. Se deriva de la fecha de la última actividad (no necesita campo nuevo en el modelo de datos). Implementación diferida al paso 10 (UX/UI).
+- En vez de castigo: indicador visual de "X días desde la última XP en esta categoría/Foco" — señal honesta, no punitiva. Se deriva de la fecha de la última actividad (no necesita campo nuevo en el modelo de datos). **Implementado** para categorías en la home: `lastActivityAt` en `GET /categories` y `client/src/lib/fecha.ts` lo traduce a HOY / AYER / HACE N DÍAS, en rojo a partir de una semana. Falta llevarlo a los Focos.
 
 ## Las 5 categorías (fijas, nombres y orden finales)
 
@@ -67,19 +67,33 @@ Diseño v1 cerrado. Cualquier cambio aquí debe discutirse explícitamente, no i
 ## Dirección visual (referencia definitiva: mockup HTML v3 de sesión previa)
 
 - Estética: lenguaje gráfico de diseño de la serie Persona — **sin** personajes anime ilustrados
-- Color primario del sistema: Amarillo (`#FFD400` aprox) + casi-negro (`#141414`) + blanco roto (`#F5F5F0`). El amarillo se reserva para elementos de sistema UI (botones principales, barra de XP, level-up), no para categorías
-- Paleta de acento por categoría (provisional):
-  - Cuerpo → `#E63946`
-  - Disciplina → `#F77F00`
-  - Mente → `#5B4E8C`
-  - Ingenio → `#00C2A8`
-  - Corazón → `#E84393`
+- Color primario del sistema: Amarillo (`#FFE500`) + negro puro (`#000000`) + blanco roto (`#F5F5F0`). El amarillo se reserva para elementos de sistema UI (botones principales, barra de XP, level-up), no para categorías
+- Paleta de acento por categoría (aplicada, croma alto):
+  - Cuerpo → `#FF2036`
+  - Disciplina → `#FF8A00`
+  - Mente → `#9945FF`
+  - Ingenio → `#00F0C8`
+  - Corazón → `#FF2E88`
+  - Sustituye a la paleta provisional inicial (`#E63946` / `#F77F00` / `#5B4E8C` / `#00C2A8` / `#E84393`), demasiado apagada contra negro. Mente era el caso extremo: `#5B4E8C` estaba tan desaturado que no leía como color de categoría
+  - El fondo bajó de `#141414` a negro puro `#000000`: buena parte de la intensidad viene del negro, no de los acentos
+  - Cada acento se usa también como texto sobre negro; el más justo es Mente (~3.9:1), suficiente para display grande pero no para texto pequeño
 - Rasgos CSS clave: contraste máximo, tipografía en mayúsculas oversized diagonal/skewed, composición de paneles ligeramente rotada, sombras duras (sin blur), texturas halftone/screentone, líneas de velocidad radiales, bordes de tarjeta recortados, bordes de acento gruesos, micro-animaciones tipo "flash/slam" (no fades suaves)
 - Tipografía display (decidida): **Dela Gothic One** (Google Fonts), gótica japonesa en bloque — registro de rotulación manga, no de cómic americano. Expuesta como `--font-display` / `font-display`. Se aplica en mayúsculas
-- Utilidades del tratamiento display (definidas en `client/src/index.css`):
+- Tipografía de datos: **Chakra Petch** (Google Fonts), palo seco angular para cifras y etiquetas. Expuesta como `--font-datos`; es la fuente por defecto del `body`. Dela Gothic One pesa demasiado por debajo de 14px
+- Utilidades y piezas (definidas en `client/src/index.css`):
   - `text-slam` → inclinación `-10deg` + sombra dura doble (negro pegado + acento rojo desplazado, sin blur)
   - `text-slam-tilt` → igual pero además girado `-3deg`, para títulos sueltos
   - `panel-slam` → panel inclinado con sombra sólida negra; el giro individual se pasa con la custom property `--rotacion`
+  - `tarjeta-categoria` + `tarjeta-recorte` + `contenido-slam` → la inclinación va en la tarjeta y el recorte de esquina en una **capa interior**, para que el nivel pueda sobresalir por encima del borde. El contenido va contra-inclinado, para que el texto se lea recto con el panel en diagonal
+  - La sombra dura de color se pinta con `drop-shadow`, **nunca con `box-shadow`**: `clip-path` recorta también la `box-shadow`, así que sobre una silueta recortada no llega a verse. `drop-shadow` sigue el contorno y tampoco lleva blur
+  - `marca-fondo` → marca de agua del fondo de la tarjeta. Es el icono de la categoría (`client/src/components/CategoryIcon.tsx`), SVG de trazo sobre rejilla de 24 dibujado en código: escala sin pixelarse, hereda el color con `currentColor` y no añade assets que mantener, igual que las texturas
+  - `texto-contorno` / `texto-golpe` → contorno negro duro en las cuatro direcciones (y sombra desplazada en el segundo). Es lo que permite texto blanco sobre cualquier categoría sin una placa de fondo: blanco sobre Ingenio da 1.4:1 y sobre Disciplina 2.3:1, ilegible sin contorno. Se probó antes una placa negra interior; se descartó porque apagaba el color, que es lo que debe mandar
+  - Sobre tarjeta a color, el amarillo solo aparece en la barra de XP (que va sobre negro): como texto desaparecería encima de Disciplina o Ingenio. El aviso de inactividad tampoco puede ir en rojo — se pierde sobre Cuerpo — y va como etiqueta negra sólida
+  - `barra-xp` / `barra-xp-relleno`, `corte-pildora`, `bloque-roto`
+  - Texturas en CSS puro, sin imágenes: `textura-diagonales` y `textura-trama` (halftone). Viven en el layout de `App.tsx` y siempre **detrás** del contenido: superpuestas actúan como veladura y apagan el color de las tarjetas. Por eso se retiraron el grano de líneas y el degradado inferior — nada de difuminados sobre el contenido
+  - Ningún degradado suave: el destello que recorre la barra de XP es una banda sólida de bordes duros animada con `steps()`, no un brillo desenfocado
+  - Animaciones de entrada: `anim-bloque`, `anim-titulo`, `anim-cinta`, `anim-tarjeta` (escalonada con `--retardo`), `anim-fab`. Todas usan `backwards` y no `both`, porque `both` congela el fotograma final y anula los `:hover` posteriores. Todo el movimiento se apaga con `prefers-reduced-motion`
+- La barra de XP mide el progreso **dentro** del nivel, no la XP total. `GET /categories` lo devuelve ya calculado (`progress`, `xpToNextLevel`, `atMaxLevel`) vía `server/src/services/categoriesService.ts`, para que la curva siga teniendo una única fuente de verdad en `server/src/lib/xpCurve.ts` y el cliente no la duplique
 - Layout:
   - Home = lista vertical de las 5 categorías (color de acento, nombre diagonal grande, nivel + barra de XP visible)
   - Tap en categoría → header full-width de alto impacto + lista de Focos

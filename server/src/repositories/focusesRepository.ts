@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { db, type DbOrTx } from "../db/index.js";
 import { focuses } from "../db/schema.js";
 
@@ -14,6 +14,19 @@ export async function getFocusesByCategory(
   categoryId: number,
 ): Promise<Focus[]> {
   return db.select().from(focuses).where(eq(focuses.categoryId, categoryId));
+}
+
+/**
+ * Nº de focos por categoría, en una sola consulta agrupada. Las categorías sin
+ * focos no salen en el resultado.
+ */
+export async function countFocusesByCategory(): Promise<Map<number, number>> {
+  const filas = await db
+    .select({ categoryId: focuses.categoryId, total: count() })
+    .from(focuses)
+    .groupBy(focuses.categoryId);
+
+  return new Map(filas.map((f) => [f.categoryId, f.total]));
 }
 
 export async function getFocusById(

@@ -71,3 +71,52 @@ export function totalXpForLevel(
   }
   return total;
 }
+
+export type LevelProgress = {
+  /** XP acumulada dentro del nivel actual, no la total histórica. */
+  xpIntoLevel: number;
+  /** Coste completo de este nivel. 0 en el nivel tope. */
+  xpForNextLevel: number;
+  /** Lo que falta para el siguiente. 0 en el nivel tope. */
+  xpToNextLevel: number;
+  /** 0..1, para pintar la barra. */
+  progress: number;
+  atMaxLevel: boolean;
+};
+
+/**
+ * Progreso DENTRO del nivel actual, que es lo único que significa algo en una
+ * barra: `currentXp` es acumulada histórica y crecería para siempre.
+ *
+ * Recibe el nivel ya almacenado en vez de recalcularlo, para que la barra
+ * concuerde siempre con el nivel que muestra la interfaz.
+ */
+export function getLevelProgress(
+  totalXp: number,
+  level: number,
+  curve: XpCurve,
+): LevelProgress {
+  const atMaxLevel = level >= curve.maxLevel;
+
+  if (atMaxLevel) {
+    return {
+      xpIntoLevel: 0,
+      xpForNextLevel: 0,
+      xpToNextLevel: 0,
+      progress: 1,
+      atMaxLevel: true,
+    };
+  }
+
+  const base = totalXpForLevel(level, curve.base, curve.exponent);
+  const xpForNextLevel = xpCostForLevel(level + 1, curve.base, curve.exponent);
+  const xpIntoLevel = Math.max(0, totalXp - base);
+
+  return {
+    xpIntoLevel,
+    xpForNextLevel,
+    xpToNextLevel: Math.max(0, xpForNextLevel - xpIntoLevel),
+    progress: Math.min(1, xpIntoLevel / xpForNextLevel),
+    atMaxLevel: false,
+  };
+}

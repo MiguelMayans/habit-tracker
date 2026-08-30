@@ -74,13 +74,15 @@ export function CategoryDetailPage() {
   }
 
   if (!idValido)
-    return <p className="text-cuerpo">El id de la categoría no es válido</p>;
-  if (loading) return <p className="text-hueso/60">Cargando…</p>;
-  if (error) return <p className="text-cuerpo">Error: {error}</p>;
+    return (
+      <p className="px-6 py-10 text-cuerpo">El id de la categoría no es válido</p>
+    );
+  if (loading) return <p className="px-6 py-10 text-hueso/60">Cargando…</p>;
+  if (error) return <p className="px-6 py-10 text-cuerpo">Error: {error}</p>;
   if (!category) return null;
 
   return (
-    <div>
+    <div className="px-4 pt-8 pb-32">
       <Link to="/" className="text-sm text-hueso/60 underline">
         ← Categorías
       </Link>
