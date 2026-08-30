@@ -8,8 +8,8 @@
 - [x] **4. Drizzle + esquema Turso** — modelo categorías/Focos/actividades → schema + migraciones
 - [x] **5. Backend Express con ruta `/health`** — confirmar cadena Express → Drizzle → Turso
 - [x] **6. Endpoints CRUD core** — seeds de categorías fijas, crear/listar Foco, spawn de Foco hijo, crear/listar actividad, lógica de cascada de XP
-- [ ] **7. Cliente consumiendo la API** — pantallas mínimas, sin pulir, funcional end-to-end
-- [ ] **8. Deploy a producción** — cliente en Netlify, servidor en Render, variables de entorno de Turso
+- [x] **7. Cliente consumiendo la API** — pantallas mínimas, sin pulir, funcional end-to-end
+- [ ] **8. Deploy a producción** — cliente en Netlify, servidor en Render, variables de entorno de Turso. Pendiente además: `CORS_ORIGIN` en Render con el dominio de Netlify (ahora en local se permite cualquier origen) y `API_URL` de `client/src/api/client.ts` apuntando al backend de Render
 - [ ] **9. PWA** — `vite-plugin-pwa`, manifest, iconos, instalable en Android
 - [ ] **10. Pulido UX/UI completo** — feedback visual, "chute" de level-up, indicadores de inactividad
 - [ ] **11. Migración a self-hosted** — una vez estable en Turso/Render
