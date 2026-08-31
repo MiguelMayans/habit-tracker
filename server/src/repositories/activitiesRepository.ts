@@ -55,6 +55,23 @@ export async function getLastActivityDateByCategory(): Promise<
   );
 }
 
+/**
+ * Desvincula las actividades de un foco sin borrarlas: la actividad ocurrió y
+ * su XP ya cuenta en la categoría. Devuelve cuántas se desvincularon.
+ */
+export async function detachActivitiesFromFocus(
+  focusId: number,
+  executor: DbOrTx = db,
+): Promise<number> {
+  const filas = await executor
+    .update(activities)
+    .set({ focusId: null })
+    .where(eq(activities.focusId, focusId))
+    .returning({ id: activities.id });
+
+  return filas.length;
+}
+
 export async function getActivitiesByFocus(
   focusId: number,
 ): Promise<Activity[]> {

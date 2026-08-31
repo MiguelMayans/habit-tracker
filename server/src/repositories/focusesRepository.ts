@@ -50,6 +50,26 @@ export async function createFocus(data: CreateFocusData): Promise<Focus> {
   return focus;
 }
 
+/** Cuántos focos hijos cuelgan de este, para no dejarlos huérfanos. */
+export async function countChildFocuses(
+  parentFocusId: number,
+  executor: DbOrTx = db,
+): Promise<number> {
+  const [fila] = await executor
+    .select({ total: count() })
+    .from(focuses)
+    .where(eq(focuses.parentFocusId, parentFocusId));
+
+  return fila?.total ?? 0;
+}
+
+export async function deleteFocus(
+  id: number,
+  executor: DbOrTx = db,
+): Promise<void> {
+  await executor.delete(focuses).where(eq(focuses.id, id));
+}
+
 export async function updateFocusXp(
   id: number,
   values: { level: number; currentXp: number },

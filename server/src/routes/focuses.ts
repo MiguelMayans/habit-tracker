@@ -1,11 +1,10 @@
 import { Router } from "express";
-import {
-  getFocusesByCategory,
-  getFocusById,
-} from "../repositories/focusesRepository.js";
+import { getFocusById } from "../repositories/focusesRepository.js";
 import { getCategoryById } from "../repositories/categoriesRepository.js";
 import {
   createFocus,
+  deleteFocus,
+  getFocusesByCategoryWithProgress,
   FocusValidationError,
 } from "../services/focusesService.js";
 import { logger } from "../lib/logger.js";
@@ -28,8 +27,7 @@ focusesRouter.get("/categories/:categoryId/focuses", async (req, res) => {
       return;
     }
 
-    const focuses = await getFocusesByCategory(categoryId);
-    res.json(focuses);
+    res.json(await getFocusesByCategoryWithProgress(categoryId));
   } catch (error) {
     logger.error({ err: error, categoryId }, "Error al listar focos");
     res.status(500).json({ message: "Error al listar focos" });
@@ -53,6 +51,26 @@ focusesRouter.get("/focuses/:id", async (req, res) => {
   } catch (error) {
     logger.error({ err: error, id }, "Error al obtener el foco");
     res.status(500).json({ message: "Error al obtener el foco" });
+  }
+});
+
+focusesRouter.delete("/focuses/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ message: "El id debe ser un número entero" });
+    return;
+  }
+
+  try {
+    res.json(await deleteFocus(id));
+  } catch (error) {
+    if (error instanceof FocusValidationError) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+
+    logger.error({ err: error, id }, "Error al borrar el foco");
+    res.status(500).json({ message: "Error al borrar el foco" });
   }
 });
 

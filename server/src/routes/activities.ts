@@ -24,10 +24,10 @@ activitiesRouter.post("/activities", async (req, res) => {
     return;
   }
 
-  if (typeof description !== "string" || description.trim() === "") {
-    res
-      .status(400)
-      .json({ message: "description es obligatoria y debe ser un texto no vacío" });
+  // La descripción es opcional: lo que cuenta es que la actividad ocurrió y
+  // con qué intensidad. Ausente o vacía se guarda como cadena vacía.
+  if (description !== undefined && typeof description !== "string") {
+    res.status(400).json({ message: "description debe ser un texto" });
     return;
   }
 
@@ -59,7 +59,7 @@ activitiesRouter.post("/activities", async (req, res) => {
     const resultado = await registerActivity({
       categoryId,
       focusId,
-      description: description.trim(),
+      description: description?.trim() ?? "",
       intensity,
       date: fecha,
     });
