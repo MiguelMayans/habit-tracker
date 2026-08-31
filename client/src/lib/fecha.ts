@@ -32,3 +32,19 @@ const MESES = [
 export function fechaLarga(d: Date): string {
   return `${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
 }
+
+/**
+ * Para listas: lo reciente se dice en relativo, que es como lo recuerdas, y a
+ * partir de una semana se pasa a fecha, que es cuando "hace 23 días" deja de
+ * significar nada.
+ */
+export function fechaRelativaCorta(iso: string): string {
+  const d = new Date(iso);
+  const dias = diasNaturales(d, new Date());
+
+  if (dias <= 0) return "HOY";
+  if (dias === 1) return "AYER";
+  if (dias < 7) return `HACE ${dias} DÍAS`;
+
+  return `${d.getDate()} ${MESES[d.getMonth()].slice(0, 3).toUpperCase()}`;
+}

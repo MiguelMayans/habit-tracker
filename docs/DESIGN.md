@@ -29,6 +29,10 @@ Diseño v1 cerrado. Cualquier cambio aquí debe discutirse explícitamente, no i
   - Valores sujetos a revisión en la sesión de balanceo pendiente
 - 3 hitos narrativos en el camino a nivel 20
 - Al llegar a nivel 20: el Foco se congela como trofeo de maestría permanente; opción manual (no automática) de generar un Foco hijo más especializado empezando en nivel 1
+- **Borrado de Focos** (`DELETE /focuses/:id`, en la interfaz con pulsación mantenida sobre la ficha):
+  - Las actividades **no se borran**: ocurrieron y su XP ya está sumada en la categoría. Se desvinculan (`focusId = null`) y siguen en el historial. Borrarlas equivaldría a restar XP, que contradice la regla central
+  - Un Foco con hijos se rechaza con 400: el hijo es una especialización del padre y quedaría colgando de nada
+  - Un Foco congelado sí se puede borrar: "permanente" describe que no se descongela, no que sea indestructible
 
 ## Categorías
 
@@ -44,7 +48,7 @@ Diseño v1 cerrado. Cualquier cambio aquí debe discutirse explícitamente, no i
 - Botón único "Registrar actividad" → formulario mínimo:
   - Categoría (obligatorio)
   - Foco (opcional, debe pertenecer a la categoría seleccionada)
-  - Descripción libre
+  - Descripción libre (**opcional**: lo que cuenta es que ocurrió y con qué intensidad; se guarda como cadena vacía y la interfaz la muestra como "Sin descripción")
   - Intensidad
 
 ### Intensidad (tiers fijos, sin escalado por categoría)
@@ -90,6 +94,10 @@ Diseño v1 cerrado. Cualquier cambio aquí debe discutirse explícitamente, no i
   - `texto-contorno` / `texto-golpe` → contorno negro duro en las cuatro direcciones (y sombra desplazada en el segundo). Es lo que permite texto blanco sobre cualquier categoría sin una placa de fondo: blanco sobre Ingenio da 1.4:1 y sobre Disciplina 2.3:1, ilegible sin contorno. Se probó antes una placa negra interior; se descartó porque apagaba el color, que es lo que debe mandar
   - Sobre tarjeta a color, el amarillo solo aparece en la barra de XP (que va sobre negro): como texto desaparecería encima de Disciplina o Ingenio. El aviso de inactividad tampoco puede ir en rojo — se pierde sobre Cuerpo — y va como etiqueta negra sólida
   - `barra-xp` / `barra-xp-relleno`, `corte-pildora`, `bloque-roto`
+  - `banda-sangre` → banda clara que cruza la pantalla de borde a borde por detrás del título, con `left/right: -50vw` y recorte por el `overflow-hidden` del layout. Color, reborde y giro se pasan con `--banda-fondo`, `--banda-reborde` y `--banda-giro`: la home la usa en hueso, el detalle de categoría en el color de la categoría, y el registro toma el color de la categoría elegida
+  - Controles: `campo-marco` (el marco es lo que se inclina) + `campo` (el control va contra-inclinado). Inclinar el propio `input` torcería el texto que escribe el usuario — tolerable en una etiqueta, molesto en un `textarea`. El foco se pinta con `:focus-within` sobre el marco
+  - `boton-slam` → botón inclinado con sombra dura que **cae sobre su propia sombra** al pulsarlo; `ficha-intensidad` → las tres intensidades como fichas pulsables en vez de un desplegable, con `aria-pressed` como estado
+  - Movimiento: `anim-fila` (entrada escalonada con `--retardo`, para filas de formulario y listas), `anim-slam` (llegada del resultado) y `anim-flash-nivel` (destello de subida de nivel, con `steps(1)`: cortes secos, sin fundido)
   - Texturas en CSS puro, sin imágenes: `textura-diagonales` y `textura-trama` (halftone). Viven en el layout de `App.tsx` y siempre **detrás** del contenido: superpuestas actúan como veladura y apagan el color de las tarjetas. Por eso se retiraron el grano de líneas y el degradado inferior — nada de difuminados sobre el contenido
   - Ningún degradado suave: el destello que recorre la barra de XP es una banda sólida de bordes duros animada con `steps()`, no un brillo desenfocado
   - Animaciones de entrada: `anim-bloque`, `anim-titulo`, `anim-cinta`, `anim-tarjeta` (escalonada con `--retardo`), `anim-fab`. Todas usan `backwards` y no `both`, porque `both` congela el fotograma final y anula los `:hover` posteriores. Todo el movimiento se apaga con `prefers-reduced-motion`

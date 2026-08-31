@@ -4,6 +4,7 @@ import { getCategories, type Category } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { desdeUltimaActividad, fechaLarga } from "../lib/fecha";
 import { CategoryIcon } from "../components/CategoryIcon";
+import logo from "../assets/logo.png";
 
 /** Giro y desvío alternos de cada tarjeta, para el efecto collage. */
 const GIROS = ["-1.2deg", "0.8deg", "-0.6deg", "1.1deg", "-0.9deg"];
@@ -27,24 +28,32 @@ export function CategoriesPage() {
 
   return (
     <div className="px-4 pt-8 pb-32">
-      <header className="relative mb-11 px-1">
-        <div
-          className="bloque-roto anim-bloque absolute -left-6 top-3 -z-10 h-23 w-72 bg-cuerpo"
-          style={{ transform: "rotate(-3.5deg)" }}
-        />
-        <h1
-          className="anim-titulo m-0 font-display text-[52px] leading-[0.94] text-hueso"
-          style={{
-            transform: "rotate(-3deg) skewX(-10deg)",
-            transformOrigin: "left center",
-            textShadow: "4px 4px 0 var(--color-negro)",
-          }}
-        >
-          Mike's Life
+      <header className="relative mb-10 px-1">
+        {/* El logotipo sustituye al título tipográfico. Ancho fluido con tope,
+            para que en móvil ocupe el ancho disponible y no crezca de más en
+            pantallas grandes. width/height evitan el salto de maquetación
+            mientras carga. */}
+        {/* La banda va suelta en la cabecera, no dentro del h1: tiene que
+            desbordar el ancho del contenedor para llegar a los dos bordes. */}
+        <div className="banda-sangre anim-logo top-[-16px] z-0 h-[128px]" />
+
+        <h1 className="relative z-10 m-0 w-full max-w-[340px]">
+          <img
+            src={logo}
+            alt="Mike's Life"
+            width={800}
+            height={325}
+            className="anim-logo block h-auto w-full"
+          />
         </h1>
+        {/* relative + z-10: los papeles del logo van posicionados y, sin esto,
+            se pintan por encima de la cinta y la tapan. */}
         <p
-          className="anim-cinta mt-5 inline-block bg-amarillo px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-negro"
-          style={{ transform: "skewX(-10deg)" }}
+          className="anim-cinta relative z-10 mt-6 inline-block bg-amarillo px-4 py-1.5 text-[12px] font-bold tracking-[0.18em] text-negro"
+          style={{
+            transform: "rotate(-2.5deg) skewX(-10deg)",
+            boxShadow: "4px 4px 0 var(--color-negro)",
+          }}
         >
           <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
             {fechaLarga(new Date())}
@@ -77,7 +86,9 @@ export function CategoriesPage() {
                   <span className="texto-contorno text-[9px] font-bold tracking-[0.24em] text-hueso">
                     NIVEL
                   </span>
-                  <b className="texto-golpe font-display text-[46px] leading-[0.82] text-hueso">
+                  {/* El nivel es la recompensa, así que va en amarillo de
+                      sistema con la rotulación del logotipo. */}
+                  <b className="texto-rotulo font-display text-[46px] leading-[0.82] text-amarillo">
                     {c.level}
                   </b>
                 </span>
@@ -97,7 +108,7 @@ export function CategoriesPage() {
                     className="relative py-3 pr-24 pl-3.5"
                     style={{ background: acento }}
                   >
-                    <h2 className="contenido-slam texto-golpe m-0 font-display text-[22px] leading-none text-hueso uppercase">
+                    <h2 className="contenido-slam texto-rotulo-fino m-0 font-display text-[22px] leading-none text-hueso uppercase">
                       {c.name}
                     </h2>
                   </div>

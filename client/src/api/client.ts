@@ -24,15 +24,30 @@ export type Category = {
   lastActivityAt: string | null;
 };
 
-export type Focus = {
+/** La fila tal cual: lo que devuelve `POST /focuses`, sin progreso calculado. */
+export type FocusRow = {
   id: number;
   categoryId: number;
   parentFocusId: number | null;
   name: string;
   level: number;
+  /** XP acumulada total histórica; para la barra usa `progress`. */
   currentXp: number;
   frozen: boolean;
 };
+
+/** Progreso dentro del nivel, calculado en el servidor con la curva real. */
+export type Progress = {
+  xpIntoLevel: number;
+  xpForNextLevel: number;
+  xpToNextLevel: number;
+  /** 0..1 */
+  progress: number;
+  atMaxLevel: boolean;
+};
+
+/** Lo que devuelve el listado de focos de una categoría. */
+export type Focus = FocusRow & Progress;
 
 export type Intensity = "chispa" | "impulso" | "all_out";
 
@@ -104,17 +119,25 @@ export function createFocus(data: {
   categoryId: number;
   name: string;
   parentFocusId?: number;
-}): Promise<Focus> {
-  return request<Focus>("/focuses", {
+}): Promise<FocusRow> {
+  return request<FocusRow>("/focuses", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
+export function deleteFocus(id: number): Promise<{
+  /** Actividades que quedan sin foco pero siguen contando en la categoría. */
+  activitiesDetached: number;
+}> {
+  return request(`/focuses/${id}`, { method: "DELETE" });
+}
+
 export function createActivity(data: {
   categoryId: number;
   focusId?: number;
-  description: string;
+  /** Opcional: lo que cuenta es que ocurrió y con qué intensidad. */
+  description?: string;
   intensity: Intensity;
   date?: string;
 }): Promise<RegisterActivityResult> {

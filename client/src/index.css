@@ -92,6 +92,30 @@ body {
   clip-path: polygon(0 6%, 100% 0, 96% 100%, 2% 92%);
 }
 
+/* Banda clara a sangre: respaldo del logotipo, cuyo contorno es negro y sobre
+   fondo negro se perdería. No se ajusta al logo — cruza la pantalla entera de
+   borde a borde y deja que la flecha asome por debajo, que es lo que la hace
+   leer como cartel y no como caja de fondo. El recorte a los lados lo hace el
+   `overflow-hidden` del layout. */
+.banda-sangre {
+  position: absolute;
+  left: -50vw;
+  right: -50vw;
+  background: var(--banda-fondo, var(--color-hueso));
+  box-shadow: 0 9px 0 var(--banda-reborde, var(--color-cuerpo));
+  transform: rotate(var(--banda-giro, -4deg));
+  pointer-events: none;
+}
+
+.banda-sangre::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--color-negro) 1px, transparent 1.4px);
+  background-size: 6px 6px;
+  opacity: 0.12;
+}
+
 /* Tarjeta de categoría: inclinada. Solo la transformación, sin recorte, para
    que el nivel pueda sobresalir por arriba. La transformación vive aquí y no
    en un style inline, porque los estilos inline ganan siempre y dejarían el
@@ -137,6 +161,25 @@ body {
     -1px 1px 0 var(--color-negro),
     1px -1px 0 var(--color-negro),
     -1px -1px 0 var(--color-negro);
+}
+
+/* Rotulación tipo logotipo. La clave es `paint-order: stroke fill`: sin eso el
+   contorno se pinta ENCIMA del relleno y se come la letra por dentro; con eso
+   queda por detrás y engorda la silueta, que es lo que hace el logo. Encima,
+   sombra dura doble (amarillo oscuro + negro) para el relieve. */
+@utility texto-rotulo {
+  -webkit-text-stroke: 5px var(--color-negro);
+  paint-order: stroke fill;
+  text-shadow:
+    5px 5px 0 #a87400,
+    9px 9px 0 var(--color-negro);
+}
+
+/* La misma construcción a menor escala, para texto de tamaño medio. */
+@utility texto-rotulo-fino {
+  -webkit-text-stroke: 3.5px var(--color-negro);
+  paint-order: stroke fill;
+  text-shadow: 4px 4px 0 var(--color-negro);
 }
 
 /* Igual pero además con sombra desplazada, para el nombre de categoría. */
@@ -187,6 +230,137 @@ body {
   clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
 }
 
+/* ---- Controles de formulario ---- */
+
+/* El marco es lo que se inclina; el control de dentro va contra-inclinado.
+   Si se inclinara el propio input, el texto que escribe el usuario saldría
+   torcido — aceptable en una etiqueta, molesto en un textarea. */
+.campo-marco {
+  background: #111;
+  border: 2px solid rgb(245 245 240 / 0.3);
+  transform: skewX(-7deg);
+  transition:
+    border-color 0.1s steps(2),
+    box-shadow 0.1s steps(2);
+}
+
+.campo-marco:focus-within {
+  border-color: var(--color-amarillo);
+  box-shadow: 5px 5px 0 var(--color-amarillo);
+}
+
+.campo {
+  display: block;
+  width: 100%;
+  padding: 11px 14px;
+  background: transparent;
+  border: 0;
+  color: var(--color-hueso);
+  font-family: var(--font-datos);
+  font-weight: 600;
+  transform: skewX(7deg);
+}
+
+.campo:focus {
+  outline: none;
+}
+
+/* Las opciones del desplegable las pinta el sistema: fondo oscuro explícito
+   o algunos navegadores las sacan en blanco sobre blanco. */
+.campo option {
+  background: #111;
+  color: var(--color-hueso);
+}
+
+/* Etiqueta de campo: pestaña sólida por encima del control. */
+.etiqueta-campo {
+  display: inline-block;
+  padding: 2px 9px;
+  background: var(--color-hueso);
+  color: var(--color-negro);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  transform: skewX(-10deg);
+}
+
+/* Botón principal: inclinado, sombra dura, y al pulsar cae sobre su sombra. */
+.boton-slam {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 0 22px;
+  background: var(--color-amarillo);
+  color: var(--color-negro);
+  font-family: var(--font-display);
+  font-size: 13px;
+  text-transform: uppercase;
+  transform: skewX(-10deg);
+  box-shadow: 6px 6px 0 var(--color-negro);
+  transition:
+    transform 0.08s steps(2),
+    box-shadow 0.08s steps(2);
+}
+
+.boton-slam > * {
+  transform: skewX(10deg);
+}
+
+.boton-slam:not(:disabled):hover {
+  transform: skewX(-10deg) translate(-2px, -2px);
+  box-shadow: 9px 9px 0 var(--color-negro);
+}
+
+.boton-slam:not(:disabled):active {
+  transform: skewX(-10deg) translate(5px, 5px);
+  box-shadow: 1px 1px 0 var(--color-negro);
+}
+
+.boton-slam:disabled {
+  opacity: 0.35;
+  box-shadow: 3px 3px 0 var(--color-negro);
+}
+
+/* Ficha de intensidad: se elige pulsando, no desplegando. */
+.ficha-intensidad {
+  position: relative;
+  padding: 12px 8px 11px;
+  background: #111;
+  color: rgb(245 245 240 / 0.55);
+  border: 2px solid rgb(245 245 240 / 0.22);
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  transform: rotate(var(--rotacion, 0deg)) skewX(-7deg);
+  transition:
+    transform 0.1s steps(2),
+    box-shadow 0.1s steps(2),
+    background-color 0.1s steps(2),
+    color 0.1s steps(2);
+}
+
+.ficha-intensidad > * {
+  transform: skewX(7deg);
+}
+
+.ficha-intensidad[aria-pressed="true"] {
+  background: var(--color-amarillo);
+  border-color: var(--color-amarillo);
+  color: var(--color-negro);
+  box-shadow: 5px 5px 0 var(--color-cuerpo);
+  transform: rotate(var(--rotacion, 0deg)) skewX(-7deg) translate(-2px, -3px);
+}
+
+/* Elemento que responde a pulsación mantenida. Sin esto, mantener el dedo
+   selecciona el texto y saca la lupa del sistema encima. El scroll se
+   mantiene: `touch-action` sigue en automático a propósito. */
+.pulsable-larga {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
 /* ---- Movimiento ---- */
 
 @keyframes correr {
@@ -223,6 +397,15 @@ body {
   from {
     opacity: 0;
     transform: rotate(-3deg) skewX(-10deg) scale(1.7);
+  }
+}
+
+/* El logotipo ya trae su propia inclinación dibujada, así que entra solo con
+   escala: cualquier skew añadido lo deformaría. */
+@keyframes entra-logo {
+  from {
+    opacity: 0;
+    transform: scale(1.55);
   }
 }
 
@@ -267,6 +450,9 @@ body {
 .anim-titulo {
   animation: entra-titulo 0.5s 0.06s cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
 }
+.anim-logo {
+  animation: entra-logo 0.5s 0.06s cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
+}
 .anim-cinta {
   animation: entra-cinta 0.4s 0.16s cubic-bezier(0.2, 1.35, 0.4, 1) backwards;
 }
@@ -278,6 +464,74 @@ body {
   animation:
     entra-fab 0.45s 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) backwards,
     latido 2.8s 1.5s ease-in-out infinite;
+}
+
+/* Entrada escalonada genérica, para filas de formulario y listas. El retardo
+   se pasa con --retardo desde el componente. */
+@keyframes entra-fila {
+  from {
+    opacity: 0;
+    transform: translateX(-26px) skewX(-12deg);
+  }
+}
+.anim-fila {
+  animation: entra-fila 0.4s var(--retardo, 0s) cubic-bezier(0.2, 1.3, 0.4, 1)
+    backwards;
+}
+
+/* Golpe de llegada del resultado: entra grande y se asienta. */
+@keyframes slam {
+  from {
+    opacity: 0;
+    transform: scale(1.5) rotate(-5deg);
+  }
+}
+.anim-slam {
+  animation: slam 0.42s cubic-bezier(0.16, 1.45, 0.4, 1) backwards;
+}
+
+/* Destello de subida de nivel: cortes secos, sin fundido. */
+@keyframes flash-nivel {
+  0%,
+  100% {
+    background-color: var(--color-negro);
+  }
+  12%,
+  20% {
+    background-color: var(--color-hueso);
+  }
+  28%,
+  36% {
+    background-color: var(--color-negro);
+  }
+  44%,
+  52% {
+    background-color: var(--color-amarillo);
+  }
+}
+.anim-flash-nivel {
+  animation: flash-nivel 1.1s steps(1) 2;
+}
+
+/* Marca lo que acaba de aparecer en una lista: sin esto, crear algo abajo del
+   todo no se distingue de que no haya pasado nada. */
+@keyframes destaca {
+  0%,
+  20%,
+  40% {
+    outline-color: var(--color-amarillo);
+  }
+  10%,
+  30%,
+  50%,
+  100% {
+    outline-color: transparent;
+  }
+}
+.anim-destaca {
+  outline: 3px solid transparent;
+  outline-offset: 4px;
+  animation: destaca 1.6s steps(1) 1;
 }
 
 /* Nadie debería marearse por una barra de XP. */
