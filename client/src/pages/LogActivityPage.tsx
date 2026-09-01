@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   createActivity,
@@ -10,6 +10,7 @@ import {
   type RegisterActivityResult,
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
+import { ModalResultado } from "../components/ModalResultado";
 
 const INTENSIDADES: {
   valor: Intensity;
@@ -402,96 +403,14 @@ export function LogActivityPage() {
       )}
 
       {resultado && (
-        <PanelResultado resultado={resultado} volverA={categoriaDeOrigen} />
+        <ModalResultado
+          resultado={resultado}
+          categoria={seleccionada}
+          volverA={categoriaDeOrigen}
+          onCerrar={() => setResultado(null)}
+        />
       )}
     </div>
   );
 }
 
-function PanelResultado({
-  resultado,
-  volverA,
-}: {
-  resultado: RegisterActivityResult;
-  /** Id de la categoría de la que venías, si el registro llegó con contexto. */
-  volverA: string;
-}) {
-  const subeAlguno =
-    resultado.category.leveledUp || Boolean(resultado.focus?.leveledUp);
-
-  // En móvil el panel aparece por debajo del pliegue y te lo pierdes. Se
-  // trae a la vista al llegar, que es justo el momento con más carga.
-  const panel = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    panel.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, []);
-
-  return (
-    <div
-      ref={panel}
-      // La key hace que el panel se remonte en cada registro, y con ello se
-      // reproduzcan otra vez las animaciones de llegada.
-      key={resultado.activity.id}
-      className={`anim-slam relative mt-8 overflow-hidden bg-negro ${
-        subeAlguno ? "anim-flash-nivel" : ""
-      }`}
-      style={{ boxShadow: "8px 8px 0 var(--color-amarillo)" }}
-    >
-      <div className="px-5 py-5">
-        <p className="texto-rotulo m-0 font-display text-[46px] leading-none text-amarillo">
-          +{resultado.xpGained}
-          <span className="text-[20px]"> XP</span>
-        </p>
-
-        <div className="mt-5 grid gap-3">
-          <FilaXp titulo="Categoría" datos={resultado.category} />
-          {resultado.focus && (
-            <FilaXp titulo="Foco" datos={resultado.focus} />
-          )}
-        </div>
-
-        {/* Devuelve de donde viniste, no siempre a la home. */}
-        <Link
-          to={volverA === "" ? "/" : `/categories/${volverA}`}
-          className="boton-slam mt-6 w-full"
-        >
-          <span>{volverA === "" ? "Ver categorías" : "Volver"}</span>
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function FilaXp({
-  titulo,
-  datos,
-}: {
-  titulo: string;
-  datos: RegisterActivityResult["category"];
-}) {
-  return (
-    <div className="flex items-center gap-3 border-t-2 border-hueso/15 pt-3">
-      <span className="text-[10px] font-bold tracking-[0.18em] text-hueso/60 uppercase">
-        {titulo}
-      </span>
-      <span className="ml-auto flex items-baseline gap-2">
-        {datos.leveledUp ? (
-          <span
-            className="bg-amarillo px-2 py-0.5 text-[9px] font-bold tracking-[0.16em] text-negro"
-            style={{ transform: "skewX(-10deg)" }}
-          >
-            NV {datos.levelBefore} → {datos.levelAfter}
-          </span>
-        ) : (
-          <span className="text-[10px] font-semibold text-hueso/60">
-            NV {datos.levelAfter}
-          </span>
-        )}
-        <span className="font-display text-[15px] text-hueso">
-          {datos.totalXp}
-          <span className="text-[9px]"> XP</span>
-        </span>
-      </span>
-    </div>
-  );
-}

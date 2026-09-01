@@ -68,6 +68,11 @@ export type XpOutcome = {
   levelAfter: number;
   leveledUp: boolean;
   totalXp: number;
+  /** Progreso dentro del nivel antes y después, 0..1: la barra va de uno a otro. */
+  progressBefore: number;
+  progressAfter: number;
+  xpToNextLevel: number;
+  atMaxLevel: boolean;
 };
 
 export type RegisterActivityResult = {

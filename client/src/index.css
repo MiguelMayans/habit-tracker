@@ -192,20 +192,18 @@ body {
     4px 4px 0 var(--color-negro);
 }
 
-/* Marca de agua del fondo de la tarjeta (icono de categoría). Contra-inclinada
-   como el resto del contenido: inclinada se vería deformada. */
-.marca-fondo {
-  transform: skewX(7deg);
-}
-
 /* Barra de XP y su relleno. */
 .barra-xp {
   clip-path: polygon(0 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
 }
 
 /* `backwards` y no `both`: con `both` el fotograma final quedaría fijado para
-   siempre y bloquearía cualquier :hover o cambio posterior. */
+   siempre y bloquearía cualquier :hover o cambio posterior.
+   El `overflow` recorta el destello al ANCHO DEL RELLENO: sin él lo recortaba
+   el carril, y la banda blanca seguía viajando por la parte vacía de la barra,
+   más allá de donde llega el progreso. */
 .barra-xp-relleno {
+  overflow: hidden;
   animation: llenar 0.95s var(--retardo, 0s) cubic-bezier(0.2, 0.9, 0.25, 1)
     backwards;
 }
@@ -511,6 +509,98 @@ body {
 }
 .anim-flash-nivel {
   animation: flash-nivel 1.1s steps(1) 2;
+}
+
+/* ---- Subida de nivel ---- */
+
+/* Estallido de rayos que sale de detrás del número. */
+@keyframes estalla {
+  from {
+    opacity: 0;
+    transform: rotate(-40deg) scale(0.2);
+  }
+  55% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.55;
+    transform: rotate(0deg) scale(1);
+  }
+}
+/* Mismo motivo: el estado final del estallido se declara en la clase. */
+.anim-estallido {
+  opacity: 0.55;
+  animation: estalla 0.7s cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
+}
+
+/* El número del nivel nuevo entra enorme y se asienta de golpe. */
+@keyframes cae-nivel {
+  0% {
+    opacity: 0;
+    transform: scale(3.2) rotate(-14deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.88) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-2deg);
+  }
+}
+.anim-cae-nivel {
+  transform: rotate(-2deg);
+  animation: cae-nivel 0.5s cubic-bezier(0.2, 1.2, 0.35, 1) backwards;
+}
+
+/* Fogonazo a pantalla completa. Cortes secos, sin fundido. */
+@keyframes fogonazo {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  4%,
+  9% {
+    opacity: 0.92;
+  }
+  14%,
+  19% {
+    opacity: 0;
+  }
+  24%,
+  29% {
+    opacity: 0.7;
+  }
+}
+/* La opacidad de reposo va aquí, no solo en los fotogramas: al terminar, la
+   animación devuelve el elemento a SU estilo base. Sin este 0, el velo blanco
+   se quedaba a opacidad 1 y dejaba la pantalla en blanco para siempre. */
+.anim-fogonazo {
+  opacity: 0;
+  animation: fogonazo 0.9s steps(1) 1;
+}
+
+/* Vibración corta del panel al impactar. */
+@keyframes sacude {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-5px, 3px);
+  }
+  40% {
+    transform: translate(4px, -3px);
+  }
+  60% {
+    transform: translate(-3px, -2px);
+  }
+  80% {
+    transform: translate(3px, 2px);
+  }
+}
+.anim-sacude {
+  animation: sacude 0.36s steps(2) 2;
 }
 
 /* Marca lo que acaba de aparecer en una lista: sin esto, crear algo abajo del

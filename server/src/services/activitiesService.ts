@@ -16,6 +16,7 @@ import {
   CATEGORY_CURVE,
   FOCUS_CURVE,
   calculateLevelForXp,
+  getLevelProgress,
   type XpCurve,
 } from "../lib/xpCurve.js";
 
@@ -45,6 +46,15 @@ export type XpOutcome = {
   levelAfter: number;
   leveledUp: boolean;
   totalXp: number;
+  /**
+   * Progreso dentro del nivel ANTES y DESPUÉS, 0..1. Van los dos porque la
+   * interfaz anima la barra de uno al otro: sin el de partida solo podría
+   * pintar el estado final, que es justo lo que no se siente.
+   */
+  progressBefore: number;
+  progressAfter: number;
+  xpToNextLevel: number;
+  atMaxLevel: boolean;
 };
 
 export type RegisterActivityResult = {
@@ -74,6 +84,33 @@ function applyXp(
   );
 
   return { level: Math.max(current.level, calculado), currentXp: totalXp };
+}
+
+/** Construye el resumen de XP de una entidad, con el antes y el después. */
+function resumirXp(
+  id: number,
+  antes: { level: number; currentXp: number },
+  despues: { level: number; currentXp: number },
+  curve: XpCurve,
+): XpOutcome {
+  const progresoAntes = getLevelProgress(antes.currentXp, antes.level, curve);
+  const progresoDespues = getLevelProgress(
+    despues.currentXp,
+    despues.level,
+    curve,
+  );
+
+  return {
+    id,
+    levelBefore: antes.level,
+    levelAfter: despues.level,
+    leveledUp: despues.level > antes.level,
+    totalXp: despues.currentXp,
+    progressBefore: progresoAntes.progress,
+    progressAfter: progresoDespues.progress,
+    xpToNextLevel: progresoDespues.xpToNextLevel,
+    atMaxLevel: progresoDespues.atMaxLevel,
+  };
 }
 
 /**
@@ -138,13 +175,7 @@ export async function registerActivity(
       const siguiente = applyXp(focus, xpGained, FOCUS_CURVE);
       await updateFocusXp(focus.id, siguiente, tx);
 
-      focusOutcome = {
-        id: focus.id,
-        levelBefore: focus.level,
-        levelAfter: siguiente.level,
-        leveledUp: siguiente.level > focus.level,
-        totalXp: siguiente.currentXp,
-      };
+      focusOutcome = resumirXp(focus.id, focus, siguiente, FOCUS_CURVE);
     }
 
     const siguienteCategoria = applyXp(category, xpGained, CATEGORY_CURVE);
@@ -154,13 +185,12 @@ export async function registerActivity(
       activity,
       xpGained,
       focus: focusOutcome,
-      category: {
-        id: category.id,
-        levelBefore: category.level,
-        levelAfter: siguienteCategoria.level,
-        leveledUp: siguienteCategoria.level > category.level,
-        totalXp: siguienteCategoria.currentXp,
-      },
+      category: resumirXp(
+        category.id,
+        category,
+        siguienteCategoria,
+        CATEGORY_CURVE,
+      ),
     };
   });
 }

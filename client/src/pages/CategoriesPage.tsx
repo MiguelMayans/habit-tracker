@@ -4,6 +4,7 @@ import { getCategories, type Category } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { desdeUltimaActividad, fechaLarga } from "../lib/fecha";
 import { CategoryIcon } from "../components/CategoryIcon";
+import { logotipoDeCategoria } from "../lib/logotipoCategoria";
 import logo from "../assets/logo.png";
 
 /** Giro y desvío alternos de cada tarjeta, para el efecto collage. */
@@ -49,7 +50,7 @@ export function CategoriesPage() {
         {/* relative + z-10: los papeles del logo van posicionados y, sin esto,
             se pintan por encima de la cinta y la tapan. */}
         <p
-          className="anim-cinta relative z-10 mt-6 inline-block bg-amarillo px-4 py-1.5 text-[12px] font-bold tracking-[0.18em] text-negro"
+          className="anim-cinta relative z-10 mt-4 inline-block bg-amarillo px-4 py-1.5 text-[12px] font-bold tracking-[0.18em] text-negro"
           style={{
             transform: "rotate(-2.5deg) skewX(-10deg)",
             boxShadow: "4px 4px 0 var(--color-negro)",
@@ -66,6 +67,7 @@ export function CategoriesPage() {
         {categories.map((c, i) => {
           const acento = categoryColorVar(c.slug);
           const ultima = desdeUltimaActividad(c.lastActivityAt);
+          const logotipo = logotipoDeCategoria(c.slug);
 
           return (
             <li
@@ -93,6 +95,23 @@ export function CategoriesPage() {
                   </b>
                 </span>
 
+                {logotipo && (
+                  // Fuera de la capa recortada, igual que el nivel: así se
+                  // sale por arriba de la franja sin que la tarjeta lo corte
+                  // ni empuje la altura de la franja. Y va desplazado a la
+                  // izquierda para que, al crecer, el extremo derecho apenas
+                  // se mueva y no se meta debajo del nivel.
+                  <h2 className="contenido-slam absolute -top-7 left-0 z-20 m-0">
+                    <img
+                      src={logotipo.src}
+                      alt={c.name}
+                      width={logotipo.ancho}
+                      height={logotipo.alto}
+                      className="h-[98px] w-auto max-w-none"
+                    />
+                  </h2>
+                )}
+
                 <div
                   className="tarjeta-recorte bg-negro"
                   style={{
@@ -104,25 +123,30 @@ export function CategoriesPage() {
                 >
                   {/* Franja de color. Reserva sitio a la derecha para el
                       nivel, que va superpuesto y fuera de esta capa. */}
+                  {/* Altura fija: así la franja mide lo mismo en las cinco
+                      categorías, lleven logotipo o texto. */}
                   <div
-                    className="relative py-3 pr-24 pl-3.5"
+                    className="relative h-[50px] pr-24 pl-3.5"
                     style={{ background: acento }}
                   >
-                    <h2 className="contenido-slam texto-rotulo-fino m-0 font-display text-[22px] leading-none text-hueso uppercase">
-                      {c.name}
-                    </h2>
+                    {/* Con logotipo no va además el icono: la imagen ya trae
+                        su propio símbolo dibujado. */}
+                    {!logotipo && (
+                      <div className="contenido-slam flex h-full items-center gap-2.5">
+                        <CategoryIcon
+                          slug={c.slug}
+                          strokeWidth={2.4}
+                          className="h-[26px] w-[26px] shrink-0 text-negro"
+                        />
+                        <h2 className="texto-rotulo-fino m-0 font-display text-[22px] leading-none text-hueso uppercase">
+                          {c.name}
+                        </h2>
+                      </div>
+                    )}
                   </div>
 
                   {/* Zona negra: los datos se leen mejor y vuelve el amarillo. */}
                   <div className="relative px-3.5 pt-3 pb-3.5">
-                    {/* Cabe entero dentro de la zona negra: a 112px se salía
-                        y varios iconos quedaban cortados. */}
-                    <CategoryIcon
-                      slug={c.slug}
-                      className="marca-fondo pointer-events-none absolute right-3 bottom-2 h-14 w-14 opacity-25"
-                      style={{ color: acento }}
-                    />
-
                     <div className="contenido-slam relative z-10">
                       <div className="barra-xp relative h-4 overflow-hidden bg-[#242424]">
                         <div

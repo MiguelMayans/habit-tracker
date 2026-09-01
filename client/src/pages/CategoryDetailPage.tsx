@@ -13,6 +13,7 @@ import {
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { CategoryIcon } from "../components/CategoryIcon";
+import { logotipoDeCategoria } from "../lib/logotipoCategoria";
 import { fechaRelativaCorta } from "../lib/fecha";
 import { usePulsacionLarga } from "../lib/usePulsacionLarga";
 import { DialogoBorrarFoco } from "../components/DialogoBorrarFoco";
@@ -183,6 +184,7 @@ export function CategoryDetailPage() {
   if (!category) return null;
 
   const acento = categoryColorVar(category.slug);
+  const logotipo = logotipoDeCategoria(category.slug);
 
   return (
     <div className="px-4 pt-6 pb-32">
@@ -198,39 +200,63 @@ export function CategoryDetailPage() {
 
       {/* Cabecera: misma banda a sangre que la home, pero en el color de la
           categoría, para que se note en cuál estás. */}
-      <header className="relative mt-7 mb-9">
-        <div
-          className="banda-sangre anim-logo top-[-18px] z-0 h-[104px]"
-          style={
-            {
-              "--banda-fondo": acento,
-              "--banda-reborde": "var(--color-negro)",
-            } as React.CSSProperties
-          }
-        />
-
-        <div className="relative z-10 flex items-end gap-3">
-          <h1 className="texto-rotulo m-0 font-display text-[38px] leading-[0.9] text-hueso uppercase">
-            {category.name}
-          </h1>
-          <span className="ml-auto flex items-baseline gap-1.5 pb-1">
-            <span className="texto-contorno text-[9px] font-bold tracking-[0.24em] text-hueso">
-              NIVEL
-            </span>
-            <b className="texto-rotulo font-display text-[42px] leading-[0.82] text-amarillo">
-              {category.level}
-            </b>
+      <header className="relative mt-6 mb-9">
+        {/* El nivel va en su propia línea y no al lado del título: así el
+            logotipo se queda con todo el ancho y puede ir a lo grande, que es
+            lo que pide una portada de categoría. */}
+        <span className="relative z-20 mb-1 flex items-baseline justify-end gap-1.5">
+          <span className="texto-contorno text-[9px] font-bold tracking-[0.24em] text-hueso">
+            NIVEL
           </span>
+          <b className="texto-rotulo font-display text-[46px] leading-[0.82] text-amarillo">
+            {category.level}
+          </b>
+        </span>
+
+        <div className="relative">
+          {/* La banda se centra sobre el título con top + margen negativo (la
+              mitad de su alto): no puede usar translate porque el giro ya
+              ocupa la transformación. Así vale igual para un logotipo alto
+              que para uno bajo. */}
+          <div
+            className="banda-sangre anim-logo top-1/2 -mt-14 z-0 h-[112px]"
+            style={
+              {
+                "--banda-fondo": acento,
+                "--banda-reborde": "var(--color-negro)",
+              } as React.CSSProperties
+            }
+          />
+
+          {logotipo ? (
+            <h1 className="relative z-10 m-0">
+              {/* A ancho completo: el logotipo manda en la pantalla y se sale
+                  de la banda por arriba y por abajo, como en la home. */}
+              <img
+                src={logotipo.src}
+                alt={category.name}
+                width={logotipo.ancho}
+                height={logotipo.alto}
+                className="block h-auto w-full"
+              />
+            </h1>
+          ) : (
+            <div className="relative z-10 flex items-center gap-3 py-6">
+              <CategoryIcon
+                slug={category.slug}
+                strokeWidth={2.4}
+                className="h-9 w-9 shrink-0 text-negro"
+              />
+              <h1 className="texto-rotulo m-0 font-display text-[38px] leading-[0.9] text-hueso uppercase">
+                {category.name}
+              </h1>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Progreso de la categoría, sobre negro para que el amarillo mande. */}
       <div className="anim-fila relative" style={{ "--retardo": "0.1s" } as React.CSSProperties}>
-        <CategoryIcon
-          slug={category.slug}
-          className="pointer-events-none absolute right-1 -top-2 h-16 w-16 opacity-20"
-          style={{ color: acento }}
-        />
         <div className="barra-xp relative h-4 overflow-hidden bg-[#242424]">
           <div
             className="barra-xp-relleno relative h-full bg-amarillo"
