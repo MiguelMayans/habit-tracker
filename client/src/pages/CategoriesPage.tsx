@@ -44,6 +44,30 @@ export function CategoriesPage() {
   const deHoy = recientes.filter((a) => esDeHoy(a.date));
   const xpDeHoy = deHoy.reduce((sum, a) => sum + XP_POR_INTENSIDAD[a.intensity], 0);
 
+  // Los últimos 5 focos DISTINTOS usados, en orden de uso más reciente:
+  // registrar en uno concreto pasa de tres toques a uno. Uno congelado no
+  // admite actividad, así que no se ofrece aunque sea el más reciente.
+  const focosRecientes: {
+    focusId: number;
+    focusName: string;
+    categoryId: number;
+    categorySlug: string;
+  }[] = [];
+  {
+    const vistos = new Set<number>();
+    for (const a of recientes) {
+      if (a.focusId === null || a.focusFrozen || vistos.has(a.focusId)) continue;
+      vistos.add(a.focusId);
+      focosRecientes.push({
+        focusId: a.focusId,
+        focusName: a.focusName ?? "Foco",
+        categoryId: a.categoryId,
+        categorySlug: a.categorySlug,
+      });
+      if (focosRecientes.length >= 5) break;
+    }
+  }
+
   if (loading)
     return <p className="px-6 py-10 text-hueso/60">Cargando categorías…</p>;
   if (error) return <p className="px-6 py-10 text-cuerpo">Error: {error}</p>;
@@ -119,6 +143,41 @@ export function CategoriesPage() {
           </div>
         )}
       </header>
+
+      {focosRecientes.length > 0 && (
+        <div className="anim-fila mb-9" style={{ "--retardo": "0.1s" } as React.CSSProperties}>
+          <p className="mb-2.5 px-1 text-[9px] font-bold tracking-[0.2em] text-hueso/40">
+            ÚLTIMOS FOCOS
+          </p>
+          {/* Full-bleed lateral, como la banda: así el scroll llega hasta el
+              borde de la pantalla en vez de pararse en el padding del layout. */}
+          <ul className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1">
+            {focosRecientes.map((f) => {
+              const acento = categoryColorVar(f.categorySlug);
+              return (
+                <li key={f.focusId} className="shrink-0">
+                  <Link
+                    to={`/log-activity?categoria=${f.categoryId}&foco=${f.focusId}`}
+                    className="block bg-[#111] px-3 py-2"
+                    style={{ borderLeft: `4px solid ${acento}`, minWidth: "132px" }}
+                  >
+                    <span
+                      className="block text-[8px] font-bold tracking-[0.16em]"
+                      style={{ color: acento }}
+                    >
+                      {categories.find((c) => c.slug === f.categorySlug)?.name.toUpperCase() ??
+                        f.categorySlug.toUpperCase()}
+                    </span>
+                    <span className="mt-0.5 block truncate font-display text-[14px] leading-tight text-hueso">
+                      {f.focusName}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
       {/* Hueco algo mayor de lo normal: el nivel sobresale por arriba. */}
       <ul className="grid gap-6">
