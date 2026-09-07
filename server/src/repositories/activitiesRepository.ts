@@ -1,6 +1,6 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, gte, sql } from "drizzle-orm";
 import { db, type DbOrTx } from "../db/index.js";
-import { activities } from "../db/schema.js";
+import { activities, categories, focuses } from "../db/schema.js";
 import type { Intensity } from "../lib/intensity.js";
 
 export type Activity = typeof activities.$inferSelect;
@@ -100,4 +100,49 @@ export async function getActivitiesByFocus(
     .from(activities)
     .where(eq(activities.focusId, focusId))
     .orderBy(desc(activities.date));
+}
+
+/**
+ * Una actividad con el contexto que el cliente no puede resolver por su
+ * cuenta cuando la lista es GLOBAL (no de una categoría o foco concretos):
+ * de qué categoría es y, si tiene foco, su nombre y si está congelado AHORA
+ * — no como estaba cuando se registró la actividad.
+ */
+export type ActivityWithContext = Activity & {
+  categorySlug: string;
+  focusName: string | null;
+  focusFrozen: boolean | null;
+};
+
+/**
+ * Actividades de todas las categorías, en una sola consulta con join —no una
+ * por categoría—, para alimentar la racha, el resumen de hoy y los focos
+ * recientes de la home.
+ */
+export async function getRecentActivities({
+  since,
+  limit = 200,
+}: {
+  since?: Date;
+  limit?: number;
+} = {}): Promise<ActivityWithContext[]> {
+  return db
+    .select({
+      id: activities.id,
+      categoryId: activities.categoryId,
+      focusId: activities.focusId,
+      description: activities.description,
+      intensity: activities.intensity,
+      date: activities.date,
+      createdAt: activities.createdAt,
+      categorySlug: categories.slug,
+      focusName: focuses.name,
+      focusFrozen: focuses.frozen,
+    })
+    .from(activities)
+    .innerJoin(categories, eq(activities.categoryId, categories.id))
+    .leftJoin(focuses, eq(activities.focusId, focuses.id))
+    .where(since ? gte(activities.date, since) : undefined)
+    .orderBy(desc(activities.date))
+    .limit(limit);
 }

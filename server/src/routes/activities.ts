@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   getActivitiesByCategory,
   getActivitiesByFocus,
+  getRecentActivities,
 } from "../repositories/activitiesRepository.js";
 import { getCategoryById } from "../repositories/categoriesRepository.js";
 import { getFocusById } from "../repositories/focusesRepository.js";
@@ -94,6 +95,42 @@ activitiesRouter.delete("/activities/:id", async (req, res) => {
 
     logger.error({ err: error, id }, "Error al deshacer la actividad");
     res.status(500).json({ message: "Error al deshacer la actividad" });
+  }
+});
+
+/**
+ * Actividades de todas las categorías, para la racha, el resumen de hoy y los
+ * focos recientes de la home (docs/DESIGN.md). `since` e `limit` son los dos
+ * únicos filtros: no hace falta paginación de verdad para una app personal.
+ */
+activitiesRouter.get("/activities", async (req, res) => {
+  let since: Date | undefined;
+  if (typeof req.query.since === "string") {
+    since = new Date(req.query.since);
+    if (Number.isNaN(since.getTime())) {
+      res
+        .status(400)
+        .json({ message: "since, si se envía, debe ser una fecha válida" });
+      return;
+    }
+  }
+
+  let limit: number | undefined;
+  if (typeof req.query.limit === "string") {
+    limit = Number(req.query.limit);
+    if (!Number.isInteger(limit) || limit <= 0) {
+      res
+        .status(400)
+        .json({ message: "limit, si se envía, debe ser un entero positivo" });
+      return;
+    }
+  }
+
+  try {
+    res.json(await getRecentActivities({ since, limit }));
+  } catch (error) {
+    logger.error({ err: error }, "Error al listar actividades recientes");
+    res.status(500).json({ message: "Error al listar actividades recientes" });
   }
 });
 

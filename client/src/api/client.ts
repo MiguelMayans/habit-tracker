@@ -61,6 +61,18 @@ export type Activity = {
   createdAt: string;
 };
 
+/**
+ * Una actividad con el contexto que solo tiene sentido en una lista GLOBAL
+ * (no ya filtrada por categoría o foco): de qué categoría es y, si tiene
+ * foco, su nombre y si está congelado AHORA MISMO — no como estaba cuando se
+ * registró la actividad.
+ */
+export type RecentActivity = Activity & {
+  categorySlug: string;
+  focusName: string | null;
+  focusFrozen: boolean | null;
+};
+
 /** Cómo quedó una entidad tras recibir la XP. */
 export type XpOutcome = {
   id: number;
@@ -176,4 +188,20 @@ export function getActivitiesByCategory(
 
 export function getActivitiesByFocus(focusId: number): Promise<Activity[]> {
   return request<Activity[]>(`/focuses/${focusId}/activities`);
+}
+
+/**
+ * De todas las categorías, no de una: alimenta la racha, el resumen de hoy y
+ * los focos recientes de la home.
+ */
+export function getRecentActivities(params: {
+  since?: string;
+  limit?: number;
+} = {}): Promise<RecentActivity[]> {
+  const query = new URLSearchParams();
+  if (params.since !== undefined) query.set("since", params.since);
+  if (params.limit !== undefined) query.set("limit", String(params.limit));
+  const qs = query.toString();
+
+  return request<RecentActivity[]>(`/activities${qs === "" ? "" : `?${qs}`}`);
 }

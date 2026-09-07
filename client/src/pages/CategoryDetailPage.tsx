@@ -10,23 +10,17 @@ import {
   type Activity,
   type Category,
   type Focus,
-  type Intensity,
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { logotipoDeCategoria } from "../lib/logotipoCategoria";
 import { esDeHoy, fechaRelativaCorta } from "../lib/fecha";
+import { XP_POR_INTENSIDAD } from "../lib/intensity";
 import { usePulsacionLarga } from "../lib/usePulsacionLarga";
 import { DialogoConfirmar } from "../components/DialogoConfirmar";
 
 /** Cuántas actividades se listan antes de cortar. */
 const HISTORIAL_VISIBLE = 8;
-
-const XP_POR_INTENSIDAD: Record<Intensity, number> = {
-  chispa: 10,
-  impulso: 20,
-  all_out: 35,
-};
 
 /** Giro alterno de las fichas de foco, para el efecto collage. */
 const GIROS = ["-0.9deg", "0.7deg", "-0.5deg", "1deg", "-0.7deg"];

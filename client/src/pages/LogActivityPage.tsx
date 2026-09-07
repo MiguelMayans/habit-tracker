@@ -11,6 +11,7 @@ import {
   type RegisterActivityResult,
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
+import { XP_POR_INTENSIDAD } from "../lib/intensity";
 import { ModalResultado } from "../components/ModalResultado";
 
 const INTENSIDADES: {
@@ -19,9 +20,9 @@ const INTENSIDADES: {
   xp: number;
   giro: string;
 }[] = [
-  { valor: "chispa", etiqueta: "Chispa", xp: 10, giro: "-1.4deg" },
-  { valor: "impulso", etiqueta: "Impulso", xp: 20, giro: "0.9deg" },
-  { valor: "all_out", etiqueta: "All-Out", xp: 35, giro: "-1deg" },
+  { valor: "chispa", etiqueta: "Chispa", xp: XP_POR_INTENSIDAD.chispa, giro: "-1.4deg" },
+  { valor: "impulso", etiqueta: "Impulso", xp: XP_POR_INTENSIDAD.impulso, giro: "0.9deg" },
+  { valor: "all_out", etiqueta: "All-Out", xp: XP_POR_INTENSIDAD.all_out, giro: "-1deg" },
 ];
 
 /**

@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getCategories, type Category } from "../api/client";
+import {
+  getCategories,
+  getRecentActivities,
+  type Category,
+  type RecentActivity,
+} from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
-import { desdeUltimaActividad, fechaLarga } from "../lib/fecha";
+import { calcularRacha, desdeUltimaActividad, esDeHoy, fechaLarga } from "../lib/fecha";
+import { XP_POR_INTENSIDAD } from "../lib/intensity";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { logotipoDeCategoria } from "../lib/logotipoCategoria";
 import logo from "../assets/logo.png";
@@ -11,17 +17,32 @@ import logo from "../assets/logo.png";
 const GIROS = ["-1.2deg", "0.8deg", "-0.6deg", "1.1deg", "-0.9deg"];
 const DESVIOS = ["0px", "10px", "0px", "12px", "0px"];
 
+// Suficiente para una racha de meses y para encontrar los últimos focos
+// usados sin necesitar una segunda llamada (bloque de focos recientes).
+const RECIENTES_LIMITE = 300;
+
 export function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [recientes, setRecientes] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getCategories()
-      .then(setCategories)
+    Promise.all([
+      getCategories(),
+      getRecentActivities({ limit: RECIENTES_LIMITE }),
+    ])
+      .then(([cats, acts]) => {
+        setCategories(cats);
+        setRecientes(acts);
+      })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
+
+  const racha = calcularRacha(recientes.map((a) => a.date));
+  const deHoy = recientes.filter((a) => esDeHoy(a.date));
+  const xpDeHoy = deHoy.reduce((sum, a) => sum + XP_POR_INTENSIDAD[a.intensity], 0);
 
   if (loading)
     return <p className="px-6 py-10 text-hueso/60">Cargando categorías…</p>;
@@ -60,6 +81,43 @@ export function CategoriesPage() {
             {fechaLarga(new Date())}
           </span>
         </p>
+
+        {(racha > 0 || deHoy.length > 0) && (
+          <div className="anim-cinta relative z-10 mt-2.5 flex flex-wrap gap-2">
+            {racha > 0 && (
+              <span
+                className="inline-block bg-hueso px-3 py-1 text-[10px] font-bold tracking-[0.14em] text-negro"
+                style={{
+                  transform: "rotate(1.5deg) skewX(-10deg)",
+                  boxShadow: "3px 3px 0 var(--color-negro)",
+                }}
+              >
+                <span
+                  className="inline-block"
+                  style={{ transform: "skewX(10deg)" }}
+                >
+                  RACHA · {racha} {racha === 1 ? "DÍA" : "DÍAS"}
+                </span>
+              </span>
+            )}
+            {deHoy.length > 0 && (
+              <span
+                className="inline-block bg-amarillo px-3 py-1 text-[10px] font-bold tracking-[0.14em] text-negro"
+                style={{
+                  transform: "rotate(-1.5deg) skewX(-10deg)",
+                  boxShadow: "3px 3px 0 var(--color-negro)",
+                }}
+              >
+                <span
+                  className="inline-block"
+                  style={{ transform: "skewX(10deg)" }}
+                >
+                  HOY · {deHoy.length} · +{xpDeHoy} XP
+                </span>
+              </span>
+            )}
+          </div>
+        )}
       </header>
 
       {/* Hueco algo mayor de lo normal: el nivel sobresale por arriba. */}

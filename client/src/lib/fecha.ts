@@ -15,6 +15,37 @@ export function esDeHoy(iso: string): boolean {
   return diasNaturales(new Date(iso), new Date()) <= 0;
 }
 
+/** Clave de día natural, para meter fechas en un Set sin duplicados de hora. */
+function claveDia(d: Date): string {
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+/**
+ * Días consecutivos con alguna actividad, terminando hoy o ayer. Si hoy
+ * todavía no hay ninguna, el día no ha terminado — no cuenta como hueco, y el
+ * conteo arranca en ayer. Solo se rompe al saltarse un día entero.
+ *
+ * No hace falta al servidor: son fechas que ya tiene el cliente delante, y la
+ * cuenta depende de la zona horaria del usuario, que el navegador ya conoce y
+ * el servidor no.
+ */
+export function calcularRacha(fechasIso: string[]): number {
+  if (fechasIso.length === 0) return 0;
+
+  const dias = new Set(fechasIso.map((iso) => claveDia(new Date(iso))));
+
+  const cursor = new Date();
+  if (!dias.has(claveDia(cursor))) cursor.setDate(cursor.getDate() - 1);
+
+  let racha = 0;
+  while (dias.has(claveDia(cursor))) {
+    racha += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return racha;
+}
+
 /**
  * Señal de inactividad de docs/DESIGN.md: informativa, nunca punitiva. Solo
  * dice cuándo fue la última vez, sin regañar ni restar nada.
