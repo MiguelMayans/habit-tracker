@@ -239,7 +239,9 @@ function BloqueXp({
         <i className="h-[3px] w-[3px] rotate-45 bg-hueso/50" />
         <span>
           {datos.atMaxLevel ? (
-            <b className="text-amarillo">NIVEL MÁXIMO</b>
+            <b className="text-amarillo">
+              {datos.frozen ? "CONGELADO" : "NIVEL MÁXIMO"}
+            </b>
           ) : (
             <>
               <b className="text-amarillo">{datos.xpToNextLevel}</b> AL NV{" "}
@@ -252,7 +254,7 @@ function BloqueXp({
             className="ml-auto bg-amarillo px-2 py-0.5 text-[9px] font-bold tracking-[0.16em] text-negro"
             style={{ transform: "skewX(-10deg)" }}
           >
-            ¡SUBES A {datos.levelAfter}!
+            {datos.frozen ? "¡MAESTRÍA!" : `¡SUBES A ${datos.levelAfter}!`}
           </span>
         )}
       </div>

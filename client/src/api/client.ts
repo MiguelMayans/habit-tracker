@@ -73,6 +73,8 @@ export type XpOutcome = {
   progressAfter: number;
   xpToNextLevel: number;
   atMaxLevel: boolean;
+  /** Solo tiene sentido en un Foco: en una categoría siempre es `false`. */
+  frozen: boolean;
 };
 
 export type RegisterActivityResult = {

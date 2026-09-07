@@ -55,6 +55,12 @@ export type XpOutcome = {
   progressAfter: number;
   xpToNextLevel: number;
   atMaxLevel: boolean;
+  /**
+   * Solo tiene sentido real en un Foco: al llegar a `FOCUS_CURVE.maxLevel` se
+   * congela y deja de admitir XP hasta que se le engendre un hijo. En una
+   * categoría siempre sale en `false` porque no existe ese estado.
+   */
+  frozen: boolean;
 };
 
 export type RegisterActivityResult = {
@@ -92,6 +98,7 @@ function resumirXp(
   antes: { level: number; currentXp: number },
   despues: { level: number; currentXp: number },
   curve: XpCurve,
+  frozen = false,
 ): XpOutcome {
   const progresoAntes = getLevelProgress(antes.currentXp, antes.level, curve);
   const progresoDespues = getLevelProgress(
@@ -110,6 +117,7 @@ function resumirXp(
     progressAfter: progresoDespues.progress,
     xpToNextLevel: progresoDespues.xpToNextLevel,
     atMaxLevel: progresoDespues.atMaxLevel,
+    frozen,
   };
 }
 
@@ -173,9 +181,13 @@ export async function registerActivity(
     let focusOutcome: XpOutcome | null = null;
     if (focus) {
       const siguiente = applyXp(focus, xpGained, FOCUS_CURVE);
-      await updateFocusXp(focus.id, siguiente, tx);
+      // Al llegar al nivel máximo se congela: dispara aquí, en el mismo golpe
+      // de XP que lo alcanza, no en una pasada aparte que habría que acordarse
+      // de ejecutar.
+      const frozen = siguiente.level >= FOCUS_CURVE.maxLevel;
+      await updateFocusXp(focus.id, { ...siguiente, frozen }, tx);
 
-      focusOutcome = resumirXp(focus.id, focus, siguiente, FOCUS_CURVE);
+      focusOutcome = resumirXp(focus.id, focus, siguiente, FOCUS_CURVE, frozen);
     }
 
     const siguienteCategoria = applyXp(category, xpGained, CATEGORY_CURVE);

@@ -72,7 +72,7 @@ export async function deleteFocus(
 
 export async function updateFocusXp(
   id: number,
-  values: { level: number; currentXp: number },
+  values: { level: number; currentXp: number; frozen?: boolean },
   executor: DbOrTx = db,
 ): Promise<Focus> {
   const [focus] = await executor
