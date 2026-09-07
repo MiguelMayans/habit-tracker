@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   createFocus,
@@ -35,28 +35,49 @@ const GIROS = ["-0.9deg", "0.7deg", "-0.5deg", "1deg", "-0.7deg"];
  * foco ya elegidos.
  *
  * Un foco congelado no se enlaza: está en el nivel máximo y el backend
- * rechazaría la actividad, así que ofrecer el atajo sería llevar a un error.
+ * rechazaría la actividad. En su lugar, un toque corto engendra su foco
+ * hijo — el mismo gesto que en un foco activo lleva a registrar, aquí lleva
+ * a la única acción que SÍ admite. La pulsación mantenida sigue borrando en
+ * los dos casos.
  */
 function FichaFoco({
   frozen,
   categoryId,
   focusId,
   onMantener,
+  onEngendrar,
   children,
 }: {
   frozen: boolean;
   categoryId: number;
   focusId: number;
   onMantener: () => void;
+  onEngendrar: () => void;
   children: React.ReactNode;
 }) {
   const pulsacion = usePulsacionLarga(onMantener);
 
-  // Un foco congelado no lleva a registrar, pero sí se puede borrar: por eso
-  // sigue teniendo pulsación mantenida aunque no sea un enlace.
   if (frozen) {
     return (
-      <div className="pulsable-larga block" {...pulsacion}>
+      <div
+        className="pulsable-larga block"
+        role="button"
+        tabIndex={0}
+        {...pulsacion}
+        onClick={(e) => {
+          // El propio hook ya traga el click cuando lo que disparó fue la
+          // pulsación larga (marca preventDefault): si ha llegado hasta aquí
+          // es que fue un toque corto de verdad.
+          pulsacion.onClick(e);
+          if (!e.defaultPrevented) onEngendrar();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onEngendrar();
+          }
+        }}
+      >
         {children}
       </div>
     );
@@ -91,6 +112,22 @@ export function CategoryDetailPage() {
   // del scroll no se distingue de que no haya pasado nada.
   const [focoNuevo, setFocoNuevo] = useState<number | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
+
+  // Al tocar un foco congelado se fija aquí como padre; el formulario de abajo
+  // pasa a crear su hijo en vez de un foco suelto.
+  const [padreEngendrar, setPadreEngendrar] = useState<Focus | null>(null);
+  const formularioRef = useRef<HTMLFormElement>(null);
+  const inputNombreRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!padreEngendrar) return;
+    formularioRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Se retrasa a que el scroll suave termine: si el foco de teclado llega
+    // antes, el navegador salta directo a la posición final y se pierde la
+    // animación.
+    const t = window.setTimeout(() => inputNombreRef.current?.focus(), 350);
+    return () => window.clearTimeout(t);
+  }, [padreEngendrar]);
 
   // Borrado por pulsación mantenida.
   const [focoABorrar, setFocoABorrar] = useState<Focus | null>(null);
@@ -140,8 +177,13 @@ export function CategoryDetailPage() {
     setCreando(true);
 
     try {
-      const creado = await createFocus({ categoryId, name: nombreNuevo });
+      const creado = await createFocus({
+        categoryId,
+        name: nombreNuevo,
+        parentFocusId: padreEngendrar?.id,
+      });
       setNombreNuevo("");
+      setPadreEngendrar(null);
       // Refresca solo la lista, sin recargar la página.
       await cargarFocuses();
       setFocoNuevo(creado.id);
@@ -304,7 +346,10 @@ export function CategoryDetailPage() {
           className="anim-fila mt-2 text-[9px] font-bold tracking-[0.16em] text-hueso/40"
           style={{ "--retardo": "0.18s" } as React.CSSProperties}
         >
-          PULSA PARA REGISTRAR · MANTÉN PULSADO PARA BORRAR
+          PULSA PARA REGISTRAR
+          {focuses.some((f) => f.frozen) &&
+            " · PULSA UN CONGELADO PARA ENGENDRAR HIJO"}{" "}
+          · MANTÉN PULSADO PARA BORRAR
         </p>
       )}
 
@@ -317,90 +362,109 @@ export function CategoryDetailPage() {
         </p>
       ) : (
         <ul className="mt-4 grid gap-3.5">
-          {focuses.map((f, i) => (
-            <li
-              key={f.id}
-              className={`tarjeta-categoria anim-tarjeta relative ${
-                f.id === focoNuevo ? "anim-destaca" : ""
-              }`}
-              style={
-                {
-                  "--rotacion": GIROS[i % GIROS.length],
-                  "--retardo": `${0.22 + i * 0.06}s`,
-                } as React.CSSProperties
-              }
-            >
-              <FichaFoco
-                frozen={f.frozen}
-                categoryId={categoryId}
-                focusId={f.id}
-                onMantener={() => {
-                  setErrorBorrado(null);
-                  setFocoABorrar(f);
-                }}
+          {focuses.map((f, i) => {
+            const padre =
+              f.parentFocusId !== null
+                ? focuses.find((p) => p.id === f.parentFocusId)
+                : undefined;
+
+            return (
+              <li
+                key={f.id}
+                className={`tarjeta-categoria anim-tarjeta relative ${
+                  f.id === focoNuevo ? "anim-destaca" : ""
+                } ${padre ? "ml-7" : ""}`}
+                style={
+                  {
+                    "--rotacion": GIROS[i % GIROS.length],
+                    "--retardo": `${0.22 + i * 0.06}s`,
+                  } as React.CSSProperties
+                }
               >
-                <div
-                  className="tarjeta-recorte bg-negro"
-                  style={{ filter: `drop-shadow(6px 6px 0 ${acento})` }}
+                <FichaFoco
+                  frozen={f.frozen}
+                  categoryId={categoryId}
+                  focusId={f.id}
+                  onMantener={() => {
+                    setErrorBorrado(null);
+                    setFocoABorrar(f);
+                  }}
+                  onEngendrar={() => setPadreEngendrar(f)}
                 >
-                  <div className="contenido-slam px-3.5 pt-3 pb-3.5">
-                  <div className="flex items-center gap-2.5">
-                    <h3 className="m-0 font-display text-[17px] leading-none text-hueso uppercase">
-                      {f.name}
-                    </h3>
-                    {f.frozen && (
-                      <span
-                        className="bg-amarillo px-2 py-0.5 text-[8px] font-bold tracking-[0.18em] text-negro"
-                        style={{ transform: "skewX(-10deg)" }}
-                      >
-                        CONGELADO
-                      </span>
-                    )}
-                    <span className="ml-auto flex items-baseline gap-1 text-[9px] font-bold tracking-[0.16em] text-hueso/70">
-                      NV{" "}
-                      <b className="font-display text-[16px] tracking-normal text-hueso">
-                        {f.level}
-                      </b>
-                    </span>
-                  </div>
-
-                  <div className="barra-xp relative mt-2.5 h-3 overflow-hidden bg-[#242424]">
-                    <div
-                      className="barra-xp-relleno relative h-full"
-                      style={
-                        {
-                          width: `${Math.round(f.progress * 100)}%`,
-                          background: f.frozen ? acento : "var(--color-amarillo)",
-                          "--retardo": `${0.42 + i * 0.06}s`,
-                        } as React.CSSProperties
-                      }
-                    />
-                  </div>
-
-                  <div className="mt-2 flex items-center gap-2 text-[9.5px] font-semibold tracking-[0.06em] text-hueso/70">
-                    <span>{f.currentXp} XP</span>
-                    <i className="h-[3px] w-[3px] rotate-45 bg-hueso/50" />
-                    <span>
-                      {f.atMaxLevel ? (
-                        <b className="text-amarillo">MAESTRÍA · NV 20</b>
-                      ) : (
-                        <>
-                          <b className="text-amarillo">{f.xpToNextLevel}</b> AL NV{" "}
-                          {f.level + 1}
-                        </>
+                  <div
+                    className="tarjeta-recorte bg-negro"
+                    style={{ filter: `drop-shadow(6px 6px 0 ${acento})` }}
+                  >
+                    <div className="contenido-slam px-3.5 pt-3 pb-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <h3 className="m-0 font-display text-[17px] leading-none text-hueso uppercase">
+                        {f.name}
+                      </h3>
+                      {f.frozen && (
+                        <span
+                          className="bg-amarillo px-2 py-0.5 text-[8px] font-bold tracking-[0.18em] text-negro"
+                          style={{ transform: "skewX(-10deg)" }}
+                        >
+                          CONGELADO
+                        </span>
                       )}
-                    </span>
+                      <span className="ml-auto flex items-baseline gap-1 text-[9px] font-bold tracking-[0.16em] text-hueso/70">
+                        NV{" "}
+                        <b className="font-display text-[16px] tracking-normal text-hueso">
+                          {f.level}
+                        </b>
+                      </span>
+                    </div>
+
+                    {padre && (
+                      <p className="mt-1 text-[9px] font-bold tracking-[0.1em] text-hueso/45">
+                        ↳ DE {padre.name}
+                      </p>
+                    )}
+
+                    <div className="barra-xp relative mt-2.5 h-3 overflow-hidden bg-[#242424]">
+                      <div
+                        className="barra-xp-relleno relative h-full"
+                        style={
+                          {
+                            width: `${Math.round(f.progress * 100)}%`,
+                            background: f.frozen ? acento : "var(--color-amarillo)",
+                            "--retardo": `${0.42 + i * 0.06}s`,
+                          } as React.CSSProperties
+                        }
+                      />
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-2 text-[9.5px] font-semibold tracking-[0.06em] text-hueso/70">
+                      <span>{f.currentXp} XP</span>
+                      <i className="h-[3px] w-[3px] rotate-45 bg-hueso/50" />
+                      <span>
+                        {f.atMaxLevel ? (
+                          <b className="text-amarillo">MAESTRÍA · NV 20</b>
+                        ) : (
+                          <>
+                            <b className="text-amarillo">{f.xpToNextLevel}</b> AL NV{" "}
+                            {f.level + 1}
+                          </>
+                        )}
+                      </span>
+                      {f.frozen && (
+                        <span className="ml-auto text-[9px] font-bold tracking-[0.1em] text-amarillo">
+                          TOCA PARA ENGENDRAR ↴
+                        </span>
+                      )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </FichaFoco>
-            </li>
-          ))}
+                </FichaFoco>
+              </li>
+            );
+          })}
         </ul>
       )}
 
       {/* ---- Nuevo foco ---- */}
-      <form onSubmit={onCrearFocus} className="mt-11">
+      <form onSubmit={onCrearFocus} className="mt-11" ref={formularioRef}>
         <h2
           className="anim-fila inline-block bg-hueso px-3 py-1 font-display text-[13px] text-negro uppercase"
           style={
@@ -411,9 +475,27 @@ export function CategoryDetailPage() {
           }
         >
           <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-            Nuevo foco
+            {padreEngendrar ? "Nuevo foco especializado" : "Nuevo foco"}
           </span>
         </h2>
+
+        {padreEngendrar && (
+          <p className="anim-slam mt-3 flex items-center gap-2 text-[11px] font-semibold text-hueso/70">
+            <span
+              className="bg-amarillo px-2 py-0.5 text-[9px] font-bold tracking-[0.14em] text-negro"
+              style={{ transform: "skewX(-10deg)" }}
+            >
+              HIJO DE {padreEngendrar.name.toUpperCase()}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPadreEngendrar(null)}
+              className="text-hueso/50 underline"
+            >
+              cancelar
+            </button>
+          </p>
+        )}
 
         <div
           className="anim-fila mt-4 flex items-stretch gap-3"
@@ -421,9 +503,14 @@ export function CategoryDetailPage() {
         >
           <div className="campo-marco flex-1">
             <input
+              ref={inputNombreRef}
               value={nombreNuevo}
               onChange={(e) => setNombreNuevo(e.target.value)}
-              placeholder="Arduino, Inglés, Pareja…"
+              placeholder={
+                padreEngendrar
+                  ? `Especialización de "${padreEngendrar.name}"…`
+                  : "Arduino, Inglés, Pareja…"
+              }
               required
               className="campo"
             />
@@ -433,7 +520,13 @@ export function CategoryDetailPage() {
             disabled={creando || nombreNuevo.trim() === ""}
             className="boton-slam shrink-0"
           >
-            <span>{creando ? "Creando…" : "Crear"}</span>
+            <span>
+              {creando
+                ? "Creando…"
+                : padreEngendrar
+                  ? "Engendrar"
+                  : "Crear"}
+            </span>
           </button>
         </div>
 

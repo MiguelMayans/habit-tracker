@@ -157,10 +157,9 @@ export async function registerActivity(
 
       if (focus.frozen) {
         throw new ActivityValidationError(
-          `El foco "${focus.name}" está congelado en el nivel máximo y ya no ` +
-            `admite más XP. Crea un foco hijo especializado con ` +
-            `POST /focuses { "categoryId": ${focus.categoryId}, "name": "...", ` +
-            `"parentFocusId": ${focus.id} } y registra la actividad ahí.`,
+          `El foco "${focus.name}" ha alcanzado la maestría y está congelado: ` +
+            `ya no admite más XP. Tócalo para engendrar un foco hijo ` +
+            `especializado y registra la actividad ahí.`,
         );
       }
     }
