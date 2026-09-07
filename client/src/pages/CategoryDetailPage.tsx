@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   createFocus,
+  deleteActivity,
   deleteFocus,
   getActivitiesByCategory,
   getCategory,
@@ -14,9 +15,9 @@ import {
 import { categoryColorVar } from "../lib/categoryColor";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { logotipoDeCategoria } from "../lib/logotipoCategoria";
-import { fechaRelativaCorta } from "../lib/fecha";
+import { esDeHoy, fechaRelativaCorta } from "../lib/fecha";
 import { usePulsacionLarga } from "../lib/usePulsacionLarga";
-import { DialogoBorrarFoco } from "../components/DialogoBorrarFoco";
+import { DialogoConfirmar } from "../components/DialogoConfirmar";
 
 /** Cuántas actividades se listan antes de cortar. */
 const HISTORIAL_VISIBLE = 8;
@@ -94,6 +95,43 @@ function FichaFoco({
   );
 }
 
+/**
+ * Fila del historial. La pulsación mantenida solo se activa si la actividad
+ * es de hoy: el servidor rechazaría deshacer una más vieja, así que ni se
+ * ofrece el gesto — evita abrir un diálogo que solo puede acabar en error.
+ */
+function FilaActividad({
+  actividad,
+  acento,
+  retardo,
+  onMantener,
+  children,
+}: {
+  actividad: Activity;
+  acento: string;
+  retardo: number;
+  onMantener: () => void;
+  children: React.ReactNode;
+}) {
+  const puedeDeshacer = esDeHoy(actividad.date);
+  const pulsacion = usePulsacionLarga(onMantener);
+
+  return (
+    <li
+      className={`anim-fila relative bg-[#111] py-2.5 pr-3 pl-3.5 ${puedeDeshacer ? "pulsable-larga" : ""}`}
+      style={
+        {
+          borderLeft: `5px solid ${acento}`,
+          "--retardo": `${retardo}s`,
+        } as React.CSSProperties
+      }
+      {...(puedeDeshacer ? pulsacion : undefined)}
+    >
+      {children}
+    </li>
+  );
+}
+
 export function CategoryDetailPage() {
   const { id } = useParams();
   const categoryId = Number(id);
@@ -133,6 +171,13 @@ export function CategoryDetailPage() {
   const [focoABorrar, setFocoABorrar] = useState<Focus | null>(null);
   const [borrando, setBorrando] = useState(false);
   const [errorBorrado, setErrorBorrado] = useState<string | null>(null);
+
+  // Deshacer un registro por pulsación mantenida sobre su fila del historial.
+  const [actividadADeshacer, setActividadADeshacer] = useState<Activity | null>(
+    null,
+  );
+  const [deshaciendo, setDeshaciendo] = useState(false);
+  const [errorDeshacer, setErrorDeshacer] = useState<string | null>(null);
 
   const cargarFocuses = useCallback(async () => {
     setFocuses(await getFocusesByCategory(categoryId));
@@ -214,6 +259,31 @@ export function CategoryDetailPage() {
       setErrorBorrado((err as Error).message);
     } finally {
       setBorrando(false);
+    }
+  }
+
+  async function onDeshacerActividad() {
+    if (!actividadADeshacer) return;
+    setErrorDeshacer(null);
+    setDeshaciendo(true);
+
+    try {
+      await deleteActivity(actividadADeshacer.id);
+      setActividadADeshacer(null);
+      // La XP revertida pudo cambiar la categoría y el foco: se recargan las
+      // tres listas para que nada se quede con un número desactualizado.
+      const [cat, focs, acts] = await Promise.all([
+        getCategory(categoryId),
+        getFocusesByCategory(categoryId),
+        getActivitiesByCategory(categoryId),
+      ]);
+      setCategory(cat);
+      setFocuses(focs);
+      setActivities(acts);
+    } catch (err) {
+      setErrorDeshacer((err as Error).message);
+    } finally {
+      setDeshaciendo(false);
     }
   }
 
@@ -552,6 +622,15 @@ export function CategoryDetailPage() {
         </span>
       </h2>
 
+      {activities.some((a) => esDeHoy(a.date)) && (
+        <p
+          className="anim-fila mt-2 text-[9px] font-bold tracking-[0.16em] text-hueso/40"
+          style={{ "--retardo": "0.4s" } as React.CSSProperties}
+        >
+          MANTÉN PULSADA UNA ACTIVIDAD DE HOY PARA DESHACERLA
+        </p>
+      )}
+
       {activities.length === 0 ? (
         <p
           className="anim-fila mt-4 text-sm text-hueso/60"
@@ -563,15 +642,15 @@ export function CategoryDetailPage() {
         <>
           <ul className="mt-4 grid gap-2.5">
             {activities.slice(0, HISTORIAL_VISIBLE).map((a, i) => (
-              <li
+              <FilaActividad
                 key={a.id}
-                className="anim-fila relative bg-[#111] py-2.5 pr-3 pl-3.5"
-                style={
-                  {
-                    borderLeft: `5px solid ${acento}`,
-                    "--retardo": `${0.44 + i * 0.04}s`,
-                  } as React.CSSProperties
-                }
+                actividad={a}
+                acento={acento}
+                retardo={0.44 + i * 0.04}
+                onMantener={() => {
+                  setErrorDeshacer(null);
+                  setActividadADeshacer(a);
+                }}
               >
                 <div className="flex items-baseline gap-3">
                   <p
@@ -601,7 +680,7 @@ export function CategoryDetailPage() {
                     </span>
                   )}
                 </div>
-              </li>
+              </FilaActividad>
             ))}
           </ul>
 
@@ -614,16 +693,71 @@ export function CategoryDetailPage() {
       )}
 
       {focoABorrar && (
-        <DialogoBorrarFoco
-          foco={focoABorrar}
-          actividades={
-            activities.filter((a) => a.focusId === focoABorrar.id).length
-          }
-          borrando={borrando}
+        <DialogoConfirmar
+          tituloFranja="¿Borrar foco?"
+          idTitulo="titulo-borrar-foco"
+          procesando={borrando}
           error={errorBorrado}
+          textoConfirmar="Borrar"
+          textoProcesando="Borrando…"
           onConfirmar={onBorrarFoco}
           onCancelar={() => setFocoABorrar(null)}
-        />
+        >
+          <p className="m-0 font-display text-[20px] leading-tight text-hueso uppercase">
+            {focoABorrar.name}
+          </p>
+          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-hueso/55">
+            NIVEL {focoABorrar.level} · {focoABorrar.currentXp} XP
+          </p>
+
+          <p className="mt-4 text-[11.5px] leading-relaxed text-hueso/75">
+            {(() => {
+              const n = activities.filter(
+                (a) => a.focusId === focoABorrar.id,
+              ).length;
+              if (n === 0) return "No tiene actividades registradas.";
+              return (
+                <>
+                  Sus <b className="text-amarillo">{n}</b>{" "}
+                  {n === 1 ? "actividad" : "actividades"} no se{" "}
+                  {n === 1 ? "borra" : "borran"}: se{" "}
+                  {n === 1 ? "queda" : "quedan"} en la categoría sin foco. La
+                  XP que {n === 1 ? "te dio sigue" : "te dieron siguen"}{" "}
+                  contando.
+                </>
+              );
+            })()}
+          </p>
+        </DialogoConfirmar>
+      )}
+
+      {actividadADeshacer && (
+        <DialogoConfirmar
+          tituloFranja="¿Deshacer registro?"
+          idTitulo="titulo-deshacer-actividad"
+          procesando={deshaciendo}
+          error={errorDeshacer}
+          textoConfirmar="Deshacer"
+          textoProcesando="Deshaciendo…"
+          onConfirmar={onDeshacerActividad}
+          onCancelar={() => setActividadADeshacer(null)}
+        >
+          <p className="m-0 font-display text-[18px] leading-tight text-hueso uppercase">
+            {actividadADeshacer.description === ""
+              ? "Sin descripción"
+              : actividadADeshacer.description}
+          </p>
+          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-hueso/55">
+            +{XP_POR_INTENSIDAD[actividadADeshacer.intensity]} XP ·{" "}
+            {fechaRelativaCorta(actividadADeshacer.date)}
+          </p>
+
+          <p className="mt-4 text-[11.5px] leading-relaxed text-hueso/75">
+            Se le resta esa XP al foco (si la tenía) y a la categoría, y el
+            nivel puede bajar si corresponde. Solo puede deshacerse un
+            registro de hoy.
+          </p>
+        </DialogoConfirmar>
       )}
     </div>
   );

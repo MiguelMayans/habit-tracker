@@ -1,6 +1,8 @@
 import { db } from "../db/index.js";
 import {
   createActivity,
+  deleteActivity as deleteActivityRow,
+  getActivityById,
   type Activity,
 } from "../repositories/activitiesRepository.js";
 import {
@@ -70,6 +72,13 @@ export type RegisterActivityResult = {
   category: XpOutcome;
 };
 
+export type UndoActivityResult = {
+  activityId: number;
+  xpLost: number;
+  focus: XpOutcome | null;
+  category: XpOutcome;
+};
+
 /**
  * Aplica la XP sobre un nivel/XP previos. El nivel nunca baja: si el cálculo
  * diera menos que el nivel actual (curva retocada, datos migrados), se conserva
@@ -90,6 +99,43 @@ function applyXp(
   );
 
   return { level: Math.max(current.level, calculado), currentXp: totalXp };
+}
+
+/**
+ * Revierte lo que aplicó `applyXp`. A propósito NO lleva el `Math.max` que sí
+ * lleva `applyXp`: aquí el nivel SÍ tiene que poder bajar, o el número
+ * miente. Ver la excepción de "deshacer" en docs/DESIGN.md — no es un
+ * castigo, es corregir un dato que se introdujo mal.
+ */
+function revertXp(
+  current: { level: number; currentXp: number },
+  xp: number,
+  curve: XpCurve,
+): { level: number; currentXp: number } {
+  const totalXp = Math.max(0, current.currentXp - xp);
+  const level = calculateLevelForXp(
+    totalXp,
+    curve.base,
+    curve.exponent,
+    curve.maxLevel,
+  );
+
+  return { level, currentXp: totalXp };
+}
+
+/**
+ * Si `fecha` cae en el día natural de hoy, según el reloj del servidor. Sirve
+ * solo para acotar la ventana de "deshacer" a un despiste reciente: no hace
+ * falta que sea exacto al segundo entre husos horarios distintos, con que
+ * discrimine "hoy" de "otro día" ya cumple su propósito.
+ */
+function esDeHoy(fecha: Date): boolean {
+  const ahora = new Date();
+  return (
+    fecha.getFullYear() === ahora.getFullYear() &&
+    fecha.getMonth() === ahora.getMonth() &&
+    fecha.getDate() === ahora.getDate()
+  );
 }
 
 /** Construye el resumen de XP de una entidad, con el antes y el después. */
@@ -200,6 +246,75 @@ export async function registerActivity(
         category.id,
         category,
         siguienteCategoria,
+        CATEGORY_CURVE,
+      ),
+    };
+  });
+}
+
+/**
+ * Deshace un registro: borra la actividad y revierte su XP en cascada, al
+ * Foco (si lo tenía) y a la categoría. Acotado a actividades de hoy — ver la
+ * excepción de docs/DESIGN.md — para que sea corrección de un despiste
+ * reciente y no un mecanismo para revisar un día entero con perspectiva.
+ */
+export async function deleteActivity(id: number): Promise<UndoActivityResult> {
+  return db.transaction(async (tx) => {
+    const activity = await getActivityById(id, tx);
+    if (!activity) {
+      throw new ActivityValidationError(`La actividad ${id} no existe`);
+    }
+
+    if (!esDeHoy(activity.date)) {
+      throw new ActivityValidationError(
+        "Solo se puede deshacer una actividad registrada hoy",
+      );
+    }
+
+    const category = await getCategoryById(activity.categoryId, tx);
+    if (!category) {
+      throw new ActivityValidationError(
+        `La categoría ${activity.categoryId} no existe`,
+      );
+    }
+
+    const xpGained = XP_BY_INTENSITY[activity.intensity];
+
+    let focusOutcome: XpOutcome | null = null;
+    if (activity.focusId !== null) {
+      const focus = await getFocusById(activity.focusId, tx);
+      // El foco pudo borrarse después de registrar la actividad (se
+      // desvincula, no se borra): entonces solo queda revertir la categoría.
+      if (focus) {
+        const revertido = revertXp(focus, xpGained, FOCUS_CURVE);
+        // Si estaba congelado y el nivel cae por debajo del máximo, se
+        // descongela: ya no es cierto que esté en nivel 20.
+        const frozen = revertido.level >= FOCUS_CURVE.maxLevel;
+        await updateFocusXp(focus.id, { ...revertido, frozen }, tx);
+
+        focusOutcome = resumirXp(
+          focus.id,
+          focus,
+          revertido,
+          FOCUS_CURVE,
+          frozen,
+        );
+      }
+    }
+
+    const categoriaRevertida = revertXp(category, xpGained, CATEGORY_CURVE);
+    await updateCategoryXp(category.id, categoriaRevertida, tx);
+
+    await deleteActivityRow(activity.id, tx);
+
+    return {
+      activityId: activity.id,
+      xpLost: xpGained,
+      focus: focusOutcome,
+      category: resumirXp(
+        category.id,
+        category,
+        categoriaRevertida,
         CATEGORY_CURVE,
       ),
     };

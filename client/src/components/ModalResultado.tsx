@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Category, RegisterActivityResult, XpOutcome } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
+import { esDeHoy } from "../lib/fecha";
 import { CategoryIcon } from "./CategoryIcon";
+import { DialogoConfirmar } from "./DialogoConfirmar";
 
 /** Compases de la secuencia, en ms desde que se abre el modal. */
 const T_ARRANQUE = 380;
@@ -19,16 +21,27 @@ export function ModalResultado({
   categoria,
   volverA,
   onCerrar,
+  onDeshacer,
 }: {
   resultado: RegisterActivityResult;
   categoria: Category | undefined;
   /** Id de la categoría de la que venías, si el registro llegó con contexto. */
   volverA: string;
   onCerrar: () => void;
+  /** Llama a DELETE /activities/:id. Si falla, lanza — el diálogo enseña el error. */
+  onDeshacer: () => Promise<void>;
 }) {
   const acento = categoria
     ? categoryColorVar(categoria.slug)
     : "var(--color-amarillo)";
+
+  // Es el momento exacto en que te das cuenta de que te has equivocado, así
+  // que el gesto vive aquí mismo y no solo escondido en el historial. Solo se
+  // ofrece si el registro es de hoy: el servidor rechazaría cualquier otro.
+  const puedeDeshacer = esDeHoy(resultado.activity.date);
+  const [confirmando, setConfirmando] = useState(false);
+  const [deshaciendo, setDeshaciendo] = useState(false);
+  const [errorDeshacer, setErrorDeshacer] = useState<string | null>(null);
 
   useEffect(() => {
     function onTecla(e: KeyboardEvent) {
@@ -37,6 +50,21 @@ export function ModalResultado({
     window.addEventListener("keydown", onTecla);
     return () => window.removeEventListener("keydown", onTecla);
   }, [onCerrar]);
+
+  async function confirmarDeshacer() {
+    setErrorDeshacer(null);
+    setDeshaciendo(true);
+
+    try {
+      await onDeshacer();
+      // Deshecho de verdad: no hay nada que seguir viendo en este modal.
+      onCerrar();
+    } catch (err) {
+      setErrorDeshacer((err as Error).message);
+    } finally {
+      setDeshaciendo(false);
+    }
+  }
 
   return (
     <div
@@ -106,8 +134,39 @@ export function ModalResultado({
           >
             <span>Registrar otra</span>
           </button>
+
+          {puedeDeshacer && (
+            <button
+              type="button"
+              onClick={() => setConfirmando(true)}
+              className="text-[10px] font-bold tracking-[0.14em] text-hueso/40 underline"
+            >
+              Me he equivocado, deshacer
+            </button>
+          )}
         </div>
       </div>
+
+      {confirmando && (
+        <DialogoConfirmar
+          tituloFranja="¿Deshacer registro?"
+          idTitulo="titulo-deshacer-modal"
+          procesando={deshaciendo}
+          error={errorDeshacer}
+          textoConfirmar="Deshacer"
+          textoProcesando="Deshaciendo…"
+          onConfirmar={confirmarDeshacer}
+          onCancelar={() => setConfirmando(false)}
+        >
+          <p className="m-0 font-display text-[20px] leading-tight text-hueso uppercase">
+            +{resultado.xpGained} XP
+          </p>
+          <p className="mt-4 text-[11.5px] leading-relaxed text-hueso/75">
+            Se le resta esa XP al foco (si lo tenía) y a la categoría, y el
+            nivel puede bajar si corresponde.
+          </p>
+        </DialogoConfirmar>
+      )}
     </div>
   );
 }

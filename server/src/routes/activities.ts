@@ -7,6 +7,7 @@ import { getCategoryById } from "../repositories/categoriesRepository.js";
 import { getFocusById } from "../repositories/focusesRepository.js";
 import {
   registerActivity,
+  deleteActivity,
   ActivityValidationError,
 } from "../services/activitiesService.js";
 import { INTENSITIES, isIntensity } from "../lib/intensity.js";
@@ -73,6 +74,26 @@ activitiesRouter.post("/activities", async (req, res) => {
 
     logger.error({ err: error }, "Error al registrar la actividad");
     res.status(500).json({ message: "Error al registrar la actividad" });
+  }
+});
+
+activitiesRouter.delete("/activities/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ message: "El id debe ser un número entero" });
+    return;
+  }
+
+  try {
+    res.json(await deleteActivity(id));
+  } catch (error) {
+    if (error instanceof ActivityValidationError) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+
+    logger.error({ err: error, id }, "Error al deshacer la actividad");
+    res.status(500).json({ message: "Error al deshacer la actividad" });
   }
 });
 

@@ -84,6 +84,13 @@ export type RegisterActivityResult = {
   category: XpOutcome;
 };
 
+export type UndoActivityResult = {
+  activityId: number;
+  xpLost: number;
+  focus: XpOutcome | null;
+  category: XpOutcome;
+};
+
 /**
  * El backend devuelve los errores como { message }. Los propagamos como Error
  * con ese texto para que las páginas puedan enseñarlo tal cual.
@@ -151,6 +158,13 @@ export function createActivity(data: {
   return request<RegisterActivityResult>("/activities", {
     method: "POST",
     body: JSON.stringify(data),
+  });
+}
+
+/** Solo admite deshacer actividades de hoy: ver la excepción de docs/DESIGN.md. */
+export function deleteActivity(id: number): Promise<UndoActivityResult> {
+  return request<UndoActivityResult>(`/activities/${id}`, {
+    method: "DELETE",
   });
 }
 

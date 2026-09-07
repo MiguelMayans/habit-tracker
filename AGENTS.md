@@ -46,7 +46,7 @@ Todo el hosting actual (Netlify, Render, Turso) debe mantenerse en **tier gratui
 
 ## Filosofía de diseño (resumen — ver docs/DESIGN.md para detalle)
 
-- Refuerzo positivo únicamente. **Nunca** restar XP ni bajar niveles.
+- Refuerzo positivo únicamente. **Nunca** restar XP ni bajar niveles como castigo — por inactividad, recaída o cualquier fallo del usuario. Excepción explícita: **deshacer un registro de hoy** corrige un error de entrada (intensidad o foco equivocados), no penaliza nada; esa XP nunca se ganó de verdad. Ver docs/DESIGN.md.
 - Presencia e intencionalidad por encima de maximizar productividad.
 - Antes de tocar cualquier lógica de XP, categorías o Focos, consultar `docs/DESIGN.md`.
 

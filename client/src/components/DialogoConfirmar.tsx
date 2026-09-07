@@ -1,25 +1,32 @@
-import { useEffect, useRef } from "react";
-import type { Focus } from "../api/client";
+import { useEffect, useRef, type ReactNode } from "react";
 
 /**
- * Confirmación de borrado. No usa `confirm()` del navegador: rompería el tono
- * de la app y en PWA instalada se ve como un cuadro ajeno al sistema.
+ * Confirmación genérica para una acción destructiva o irreversible. No usa
+ * `confirm()` del navegador: rompería el tono de la app y en PWA instalada se
+ * ve como un cuadro ajeno al sistema.
  *
- * Dice explícitamente qué pasa con las actividades, porque es la duda real:
- * no se borran, y la XP que dieron se queda en la categoría.
+ * El cuerpo (qué se va a hacer y sus consecuencias) lo decide cada llamada:
+ * este componente solo pone el armazón — franja de título, foco inicial en
+ * Cancelar, cierre con Escape y los dos botones.
  */
-export function DialogoBorrarFoco({
-  foco,
-  actividades,
-  borrando,
+export function DialogoConfirmar({
+  tituloFranja,
+  idTitulo,
+  children,
+  procesando,
   error,
+  textoConfirmar,
+  textoProcesando,
   onConfirmar,
   onCancelar,
 }: {
-  foco: Focus;
-  actividades: number;
-  borrando: boolean;
+  tituloFranja: string;
+  idTitulo: string;
+  children: ReactNode;
+  procesando: boolean;
   error: string | null;
+  textoConfirmar: string;
+  textoProcesando: string;
   onConfirmar: () => void;
   onCancelar: () => void;
 }) {
@@ -42,7 +49,7 @@ export function DialogoBorrarFoco({
       className="fixed inset-0 z-50 flex items-center justify-center px-6"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="titulo-borrar-foco"
+      aria-labelledby={idTitulo}
     >
       <button
         type="button"
@@ -57,36 +64,15 @@ export function DialogoBorrarFoco({
       >
         <div className="bg-cuerpo px-4 py-2.5">
           <h2
-            id="titulo-borrar-foco"
+            id={idTitulo}
             className="texto-contorno m-0 font-display text-[16px] text-hueso uppercase"
           >
-            ¿Borrar foco?
+            {tituloFranja}
           </h2>
         </div>
 
         <div className="px-4 py-4">
-          <p className="m-0 font-display text-[20px] leading-tight text-hueso uppercase">
-            {foco.name}
-          </p>
-          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-hueso/55">
-            NIVEL {foco.level} · {foco.currentXp} XP
-          </p>
-
-          <p className="mt-4 text-[11.5px] leading-relaxed text-hueso/75">
-            {actividades === 0 ? (
-              <>No tiene actividades registradas.</>
-            ) : (
-              <>
-                Sus <b className="text-amarillo">{actividades}</b>{" "}
-                {actividades === 1 ? "actividad" : "actividades"} no se{" "}
-                {actividades === 1 ? "borra" : "borran"}: se{" "}
-                {actividades === 1 ? "queda" : "quedan"} en la categoría sin
-                foco. La XP que{" "}
-                {actividades === 1 ? "te dio sigue" : "te dieron siguen"}{" "}
-                contando.
-              </>
-            )}
-          </p>
+          {children}
 
           {error && (
             <p className="anim-slam mt-4 bg-cuerpo px-3 py-2 text-[11px] font-bold text-hueso">
@@ -107,14 +93,14 @@ export function DialogoBorrarFoco({
             <button
               type="button"
               onClick={onConfirmar}
-              disabled={borrando}
+              disabled={procesando}
               className="boton-slam flex-1"
               style={{
                 background: "var(--color-cuerpo)",
                 color: "var(--color-hueso)",
               }}
             >
-              <span>{borrando ? "Borrando…" : "Borrar"}</span>
+              <span>{procesando ? textoProcesando : textoConfirmar}</span>
             </button>
           </div>
         </div>

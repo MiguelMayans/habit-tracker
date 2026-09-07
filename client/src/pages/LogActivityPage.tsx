@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   createActivity,
+  deleteActivity,
   getCategories,
   getFocusesByCategory,
   type Category,
@@ -155,6 +156,25 @@ export function LogActivityPage() {
       setError((err as Error).message);
     } finally {
       setEnviando(false);
+    }
+  }
+
+  /**
+   * DELETE real. Si falla, se deja lanzar: el modal atrapa el error y lo
+   * enseña en su propio diálogo, en vez de duplicar aquí ese manejo.
+   */
+  async function onDeshacer() {
+    if (!resultado) return;
+
+    await deleteActivity(resultado.activity.id);
+
+    // La XP revertida cambió el nivel de la categoría (y del foco, si lo
+    // había): se recarga lo que alimenta los desplegables para que no se
+    // quede enseñando un nivel que ya no es real.
+    const cats = await getCategories();
+    setCategories(cats);
+    if (resultado.activity.focusId !== null && categoryId !== "") {
+      setFocuses(await getFocusesByCategory(Number(categoryId)));
     }
   }
 
@@ -408,6 +428,7 @@ export function LogActivityPage() {
           categoria={seleccionada}
           volverA={categoriaDeOrigen}
           onCerrar={() => setResultado(null)}
+          onDeshacer={onDeshacer}
         />
       )}
     </div>

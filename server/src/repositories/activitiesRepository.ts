@@ -21,6 +21,26 @@ export async function createActivity(
   return activity;
 }
 
+export async function getActivityById(
+  id: number,
+  executor: DbOrTx = db,
+): Promise<Activity | null> {
+  const [activity] = await executor
+    .select()
+    .from(activities)
+    .where(eq(activities.id, id))
+    .limit(1);
+
+  return activity ?? null;
+}
+
+export async function deleteActivity(
+  id: number,
+  executor: DbOrTx = db,
+): Promise<void> {
+  await executor.delete(activities).where(eq(activities.id, id));
+}
+
 export async function getActivitiesByCategory(
   categoryId: number,
 ): Promise<Activity[]> {

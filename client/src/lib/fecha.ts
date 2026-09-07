@@ -6,6 +6,16 @@ function diasNaturales(desde: Date, hasta: Date): number {
 }
 
 /**
+ * Si `iso` cae en el día natural de hoy. Sirve para decidir si se ofrece
+ * DESHACER: el servidor tiene la última palabra (docs/DESIGN.md, excepción
+ * de deshacer), esto solo evita mostrar el botón cuando ya se sabe que va a
+ * fallar.
+ */
+export function esDeHoy(iso: string): boolean {
+  return diasNaturales(new Date(iso), new Date()) <= 0;
+}
+
+/**
  * Señal de inactividad de docs/DESIGN.md: informativa, nunca punitiva. Solo
  * dice cuándo fue la última vez, sin regañar ni restar nada.
  */
