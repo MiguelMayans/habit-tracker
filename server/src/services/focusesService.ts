@@ -122,3 +122,17 @@ export async function createFocus(data: CreateFocusData): Promise<Focus> {
 
   return focusesRepository.createFocus(data);
 }
+
+/**
+ * Corrige el nombre de un foco. Antes la única salida ante una errata era
+ * borrarlo, que además desengancha sus actividades — desproporcionado para
+ * arreglar una palabra mal escrita.
+ */
+export async function renameFocus(id: number, name: string): Promise<Focus> {
+  const focus = await focusesRepository.getFocusById(id);
+  if (!focus) {
+    throw new FocusValidationError(`El foco ${id} no existe`);
+  }
+
+  return focusesRepository.updateFocusName(id, name);
+}

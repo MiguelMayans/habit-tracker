@@ -152,6 +152,13 @@ export function createFocus(data: {
   });
 }
 
+export function renameFocus(id: number, name: string): Promise<FocusRow> {
+  return request<FocusRow>(`/focuses/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ name }),
+  });
+}
+
 export function deleteFocus(id: number): Promise<{
   /** Actividades que quedan sin foco pero siguen contando en la categoría. */
   activitiesDetached: number;

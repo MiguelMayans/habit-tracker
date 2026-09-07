@@ -477,6 +477,22 @@ body {
     backwards;
 }
 
+/* Bloque de carga: late en vez de mostrar un gris muerto. Nunca dice qué
+   forma tendrá el contenido real —sería mentir sobre datos que aún no han
+   llegado—, solo que algo está en camino. */
+@keyframes pulso-carga {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 0.7;
+  }
+}
+.esqueleto {
+  background: #1c1c1c;
+  animation: pulso-carga 1.1s ease-in-out infinite alternate;
+}
+
 /* Golpe de llegada del resultado: entra grande y se asienta. */
 @keyframes slam {
   from {

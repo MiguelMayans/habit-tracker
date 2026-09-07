@@ -7,6 +7,7 @@ import {
   getActivitiesByCategory,
   getCategory,
   getFocusesByCategory,
+  renameFocus,
   type Activity,
   type Category,
   type Focus,
@@ -18,6 +19,9 @@ import { esDeHoy, fechaRelativaCorta } from "../lib/fecha";
 import { XP_POR_INTENSIDAD } from "../lib/intensity";
 import { usePulsacionLarga } from "../lib/usePulsacionLarga";
 import { DialogoConfirmar } from "../components/DialogoConfirmar";
+import { FilaActividad } from "../components/FilaActividad";
+import { TarjetasEsqueleto } from "../components/TarjetasEsqueleto";
+import { PanelError } from "../components/PanelError";
 
 /** Cuántas actividades se listan antes de cortar. */
 const HISTORIAL_VISIBLE = 8;
@@ -89,43 +93,6 @@ function FichaFoco({
   );
 }
 
-/**
- * Fila del historial. La pulsación mantenida solo se activa si la actividad
- * es de hoy: el servidor rechazaría deshacer una más vieja, así que ni se
- * ofrece el gesto — evita abrir un diálogo que solo puede acabar en error.
- */
-function FilaActividad({
-  actividad,
-  acento,
-  retardo,
-  onMantener,
-  children,
-}: {
-  actividad: Activity;
-  acento: string;
-  retardo: number;
-  onMantener: () => void;
-  children: React.ReactNode;
-}) {
-  const puedeDeshacer = esDeHoy(actividad.date);
-  const pulsacion = usePulsacionLarga(onMantener);
-
-  return (
-    <li
-      className={`anim-fila relative bg-[#111] py-2.5 pr-3 pl-3.5 ${puedeDeshacer ? "pulsable-larga" : ""}`}
-      style={
-        {
-          borderLeft: `5px solid ${acento}`,
-          "--retardo": `${retardo}s`,
-        } as React.CSSProperties
-      }
-      {...(puedeDeshacer ? pulsacion : undefined)}
-    >
-      {children}
-    </li>
-  );
-}
-
 export function CategoryDetailPage() {
   const { id } = useParams();
   const categoryId = Number(id);
@@ -177,11 +144,37 @@ export function CategoryDetailPage() {
     setFocuses(await getFocusesByCategory(categoryId));
   }, [categoryId]);
 
+  // Renombrar: la única salida ante una errata era borrar el foco, que
+  // además desengancha sus actividades. Desproporcionado para una palabra
+  // mal escrita.
+  const [focoEditando, setFocoEditando] = useState<Focus | null>(null);
+  const [nombreEditado, setNombreEditado] = useState("");
+  const [renombrando, setRenombrando] = useState(false);
+  const [errorRenombrar, setErrorRenombrar] = useState<string | null>(null);
+
+  async function onGuardarRenombrado() {
+    if (!focoEditando) return;
+    setErrorRenombrar(null);
+    setRenombrando(true);
+
+    try {
+      await renameFocus(focoEditando.id, nombreEditado);
+      setFocoEditando(null);
+      await cargarFocuses();
+    } catch (err) {
+      setErrorRenombrar((err as Error).message);
+    } finally {
+      setRenombrando(false);
+    }
+  }
+
   // Se deriva en render, no en un efecto: no depende de nada externo.
   const idValido = Number.isInteger(categoryId);
 
-  useEffect(() => {
-    if (!idValido) return;
+  // Se envuelve en useCallback para poder llamarla también desde el botón de
+  // reintentar, sin duplicar el fetch.
+  const cargar = useCallback(() => {
+    if (!idValido) return () => {};
 
     // Si se navega a otra categoría antes de que llegue esta respuesta, se
     // descarta: si no, una respuesta lenta podría pisar a una más reciente.
@@ -209,6 +202,16 @@ export function CategoryDetailPage() {
       cancelado = true;
     };
   }, [categoryId, idValido]);
+
+  useEffect(() => cargar(), [cargar]);
+
+  // El reset de loading/error vive en el evento que lo provoca (el botón),
+  // no dentro del efecto.
+  function onReintentar() {
+    setLoading(true);
+    setError(null);
+    cargar();
+  }
 
   async function onCrearFocus(e: React.FormEvent) {
     e.preventDefault();
@@ -285,8 +288,18 @@ export function CategoryDetailPage() {
     return (
       <p className="px-6 py-10 text-cuerpo">El id de la categoría no es válido</p>
     );
-  if (loading) return <p className="px-6 py-10 text-hueso/60">Cargando…</p>;
-  if (error) return <p className="px-6 py-10 text-cuerpo">Error: {error}</p>;
+  if (loading)
+    return (
+      <div className="px-4 pt-8 pb-32">
+        <TarjetasEsqueleto n={3} altura="96px" />
+      </div>
+    );
+  if (error)
+    return (
+      <div className="px-4 pt-8 pb-32">
+        <PanelError mensaje={error} onReintentar={onReintentar} />
+      </div>
+    );
   if (!category) return null;
 
   const acento = categoryColorVar(category.slug);
@@ -445,82 +458,145 @@ export function CategoryDetailPage() {
                   } as React.CSSProperties
                 }
               >
-                <FichaFoco
-                  frozen={f.frozen}
-                  categoryId={categoryId}
-                  focusId={f.id}
-                  onMantener={() => {
-                    setErrorBorrado(null);
-                    setFocoABorrar(f);
-                  }}
-                  onEngendrar={() => setPadreEngendrar(f)}
-                >
+                {focoEditando?.id === f.id ? (
+                  // Panel de edición SUSTITUYE a FichaFoco entera, no va
+                  // dentro: metido en su envoltorio (Link o pulsación
+                  // mantenida), cualquier toque en el input arrancaría
+                  // también el temporizador de pulsación larga.
                   <div
                     className="tarjeta-recorte bg-negro"
                     style={{ filter: `drop-shadow(6px 6px 0 ${acento})` }}
                   >
-                    <div className="contenido-slam px-3.5 pt-3 pb-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <h3 className="m-0 font-display text-[17px] leading-none text-hueso uppercase">
-                        {f.name}
-                      </h3>
-                      {f.frozen && (
-                        <span
-                          className="bg-amarillo px-2 py-0.5 text-[8px] font-bold tracking-[0.18em] text-negro"
-                          style={{ transform: "skewX(-10deg)" }}
+                    <div className="contenido-slam px-3.5 py-3.5">
+                      <div className="campo-marco">
+                        <input
+                          value={nombreEditado}
+                          onChange={(e) => setNombreEditado(e.target.value)}
+                          autoFocus
+                          className="campo"
+                        />
+                      </div>
+                      {errorRenombrar && (
+                        <p className="mt-2 text-[10px] font-bold text-cuerpo">
+                          {errorRenombrar}
+                        </p>
+                      )}
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={onGuardarRenombrado}
+                          disabled={renombrando || nombreEditado.trim() === ""}
+                          className="boton-slam flex-1"
                         >
-                          CONGELADO
-                        </span>
-                      )}
-                      <span className="ml-auto flex items-baseline gap-1 text-[9px] font-bold tracking-[0.16em] text-hueso/70">
-                        NV{" "}
-                        <b className="font-display text-[16px] tracking-normal text-hueso">
-                          {f.level}
-                        </b>
-                      </span>
-                    </div>
-
-                    {padre && (
-                      <p className="mt-1 text-[9px] font-bold tracking-[0.1em] text-hueso/45">
-                        ↳ DE {padre.name}
-                      </p>
-                    )}
-
-                    <div className="barra-xp relative mt-2.5 h-3 overflow-hidden bg-[#242424]">
-                      <div
-                        className="barra-xp-relleno relative h-full"
-                        style={
-                          {
-                            width: `${Math.round(f.progress * 100)}%`,
-                            background: f.frozen ? acento : "var(--color-amarillo)",
-                            "--retardo": `${0.42 + i * 0.06}s`,
-                          } as React.CSSProperties
-                        }
-                      />
-                    </div>
-
-                    <div className="mt-2 flex items-center gap-2 text-[9.5px] font-semibold tracking-[0.06em] text-hueso/70">
-                      <span>{f.currentXp} XP</span>
-                      <i className="h-[3px] w-[3px] rotate-45 bg-hueso/50" />
-                      <span>
-                        {f.atMaxLevel ? (
-                          <b className="text-amarillo">MAESTRÍA · NV 20</b>
-                        ) : (
-                          <>
-                            <b className="text-amarillo">{f.xpToNextLevel}</b> AL NV{" "}
-                            {f.level + 1}
-                          </>
-                        )}
-                      </span>
-                      {f.frozen && (
-                        <span className="ml-auto text-[9px] font-bold tracking-[0.1em] text-amarillo">
-                          TOCA PARA ENGENDRAR ↴
-                        </span>
-                      )}
+                          <span>{renombrando ? "Guardando…" : "Guardar"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFocoEditando(null)}
+                          className="boton-slam flex-1"
+                          style={{
+                            background: "transparent",
+                            color: "var(--color-hueso)",
+                            boxShadow: "none",
+                            border: "2px solid var(--color-hueso)",
+                          }}
+                        >
+                          <span>Cancelar</span>
+                        </button>
                       </div>
                     </div>
                   </div>
-                </FichaFoco>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFocoEditando(f);
+                        setNombreEditado(f.name);
+                        setErrorRenombrar(null);
+                      }}
+                      className="absolute top-1.5 right-2 z-30 text-[9px] font-bold tracking-[0.14em] text-hueso/45 underline"
+                    >
+                      editar
+                    </button>
+                    <FichaFoco
+                      frozen={f.frozen}
+                      categoryId={categoryId}
+                      focusId={f.id}
+                      onMantener={() => {
+                        setErrorBorrado(null);
+                        setFocoABorrar(f);
+                      }}
+                      onEngendrar={() => setPadreEngendrar(f)}
+                    >
+                      <div
+                        className="tarjeta-recorte bg-negro"
+                        style={{ filter: `drop-shadow(6px 6px 0 ${acento})` }}
+                      >
+                        <div className="contenido-slam px-3.5 pt-3 pb-3.5">
+                        <div className="flex items-center gap-2.5">
+                          <h3 className="m-0 font-display text-[17px] leading-none text-hueso uppercase">
+                            {f.name}
+                          </h3>
+                          {f.frozen && (
+                            <span
+                              className="bg-amarillo px-2 py-0.5 text-[8px] font-bold tracking-[0.18em] text-negro"
+                              style={{ transform: "skewX(-10deg)" }}
+                            >
+                              CONGELADO
+                            </span>
+                          )}
+                          <span className="ml-auto flex items-baseline gap-1 text-[9px] font-bold tracking-[0.16em] text-hueso/70">
+                            NV{" "}
+                            <b className="font-display text-[16px] tracking-normal text-hueso">
+                              {f.level}
+                            </b>
+                          </span>
+                        </div>
+
+                        {padre && (
+                          <p className="mt-1 text-[9px] font-bold tracking-[0.1em] text-hueso/45">
+                            ↳ DE {padre.name}
+                          </p>
+                        )}
+
+                        <div className="barra-xp relative mt-2.5 h-3 overflow-hidden bg-[#242424]">
+                          <div
+                            className="barra-xp-relleno relative h-full"
+                            style={
+                              {
+                                width: `${Math.round(f.progress * 100)}%`,
+                                background: f.frozen ? acento : "var(--color-amarillo)",
+                                "--retardo": `${0.42 + i * 0.06}s`,
+                              } as React.CSSProperties
+                            }
+                          />
+                        </div>
+
+                        <div className="mt-2 flex items-center gap-2 text-[9.5px] font-semibold tracking-[0.06em] text-hueso/70">
+                          <span>{f.currentXp} XP</span>
+                          <i className="h-[3px] w-[3px] rotate-45 bg-hueso/50" />
+                          <span>
+                            {f.atMaxLevel ? (
+                              <b className="text-amarillo">MAESTRÍA · NV 20</b>
+                            ) : (
+                              <>
+                                <b className="text-amarillo">{f.xpToNextLevel}</b> AL NV{" "}
+                                {f.level + 1}
+                              </>
+                            )}
+                          </span>
+                          {f.frozen && (
+                            <span className="ml-auto text-[9px] font-bold tracking-[0.1em] text-amarillo">
+                              TOCA PARA ENGENDRAR ↴
+                            </span>
+                          )}
+                          </div>
+                        </div>
+                      </div>
+                    </FichaFoco>
+                  </>
+                )}
               </li>
             );
           })}
@@ -640,48 +716,28 @@ export function CategoryDetailPage() {
                 key={a.id}
                 actividad={a}
                 acento={acento}
+                focusName={
+                  a.focusId !== null
+                    ? (focuses.find((f) => f.id === a.focusId)?.name ??
+                      "foco borrado")
+                    : null
+                }
                 retardo={0.44 + i * 0.04}
                 onMantener={() => {
                   setErrorDeshacer(null);
                   setActividadADeshacer(a);
                 }}
-              >
-                <div className="flex items-baseline gap-3">
-                  <p
-                    className={`m-0 flex-1 text-[12px] leading-snug font-semibold ${
-                      a.description === "" ? "text-hueso/40 italic" : "text-hueso"
-                    }`}
-                  >
-                    {a.description === "" ? "Sin descripción" : a.description}
-                  </p>
-                  <span className="shrink-0 text-[9px] font-bold tracking-[0.14em] text-hueso/50">
-                    {fechaRelativaCorta(a.date)}
-                  </span>
-                </div>
-
-                <div className="mt-1.5 flex items-center gap-2">
-                  <span
-                    className="bg-amarillo px-1.5 py-0.5 font-display text-[10px] text-negro"
-                    style={{ transform: "skewX(-10deg)" }}
-                  >
-                    +{XP_POR_INTENSIDAD[a.intensity]} XP
-                  </span>
-                  {a.focusId !== null && (
-                    <span className="text-[9.5px] font-semibold tracking-[0.06em] text-hueso/55">
-                      ↳{" "}
-                      {focuses.find((f) => f.id === a.focusId)?.name ??
-                        "foco borrado"}
-                    </span>
-                  )}
-                </div>
-              </FilaActividad>
+              />
             ))}
           </ul>
 
           {activities.length > HISTORIAL_VISIBLE && (
-            <p className="mt-3 text-[10px] font-bold tracking-[0.16em] text-hueso/45">
-              Y {activities.length - HISTORIAL_VISIBLE} MÁS
-            </p>
+            <Link
+              to={`/categories/${categoryId}/historial`}
+              className="mt-3 inline-block text-[10px] font-bold tracking-[0.16em] text-amarillo underline"
+            >
+              VER HISTORIAL COMPLETO · Y {activities.length - HISTORIAL_VISIBLE} MÁS
+            </Link>
           )}
         </>
       )}

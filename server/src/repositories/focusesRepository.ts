@@ -70,6 +70,20 @@ export async function deleteFocus(
   await executor.delete(focuses).where(eq(focuses.id, id));
 }
 
+export async function updateFocusName(
+  id: number,
+  name: string,
+  executor: DbOrTx = db,
+): Promise<Focus> {
+  const [focus] = await executor
+    .update(focuses)
+    .set({ name })
+    .where(eq(focuses.id, id))
+    .returning();
+
+  return focus;
+}
+
 export async function updateFocusXp(
   id: number,
   values: { level: number; currentXp: number; frozen?: boolean },

@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { CategoryDetailPage } from "./pages/CategoryDetailPage";
+import { CategoryHistoryPage } from "./pages/CategoryHistoryPage";
 import { LogActivityPage } from "./pages/LogActivityPage";
 import { FabRegistrar } from "./components/FabRegistrar";
 
@@ -17,6 +18,10 @@ function App() {
           <Routes>
             <Route path="/" element={<CategoriesPage />} />
             <Route path="/categories/:id" element={<CategoryDetailPage />} />
+            <Route
+              path="/categories/:id/historial"
+              element={<CategoryHistoryPage />}
+            />
             <Route path="/log-activity" element={<LogActivityPage />} />
             <Route
               path="*"

@@ -5,6 +5,7 @@ import {
   createFocus,
   deleteFocus,
   getFocusesByCategoryWithProgress,
+  renameFocus,
   FocusValidationError,
 } from "../services/focusesService.js";
 import { logger } from "../lib/logger.js";
@@ -71,6 +72,34 @@ focusesRouter.delete("/focuses/:id", async (req, res) => {
 
     logger.error({ err: error, id }, "Error al borrar el foco");
     res.status(500).json({ message: "Error al borrar el foco" });
+  }
+});
+
+focusesRouter.patch("/focuses/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) {
+    res.status(400).json({ message: "El id debe ser un número entero" });
+    return;
+  }
+
+  const { name } = req.body ?? {};
+  if (typeof name !== "string" || name.trim() === "") {
+    res
+      .status(400)
+      .json({ message: "name es obligatorio y debe ser un texto no vacío" });
+    return;
+  }
+
+  try {
+    res.json(await renameFocus(id, name.trim()));
+  } catch (error) {
+    if (error instanceof FocusValidationError) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+
+    logger.error({ err: error, id }, "Error al renombrar el foco");
+    res.status(500).json({ message: "Error al renombrar el foco" });
   }
 });
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   getCategories,
@@ -11,6 +11,8 @@ import { calcularRacha, desdeUltimaActividad, esDeHoy, fechaLarga } from "../lib
 import { XP_POR_INTENSIDAD } from "../lib/intensity";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { logotipoDeCategoria } from "../lib/logotipoCategoria";
+import { TarjetasEsqueleto } from "../components/TarjetasEsqueleto";
+import { PanelError } from "../components/PanelError";
 import logo from "../assets/logo.png";
 
 /** Giro y desvío alternos de cada tarjeta, para el efecto collage. */
@@ -27,7 +29,7 @@ export function CategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const cargar = useCallback(() => {
     Promise.all([
       getCategories(),
       getRecentActivities({ limit: RECIENTES_LIMITE }),
@@ -39,6 +41,19 @@ export function CategoriesPage() {
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
+
+  // El reset de loading/error vive en el evento que lo provoca (el botón),
+  // no dentro del efecto: así una llamada síncrona a setState no dispara un
+  // segundo render en cascada mientras React sincroniza el efecto.
+  function onReintentar() {
+    setLoading(true);
+    setError(null);
+    cargar();
+  }
 
   const racha = calcularRacha(recientes.map((a) => a.date));
   const deHoy = recientes.filter((a) => esDeHoy(a.date));
@@ -69,8 +84,17 @@ export function CategoriesPage() {
   }
 
   if (loading)
-    return <p className="px-6 py-10 text-hueso/60">Cargando categorías…</p>;
-  if (error) return <p className="px-6 py-10 text-cuerpo">Error: {error}</p>;
+    return (
+      <div className="px-4 pt-8 pb-32">
+        <TarjetasEsqueleto n={5} />
+      </div>
+    );
+  if (error)
+    return (
+      <div className="px-4 pt-8 pb-32">
+        <PanelError mensaje={error} onReintentar={onReintentar} />
+      </div>
+    );
 
   return (
     <div className="px-4 pt-8 pb-32">
