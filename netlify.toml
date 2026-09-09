@@ -1,16 +1,28 @@
-# Se construye desde la RAÍZ y no con `base = "client"`. Esto es un workspace
-# de pnpm: el lockfile y pnpm-workspace.yaml viven arriba, y si la instalación
-# se lanza dentro de client/ pnpm resuelve el workspace desde un sitio que no
-# es su raíz. Con `--filter` se instala una vez arriba y se construye solo el
-# cliente.
+# Cliente y API en el mismo sitio de Netlify. Vivir en el mismo dominio es lo
+# que hace que no haya CORS que configurar en producción.
+#
+# Se construye desde la RAÍZ y no con `base = "client"`: esto es un workspace
+# de pnpm, y si la instalación se lanza dentro de client/ pnpm resuelve el
+# workspace desde un sitio que no es su raíz.
+#
+# El servidor se compila ANTES que el cliente porque la función importa su
+# JavaScript ya construido (ver netlify/functions/api.mjs).
 [build]
-  command = "pnpm --filter client build"
+  command = "pnpm --filter server build && pnpm --filter client build"
   publish = "client/dist"
+  functions = "netlify/functions"
 
 [build.environment]
   # Sin esto Netlify elige una versión de Node por su cuenta, que puede no ser
   # la que compila este proyecto.
   NODE_VERSION = "22"
+  # La API es de la misma casa, así que basta una ruta relativa. Al no ser una
+  # URL absoluta, tampoco hay nada que rellenar a mano en el panel.
+  VITE_API_URL = "/api"
 
-# VITE_API_URL se configura en el panel de Netlify, no aquí: apunta al backend
-# de Render y no tiene por qué vivir en el repositorio.
+# Todo lo que empieza por /api va a la función; el resto lo resuelve el
+# _redirects del cliente devolviendo index.html, porque el enrutado es suyo.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200

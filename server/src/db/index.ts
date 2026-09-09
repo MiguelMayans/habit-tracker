@@ -1,5 +1,9 @@
 import "dotenv/config";
-import { drizzle } from "drizzle-orm/libsql";
+// La variante `web` habla con Turso por HTTP y no arrastra el binario nativo
+// de libsql, que en un entorno serverless no se puede empaquetar. Las
+// transacciones interactivas siguen funcionando —comprobado contra la base
+// real—, que es de lo que dependen las cascadas de XP.
+import { drizzle } from "drizzle-orm/libsql/web";
 
 export const db = drizzle({
   connection: {

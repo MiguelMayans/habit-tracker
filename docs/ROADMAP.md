@@ -9,7 +9,7 @@
 - [x] **5. Backend Express con ruta `/health`** — confirmar cadena Express → Drizzle → Turso
 - [x] **6. Endpoints CRUD core** — seeds de categorías fijas, crear/listar Foco, spawn de Foco hijo, crear/listar actividad, lógica de cascada de XP
 - [x] **7. Cliente consumiendo la API** — pantallas mínimas, sin pulir, funcional end-to-end
-- [ ] **8. Deploy a producción** — cliente en Netlify, servidor en Render, variables de entorno de Turso. Pendiente además: `CORS_ORIGIN` en Render con el dominio de Netlify (ahora en local se permite cualquier origen) y `API_URL` de `client/src/api/client.ts` apuntando al backend de Render
+- [ ] **8. Deploy a producción** — **todo en Netlify**: el cliente como sitio estático y el servidor como función (`netlify/functions/api.mjs`, Express envuelto con `serverless-http`). Se descartó Render porque en el plan gratuito el servicio se duerme a los 15 minutos y tarda ~50 s en despertar, que en una app que abres treinta segundos para registrar algo es inservible. Al compartir dominio desaparece el CORS en producción, y `VITE_API_URL` es `/api`, ya declarado en `netlify.toml`. Solo quedan por poner a mano las credenciales de Turso en el panel
 - [ ] **9. PWA** — `vite-plugin-pwa`, manifest, iconos, instalable en Android
 - [ ] **10. Ajuste fino de UX/UI** — la base visual Persona ya está aplicada en la home (paso 7): paleta intensa, tipografías, texturas, animaciones de entrada, barra de XP e indicador de inactividad. Queda afinar sobre eso: llevar el mismo lenguaje al detalle de categoría y al registro de actividad, y el "chute" de level-up
 - [ ] **11. Migración a self-hosted** — una vez estable en Turso/Render
