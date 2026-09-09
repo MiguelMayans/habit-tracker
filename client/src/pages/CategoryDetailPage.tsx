@@ -319,19 +319,7 @@ export function CategoryDetailPage() {
 
       {/* Cabecera: misma banda a sangre que la home, pero en el color de la
           categoría, para que se note en cuál estás. */}
-      <header className="relative mt-6 mb-9">
-        {/* El nivel va en su propia línea y no al lado del título: así el
-            logotipo se queda con todo el ancho y puede ir a lo grande, que es
-            lo que pide una portada de categoría. */}
-        <span className="relative z-20 mb-1 flex items-baseline justify-end gap-1.5">
-          <span className="texto-contorno text-[9px] font-bold tracking-[0.24em] text-hueso">
-            NIVEL
-          </span>
-          <b className="texto-rotulo font-display text-[46px] leading-[0.82] text-amarillo">
-            {category.level}
-          </b>
-        </span>
-
+      <header className="relative mt-5 mb-7">
         <div className="relative">
           {/* La banda se centra sobre el título con top + margen negativo (la
               mitad de su alto): no puede usar translate porque el giro ya
@@ -374,32 +362,56 @@ export function CategoryDetailPage() {
         </div>
       </header>
 
-      {/* Progreso de la categoría, sobre negro para que el amarillo mande. */}
-      <div className="anim-fila relative" style={{ "--retardo": "0.1s" } as React.CSSProperties}>
-        <div className="barra-xp relative h-4 overflow-hidden bg-[#242424]">
-          <div
-            className="barra-xp-relleno relative h-full bg-amarillo"
-            style={
-              {
-                width: `${Math.round(category.progress * 100)}%`,
-                "--retardo": "0.3s",
-              } as React.CSSProperties
-            }
+      {/* Nivel y progreso, juntos: el número solo, flotando encima del título,
+          quedaba huérfano y además empujaba la portada hacia abajo. Aquí manda
+          por tamaño y está pegado a la barra que precisamente lo mide. */}
+      <div
+        className="anim-fila relative flex items-end gap-4"
+        style={{ "--retardo": "0.1s" } as React.CSSProperties}
+      >
+        <div className="shrink-0">
+          <span className="block text-[9px] font-bold tracking-[0.24em] text-hueso/70">
+            NIVEL
+          </span>
+          {/* El bloque se recorta al alto real del número: `leading-[0.72]` y
+              el margen negativo quitan el hueco que la fuente deja por encima
+              de las cifras, que si no descuadra el alineado con la barra. */}
+          <b className="texto-rotulo -mt-0.5 block font-display text-[76px] leading-[0.72] text-amarillo">
+            {category.level}
+          </b>
+          {/* Zócalo en el color de la categoría: ata el número a dónde estás. */}
+          <i
+            className="mt-1.5 block h-[5px] w-full"
+            style={{ background: acento, transform: "skewX(-16deg)" }}
           />
         </div>
-        <div className="mt-2.5 flex items-center gap-2 text-[10px] font-semibold tracking-[0.06em] text-hueso/75">
-          <span>{category.currentXp} XP</span>
-          <i className="h-[3px] w-[3px] rotate-45 bg-hueso/55" />
-          <span>
-            {category.atMaxLevel ? (
-              <b className="text-amarillo">NIVEL MÁXIMO</b>
-            ) : (
-              <>
-                <b className="text-amarillo">{category.xpToNextLevel}</b> AL NV{" "}
-                {category.level + 1}
-              </>
-            )}
-          </span>
+
+        <div className="min-w-0 flex-1 pb-1">
+          <div className="barra-xp relative h-4 overflow-hidden bg-[#242424]">
+            <div
+              className="barra-xp-relleno relative h-full bg-amarillo"
+              style={
+                {
+                  width: `${Math.round(category.progress * 100)}%`,
+                  "--retardo": "0.3s",
+                } as React.CSSProperties
+              }
+            />
+          </div>
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold tracking-[0.06em] text-hueso/75">
+            <span>{category.currentXp} XP</span>
+            <i className="h-[3px] w-[3px] rotate-45 bg-hueso/55" />
+            <span>
+              {category.atMaxLevel ? (
+                <b className="text-amarillo">NIVEL MÁXIMO</b>
+              ) : (
+                <>
+                  <b className="text-amarillo">{category.xpToNextLevel}</b> AL NV{" "}
+                  {category.level + 1}
+                </>
+              )}
+            </span>
+          </div>
         </div>
       </div>
 
