@@ -5,7 +5,7 @@ import {
   createFocus,
   deleteFocus,
   getFocusesByCategoryWithProgress,
-  renameFocus,
+  updateFocus,
   FocusValidationError,
 } from "../services/focusesService.js";
 import { logger } from "../lib/logger.js";
@@ -82,24 +82,40 @@ focusesRouter.patch("/focuses/:id", async (req, res) => {
     return;
   }
 
-  const { name } = req.body ?? {};
-  if (typeof name !== "string" || name.trim() === "") {
+  const { name, frozen } = req.body ?? {};
+
+  if (name === undefined && frozen === undefined) {
     res
       .status(400)
-      .json({ message: "name es obligatorio y debe ser un texto no vacío" });
+      .json({ message: "Hay que enviar al menos name o frozen" });
+    return;
+  }
+
+  if (name !== undefined && (typeof name !== "string" || name.trim() === "")) {
+    res.status(400).json({ message: "name debe ser un texto no vacío" });
+    return;
+  }
+
+  if (frozen !== undefined && typeof frozen !== "boolean") {
+    res.status(400).json({ message: "frozen debe ser true o false" });
     return;
   }
 
   try {
-    res.json(await renameFocus(id, name.trim()));
+    res.json(
+      await updateFocus(id, {
+        ...(name === undefined ? {} : { name: name.trim() }),
+        ...(frozen === undefined ? {} : { frozen }),
+      }),
+    );
   } catch (error) {
     if (error instanceof FocusValidationError) {
       res.status(400).json({ message: error.message });
       return;
     }
 
-    logger.error({ err: error, id }, "Error al renombrar el foco");
-    res.status(500).json({ message: "Error al renombrar el foco" });
+    logger.error({ err: error, id }, "Error al actualizar el foco");
+    res.status(500).json({ message: "Error al actualizar el foco" });
   }
 });
 

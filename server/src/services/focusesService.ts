@@ -124,15 +124,43 @@ export async function createFocus(data: CreateFocusData): Promise<Focus> {
 }
 
 /**
- * Corrige el nombre de un foco. Antes la única salida ante una errata era
- * borrarlo, que además desengancha sus actividades — desproporcionado para
- * arreglar una palabra mal escrita.
+ * Lo que el usuario puede cambiar a mano de un foco: su nombre y si está
+ * cerrado. La XP y el nivel no se tocan nunca por aquí.
+ *
+ * Sobre cerrar: `frozen` ya existía para el trofeo de maestría de nivel 20,
+ * y significa "no acepta más actividad, pero sí puede engendrar un hijo".
+ * Eso es exactamente lo que hace falta para dar un foco por terminado antes
+ * de tiempo — acabaste el libro, perdiste los cuatro kilos—, así que se
+ * reutiliza en vez de añadir una segunda bandera que diría casi lo mismo.
+ *
+ * Los dos casos se distinguen sin guardar nada más: congelado en el nivel
+ * máximo es maestría, congelado por debajo es un cierre a mano. Por eso la
+ * maestría no se puede reabrir y un cierre sí: lo primero se ganó, lo segundo
+ * es una decisión, y las decisiones se cambian de opinión.
  */
-export async function renameFocus(id: number, name: string): Promise<Focus> {
+export async function updateFocus(
+  id: number,
+  cambios: { name?: string; frozen?: boolean },
+): Promise<Focus> {
   const focus = await focusesRepository.getFocusById(id);
   if (!focus) {
     throw new FocusValidationError(`El foco ${id} no existe`);
   }
 
-  return focusesRepository.updateFocusName(id, name);
+  if (cambios.frozen === true && focus.frozen) {
+    throw new FocusValidationError(`El foco "${focus.name}" ya está cerrado`);
+  }
+
+  if (cambios.frozen === false) {
+    if (!focus.frozen) {
+      throw new FocusValidationError(`El foco "${focus.name}" no está cerrado`);
+    }
+    if (focus.level >= FOCUS_CURVE.maxLevel) {
+      throw new FocusValidationError(
+        `"${focus.name}" alcanzó la maestría en el nivel ${FOCUS_CURVE.maxLevel}. Eso no se reabre.`,
+      );
+    }
+  }
+
+  return focusesRepository.updateFocus(id, cambios);
 }

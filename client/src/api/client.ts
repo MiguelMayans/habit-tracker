@@ -152,10 +152,19 @@ export function createFocus(data: {
   });
 }
 
-export function renameFocus(id: number, name: string): Promise<FocusRow> {
+/**
+ * Lo que se edita a mano de un foco. `frozen: true` lo da por cerrado —
+ * terminaste el libro, perdiste los kilos—: deja de aceptar actividad y pasa
+ * a poder engendrar un hijo. Un cierre se puede deshacer; la maestría de
+ * nivel 20 no, y el servidor la rechaza.
+ */
+export function updateFocus(
+  id: number,
+  cambios: { name?: string; frozen?: boolean },
+): Promise<FocusRow> {
   return request<FocusRow>(`/focuses/${id}`, {
     method: "PATCH",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(cambios),
   });
 }
 

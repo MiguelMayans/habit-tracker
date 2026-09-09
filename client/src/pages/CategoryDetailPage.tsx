@@ -7,7 +7,7 @@ import {
   getActivitiesByCategory,
   getCategory,
   getFocusesByCategory,
-  renameFocus,
+  updateFocus,
   type Activity,
   type Category,
   type Focus,
@@ -158,13 +158,33 @@ export function CategoryDetailPage() {
     setRenombrando(true);
 
     try {
-      await renameFocus(focoEditando.id, nombreEditado);
+      await updateFocus(focoEditando.id, { name: nombreEditado });
       setFocoEditando(null);
       await cargarFocuses();
     } catch (err) {
       setErrorRenombrar((err as Error).message);
     } finally {
       setRenombrando(false);
+    }
+  }
+
+  // Cerrar un foco a mano: lo das por terminado antes de llegar al nivel 20.
+  const [focoACerrar, setFocoACerrar] = useState<Focus | null>(null);
+  const [cerrando, setCerrando] = useState(false);
+  const [errorCerrar, setErrorCerrar] = useState<string | null>(null);
+
+  async function onCambiarCierre(foco: Focus, cerrado: boolean) {
+    setErrorCerrar(null);
+    setCerrando(true);
+
+    try {
+      await updateFocus(foco.id, { frozen: cerrado });
+      setFocoACerrar(null);
+      await cargarFocuses();
+    } catch (err) {
+      setErrorCerrar((err as Error).message);
+    } finally {
+      setCerrando(false);
     }
   }
 
@@ -437,7 +457,7 @@ export function CategoryDetailPage() {
         >
           PULSA PARA REGISTRAR
           {focuses.some((f) => f.frozen) &&
-            " · PULSA UN CONGELADO PARA ENGENDRAR HIJO"}{" "}
+            " · PULSA UN CERRADO PARA ENGENDRAR HIJO"}{" "}
           · MANTÉN PULSADO PARA BORRAR
         </p>
       )}
@@ -520,17 +540,42 @@ export function CategoryDetailPage() {
                   </div>
                 ) : (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFocoEditando(f);
-                        setNombreEditado(f.name);
-                        setErrorRenombrar(null);
-                      }}
-                      className="absolute top-1.5 right-2 z-30 text-[9px] font-bold tracking-[0.14em] text-hueso/45 underline"
-                    >
-                      editar
-                    </button>
+                    <div className="absolute top-1.5 right-2 z-30 flex gap-2.5 text-[9px] font-bold tracking-[0.14em] text-hueso/45">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFocoEditando(f);
+                          setNombreEditado(f.name);
+                          setErrorRenombrar(null);
+                        }}
+                        className="underline"
+                      >
+                        editar
+                      </button>
+                      {/* La maestría no se reabre: se ganó. Un cierre a mano
+                          sí, que es una decisión y las decisiones cambian. */}
+                      {f.atMaxLevel ? null : f.frozen ? (
+                        <button
+                          type="button"
+                          onClick={() => onCambiarCierre(f, false)}
+                          disabled={cerrando}
+                          className="text-amarillo underline"
+                        >
+                          reabrir
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setErrorCerrar(null);
+                            setFocoACerrar(f);
+                          }}
+                          className="underline"
+                        >
+                          cerrar
+                        </button>
+                      )}
+                    </div>
                     <FichaFoco
                       frozen={f.frozen}
                       categoryId={categoryId}
@@ -551,11 +596,25 @@ export function CategoryDetailPage() {
                             {f.name}
                           </h3>
                           {f.frozen && (
+                            // Congelado en el nivel máximo es maestría; por
+                            // debajo, solo puede venir de haberlo cerrado a
+                            // mano. No hace falta guardar cuál de las dos.
                             <span
-                              className="bg-amarillo px-2 py-0.5 text-[8px] font-bold tracking-[0.18em] text-negro"
-                              style={{ transform: "skewX(-10deg)" }}
+                              className="px-2 py-0.5 text-[8px] font-bold tracking-[0.18em]"
+                              style={{
+                                transform: "skewX(-10deg)",
+                                background: f.atMaxLevel
+                                  ? "var(--color-amarillo)"
+                                  : "transparent",
+                                color: f.atMaxLevel
+                                  ? "var(--color-negro)"
+                                  : "var(--color-hueso)",
+                                boxShadow: f.atMaxLevel
+                                  ? undefined
+                                  : "inset 0 0 0 1.5px rgb(245 245 240 / 0.45)",
+                              }}
                             >
-                              CONGELADO
+                              {f.atMaxLevel ? "MAESTRÍA" : "CERRADO"}
                             </span>
                           )}
                           <span className="ml-auto flex items-baseline gap-1 text-[9px] font-bold tracking-[0.16em] text-hueso/70">
@@ -591,6 +650,8 @@ export function CategoryDetailPage() {
                           <span>
                             {f.atMaxLevel ? (
                               <b className="text-amarillo">MAESTRÍA · NV 20</b>
+                            ) : f.frozen ? (
+                              <b className="text-hueso/60">DADO POR TERMINADO</b>
                             ) : (
                               <>
                                 <b className="text-amarillo">{f.xpToNextLevel}</b> AL NV{" "}
@@ -752,6 +813,36 @@ export function CategoryDetailPage() {
             </Link>
           )}
         </>
+      )}
+
+      {focoACerrar && (
+        <DialogoConfirmar
+          tituloFranja="¿Darlo por terminado?"
+          idTitulo="titulo-cerrar-foco"
+          procesando={cerrando}
+          error={errorCerrar}
+          textoConfirmar="Cerrar"
+          textoProcesando="Cerrando…"
+          onConfirmar={() => onCambiarCierre(focoACerrar, true)}
+          onCancelar={() => setFocoACerrar(null)}
+        >
+          <p className="m-0 font-display text-[20px] leading-tight text-hueso uppercase">
+            {focoACerrar.name}
+          </p>
+          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-hueso/55">
+            NIVEL {focoACerrar.level} · {focoACerrar.currentXp} XP
+          </p>
+
+          <p className="mt-4 text-[11.5px] leading-relaxed text-hueso/75">
+            Dejará de aceptar actividad y podrás{" "}
+            <b className="text-amarillo">engendrar un hijo</b> desde él, igual
+            que si hubiera llegado al nivel 20. Su XP se queda donde está: no
+            se pierde nada.
+          </p>
+          <p className="mt-2 text-[11.5px] leading-relaxed text-hueso/55">
+            Se puede reabrir cuando quieras.
+          </p>
+        </DialogoConfirmar>
       )}
 
       {focoABorrar && (

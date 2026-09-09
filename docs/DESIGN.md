@@ -30,6 +30,9 @@ Diseño v1 cerrado. Cualquier cambio aquí debe discutirse explícitamente, no i
   - Valores sujetos a revisión en la sesión de balanceo pendiente
 - 3 hitos narrativos en el camino a nivel 20
 - Al llegar a nivel 20: el Foco se congela como trofeo de maestría permanente; opción manual (no automática) de generar un Foco hijo más especializado empezando en nivel 1
+- **Cerrar un Foco a mano** (`PATCH /focuses/:id` con `{ frozen: true }`, en la interfaz el botón «cerrar» de la ficha): no todo lo que se sigue termina en el nivel 20. Acabaste el libro, perdiste los cuatro kilos, el objetivo dejó de tener sentido. Cerrarlo lo deja igual que un Foco congelado: deja de aceptar actividad y pasa a poder engendrar un hijo especializado. **Su XP no se toca** — sigue contada en la categoría, coherente con la regla central
+  - No se guarda una segunda bandera para distinguir los dos casos: `frozen` con el nivel al máximo es maestría, `frozen` por debajo solo puede venir de un cierre a mano. Todo lo que hay que saber ya está en los datos
+  - Un cierre se puede reabrir (`{ frozen: false }`); la maestría **no**, y el servidor la rechaza: lo primero es una decisión y las decisiones cambian, lo segundo se ganó
 - **Borrado de Focos** (`DELETE /focuses/:id`, en la interfaz con pulsación mantenida sobre la ficha):
   - Las actividades **no se borran**: ocurrieron y su XP ya está sumada en la categoría. Se desvinculan (`focusId = null`) y siguen en el historial. Borrarlas equivaldría a restar XP, que contradice la regla central
   - Un Foco con hijos se rechaza con 400: el hijo es una especialización del padre y quedaría colgando de nada

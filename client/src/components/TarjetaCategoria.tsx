@@ -286,16 +286,19 @@ function FilaFocoHome({
         <span className="truncate font-display text-[13px] leading-none text-hueso uppercase">
           {f.name}
         </span>
-        {/* Congelado siempre es el nivel máximo, así que el rótulo dice lo
-            mismo que diría el número y además dice por qué no se puede tocar.
-            En su versión anterior era una placa amarilla: demasiada tinta para
-            una lista que solo se ojea. */}
+        {/* Un foco congelado no acepta actividad, así que en vez del nivel
+            se dice por qué: maestría si llegó al tope, cerrado si lo diste
+            por terminado a mano. */}
         <span
           className={`ml-auto shrink-0 text-[9px] font-bold tracking-[0.14em] ${
-            f.frozen ? "text-amarillo" : "text-hueso/45"
+            f.atMaxLevel
+              ? "text-amarillo"
+              : f.frozen
+                ? "text-hueso/35"
+                : "text-hueso/45"
           }`}
         >
-          {f.frozen ? "MAESTRÍA" : `NV ${f.level}`}
+          {f.atMaxLevel ? "MAESTRÍA" : f.frozen ? "CERRADO" : `NV ${f.level}`}
         </span>
       </div>
 

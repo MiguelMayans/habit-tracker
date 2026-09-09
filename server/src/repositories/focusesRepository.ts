@@ -70,14 +70,15 @@ export async function deleteFocus(
   await executor.delete(focuses).where(eq(focuses.id, id));
 }
 
-export async function updateFocusName(
+/** Los campos que el usuario edita a mano. La XP nunca se toca por aquí. */
+export async function updateFocus(
   id: number,
-  name: string,
+  values: { name?: string; frozen?: boolean },
   executor: DbOrTx = db,
 ): Promise<Focus> {
   const [focus] = await executor
     .update(focuses)
-    .set({ name })
+    .set(values)
     .where(eq(focuses.id, id))
     .returning();
 

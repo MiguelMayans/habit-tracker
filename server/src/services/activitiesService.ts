@@ -202,10 +202,18 @@ export async function registerActivity(
       }
 
       if (focus.frozen) {
+        // Congelado en el nivel máximo es maestría; por debajo solo puede
+        // venir de haberlo cerrado a mano. Decirle "has alcanzado la
+        // maestría" a un foco de nivel 3 que diste por terminado es mentir.
+        const motivo =
+          focus.level >= FOCUS_CURVE.maxLevel
+            ? "ha alcanzado la maestría y está congelado"
+            : "está cerrado";
+
         throw new ActivityValidationError(
-          `El foco "${focus.name}" ha alcanzado la maestría y está congelado: ` +
-            `ya no admite más XP. Tócalo para engendrar un foco hijo ` +
-            `especializado y registra la actividad ahí.`,
+          `El foco "${focus.name}" ${motivo}: ya no admite más XP. Tócalo ` +
+            `para engendrar un foco hijo especializado y registra la ` +
+            `actividad ahí, o reábrelo desde su categoría.`,
         );
       }
     }
