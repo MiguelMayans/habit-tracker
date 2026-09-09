@@ -1,5 +1,4 @@
 import { Link, useLocation } from "react-router-dom";
-import registrar from "../assets/wordmarks/registrar.png";
 
 /**
  * Acción persistente en todas las pantallas (docs/DESIGN.md). Se oculta en la
@@ -18,27 +17,25 @@ export function FabRegistrar() {
     : "/log-activity";
 
   return (
+    // Sin ancho fijo: la pastilla la mide el rótulo. Con un ancho a mano
+    // habría que recalcularlo a ojo cada vez que cambie el texto o el cuerpo.
     <Link
       to={destino}
-      className="anim-fab fixed right-5 bottom-6 z-40 block h-12 w-[124px]"
+      className="anim-fab fixed right-5 bottom-6 z-40 flex h-12 items-center justify-center px-7"
       style={{ transform: "skewX(-10deg)" }}
     >
-      {/* La pastilla mantiene su alto de siempre; el rótulo la desborda por
-          los cuatro lados. Por eso el recorte vive en esta capa y la imagen
-          es hermana suya: dentro, el clip-path se la comería. */}
+      {/* El recorte vive en esta capa y no en el enlace porque `clip-path`
+          recorta también la `box-shadow`, y ahí es donde late el botón. */}
       <div className="corte-pildora absolute inset-0 bg-amarillo" />
 
-      {/* El rótulo trae dentro su propia cruz, así que el botón ya no pone el
-          "+" aparte. Se contra-inclina para que el dibujo se vea recto y sea
-          la pastilla la que va torcida, como en el resto de la app. */}
-      <img
-        src={registrar}
-        alt="Registrar"
-        width={420}
-        height={175}
-        className="absolute top-1/2 left-1/2 block h-[62px] w-auto max-w-none"
-        style={{ transform: "translate(-50%, -50%) skewX(10deg)" }}
-      />
+      {/* Contra-inclinado: la pastilla va torcida, el rótulo se lee recto. */}
+      <span
+        className="relative flex items-baseline gap-1.5 font-display text-[14px] leading-none text-negro uppercase"
+        style={{ transform: "skewX(10deg)" }}
+      >
+        <b className="text-[18px] leading-none">+</b>
+        Registrar
+      </span>
     </Link>
   );
 }
