@@ -1,4 +1,14 @@
-# La app es una SPA: el enrutado vive en el cliente y el servidor de estáticos
-# no conoce /categories/1 ni /log-activity. Sin esto, recargar en cualquier
-# pantalla que no sea la home devuelve un 404 de Netlify.
+# Las DOS reglas viven en el mismo fichero y en este orden a propósito.
+#
+# Estaban repartidas entre netlify.toml y este fichero, y el orden entre
+# ficheros distintos no es algo en lo que convenga confiar: la regla comodín
+# de abajo atrapaba /api/categories y devolvía el index.html, que es de donde
+# salía el "Unexpected token '<'". Dentro de un mismo fichero el orden sí está
+# garantizado, y gana la primera que encaja.
+
+# La API, a la función.
+/api/*  /.netlify/functions/api/:splat  200
+
+# Todo lo demás, a la SPA: el enrutado vive en el cliente y el servidor de
+# estáticos no conoce /categories/1 ni /log-activity.
 /*  /index.html  200

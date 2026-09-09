@@ -20,9 +20,7 @@
   # URL absoluta, tampoco hay nada que rellenar a mano en el panel.
   VITE_API_URL = "/api"
 
-# Todo lo que empieza por /api va a la función; el resto lo resuelve el
-# _redirects del cliente devolviendo index.html, porque el enrutado es suyo.
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
+# Las reglas de redirección NO viven aquí: están las dos juntas y en orden en
+# client/public/_redirects. Repartidas entre los dos ficheros dependían del
+# orden de precedencia entre ellos, y el comodín de la SPA acababa atrapando
+# las llamadas a /api.
