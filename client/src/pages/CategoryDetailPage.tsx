@@ -20,6 +20,7 @@ import { XP_POR_INTENSIDAD } from "../lib/intensity";
 import { usePulsacionLarga } from "../lib/usePulsacionLarga";
 import { DialogoConfirmar } from "../components/DialogoConfirmar";
 import { FilaActividad } from "../components/FilaActividad";
+import { NivelNumero } from "../components/NivelNumero";
 import { TarjetasEsqueleto } from "../components/TarjetasEsqueleto";
 import { PanelError } from "../components/PanelError";
 
@@ -373,15 +374,10 @@ export function CategoryDetailPage() {
           <span className="block text-[9px] font-bold tracking-[0.24em] text-hueso/70">
             NIVEL
           </span>
-          {/* El bloque se recorta al alto real del número: `leading-[0.72]` y
-              el margen negativo quitan el hueco que la fuente deja por encima
-              de las cifras, que si no descuadra el alineado con la barra. */}
-          <b className="texto-rotulo -mt-0.5 block font-display text-[76px] leading-[0.72] text-amarillo">
-            {category.level}
-          </b>
+          <NivelNumero valor={category.level} alto={104} className="mt-0.5" />
           {/* Zócalo en el color de la categoría: ata el número a dónde estás. */}
           <i
-            className="mt-1.5 block h-[5px] w-full"
+            className="mt-1 block h-[5px] w-full"
             style={{ background: acento, transform: "skewX(-16deg)" }}
           />
         </div>

@@ -4,6 +4,7 @@ import { getFocusesByCategory, type Category, type Focus } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { desdeUltimaActividad } from "../lib/fecha";
 import { CategoryIcon } from "./CategoryIcon";
+import { NivelNumero } from "./NivelNumero";
 import { logotipoDeCategoria } from "../lib/logotipoCategoria";
 
 /** Giro y desvío alternos de cada tarjeta, para el efecto collage. */
@@ -68,16 +69,11 @@ export function TarjetaCategoria({
       }
     >
       {/* El nivel vive FUERA de la capa recortada; por eso puede salirse por
-          arriba de la tarjeta. */}
-      <span className="contenido-slam absolute -top-4 right-4 z-20 flex items-baseline gap-1.5">
-        <span className="texto-contorno text-[9px] font-bold tracking-[0.24em] text-hueso">
-          NIVEL
-        </span>
-        {/* El nivel es la recompensa, así que va en amarillo de sistema con la
-            rotulación del logotipo. */}
-        <b className="texto-rotulo font-display text-[46px] leading-[0.82] text-amarillo">
-          {c.level}
-        </b>
+          arriba de la tarjeta. Aquí va sin el rótulo NIVEL que sí lleva el
+          detalle: la ráfaga ya canta bastante, y dos cifras más la etiqueta no
+          caben en el hueco que la franja reserva a la derecha. */}
+      <span className="contenido-slam absolute -top-8 right-3 z-20 block">
+        <NivelNumero valor={c.level} alto={68} />
       </span>
 
       {logotipo && (
@@ -109,7 +105,7 @@ export function TarjetaCategoria({
               superpuesto y fuera de esta capa. Altura fija: así la franja mide
               lo mismo en las cinco categorías, lleven logotipo o texto. */}
           <div
-            className="relative h-[50px] pr-24 pl-3.5"
+            className="relative h-[50px] pr-28 pl-3.5"
             style={{ background: acento }}
           >
             {/* Con logotipo no va además el icono: la imagen ya trae su propio
