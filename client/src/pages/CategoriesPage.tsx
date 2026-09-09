@@ -87,32 +87,38 @@ export function CategoriesPage() {
           />
         </h1>
         {/* relative + z-10: los papeles del logo van posicionados y, sin esto,
-            se pintan por encima de la cinta y la tapan. */}
-        <p
-          className="anim-cinta relative z-10 mt-4 inline-block bg-amarillo px-4 py-1.5 text-[12px] font-bold tracking-[0.18em] text-negro"
-          style={{
-            transform: "rotate(-2.5deg) skewX(-10deg)",
-            boxShadow: "4px 4px 0 var(--color-negro)",
-          }}
-        >
-          <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-            {fechaLarga(new Date())}
-          </span>
-        </p>
+            se pintan por encima de las cintas y las tapan.
 
-        {deHoy.length > 0 && (
-          <span
-            className="anim-cinta relative z-10 mt-2.5 inline-block bg-amarillo px-3 py-1 text-[10px] font-bold tracking-[0.14em] text-negro"
+            Las dos cintas comparten fila y se van a los extremos en vez de
+            apilarse: apiladas quedaban pegadas y se leían como un bloque
+            amarillo. `flex-wrap` las devuelve a dos líneas si no caben. */}
+        <div className="relative z-10 mt-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5">
+          <p
+            className="anim-cinta m-0 inline-block bg-amarillo px-4 py-1.5 text-[12px] font-bold tracking-[0.18em] text-negro"
             style={{
-              transform: "rotate(-1.5deg) skewX(-10deg)",
-              boxShadow: "3px 3px 0 var(--color-negro)",
+              transform: "rotate(-2.5deg) skewX(-10deg)",
+              boxShadow: "4px 4px 0 var(--color-negro)",
             }}
           >
             <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-              HOY · {deHoy.length} · +{xpDeHoy} XP
+              {fechaLarga(new Date())}
             </span>
-          </span>
-        )}
+          </p>
+
+          {deHoy.length > 0 && (
+            <span
+              className="anim-cinta inline-block bg-amarillo px-3 py-1 text-[10px] font-bold tracking-[0.14em] text-negro"
+              style={{
+                transform: "rotate(-1.5deg) skewX(-10deg)",
+                boxShadow: "3px 3px 0 var(--color-negro)",
+              }}
+            >
+              <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
+                HOY · {deHoy.length} · +{xpDeHoy} XP
+              </span>
+            </span>
+          )}
+        </div>
       </header>
 
       <TiraDeRitmo actividades={recientes} racha={racha} />

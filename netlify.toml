@@ -1,9 +1,11 @@
-# El repo es un monorepo de pnpm y Netlify construye desde la raíz, así que
-# hay que decirle dónde vive el cliente y dónde deja el build.
+# Se construye desde la RAÍZ y no con `base = "client"`. Esto es un workspace
+# de pnpm: el lockfile y pnpm-workspace.yaml viven arriba, y si la instalación
+# se lanza dentro de client/ pnpm resuelve el workspace desde un sitio que no
+# es su raíz. Con `--filter` se instala una vez arriba y se construye solo el
+# cliente.
 [build]
-  base = "client"
-  command = "pnpm build"
-  publish = "dist"
+  command = "pnpm --filter client build"
+  publish = "client/dist"
 
 [build.environment]
   # Sin esto Netlify elige una versión de Node por su cuenta, que puede no ser
