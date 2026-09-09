@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "LOG_PRETTY=1 tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/src/index.js",
     "db:seed": "tsx src/db/seed.ts"
