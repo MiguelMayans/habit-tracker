@@ -348,20 +348,20 @@ export function CategoryDetailPage() {
         </Link>
 
         <span
-          className="anim-cinta flex shrink-0 items-center gap-2 bg-hueso py-1 pr-3.5 pl-3"
+          className="anim-cinta flex shrink-0 items-center gap-2.5 bg-hueso py-1.5 pr-4 pl-3.5"
           style={{
             transform: "skewX(-10deg)",
-            boxShadow: `6px 6px 0 ${acento}`,
+            boxShadow: `7px 7px 0 ${acento}`,
           }}
         >
           <span
-            className="inline-block text-[9px] font-bold tracking-[0.2em] text-negro"
+            className="inline-block text-[10px] font-bold tracking-[0.2em] text-negro"
             style={{ transform: "skewX(10deg)" }}
           >
             NIVEL
           </span>
           <b
-            className="texto-rotulo-fino inline-block font-display text-[38px] leading-[0.8] text-amarillo"
+            className="texto-rotulo-fino inline-block font-display text-[56px] leading-[0.78] text-amarillo"
             style={{ transform: "skewX(10deg)" }}
           >
             {category.level}

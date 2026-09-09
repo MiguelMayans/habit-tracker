@@ -8,6 +8,7 @@ import {
 import { calcularRacha, esDeHoy, fechaLarga } from "../lib/fecha";
 import { XP_POR_INTENSIDAD } from "../lib/intensity";
 import { TarjetaCategoria } from "../components/TarjetaCategoria";
+import { TiraDeRitmo } from "../components/TiraDeRitmo";
 import { TarjetasEsqueleto } from "../components/TarjetasEsqueleto";
 import { PanelError } from "../components/PanelError";
 import logo from "../assets/logo.png";
@@ -99,43 +100,22 @@ export function CategoriesPage() {
           </span>
         </p>
 
-        {(racha > 0 || deHoy.length > 0) && (
-          <div className="anim-cinta relative z-10 mt-2.5 flex flex-wrap gap-2">
-            {racha > 0 && (
-              <span
-                className="inline-block bg-hueso px-3 py-1 text-[10px] font-bold tracking-[0.14em] text-negro"
-                style={{
-                  transform: "rotate(1.5deg) skewX(-10deg)",
-                  boxShadow: "3px 3px 0 var(--color-negro)",
-                }}
-              >
-                <span
-                  className="inline-block"
-                  style={{ transform: "skewX(10deg)" }}
-                >
-                  RACHA · {racha} {racha === 1 ? "DÍA" : "DÍAS"}
-                </span>
-              </span>
-            )}
-            {deHoy.length > 0 && (
-              <span
-                className="inline-block bg-amarillo px-3 py-1 text-[10px] font-bold tracking-[0.14em] text-negro"
-                style={{
-                  transform: "rotate(-1.5deg) skewX(-10deg)",
-                  boxShadow: "3px 3px 0 var(--color-negro)",
-                }}
-              >
-                <span
-                  className="inline-block"
-                  style={{ transform: "skewX(10deg)" }}
-                >
-                  HOY · {deHoy.length} · +{xpDeHoy} XP
-                </span>
-              </span>
-            )}
-          </div>
+        {deHoy.length > 0 && (
+          <span
+            className="anim-cinta relative z-10 mt-2.5 inline-block bg-amarillo px-3 py-1 text-[10px] font-bold tracking-[0.14em] text-negro"
+            style={{
+              transform: "rotate(-1.5deg) skewX(-10deg)",
+              boxShadow: "3px 3px 0 var(--color-negro)",
+            }}
+          >
+            <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
+              HOY · {deHoy.length} · +{xpDeHoy} XP
+            </span>
+          </span>
         )}
       </header>
+
+      <TiraDeRitmo actividades={recientes} racha={racha} />
 
       {/* Hueco algo mayor de lo normal: el nivel sobresale por arriba. */}
       <ul className="grid gap-6">

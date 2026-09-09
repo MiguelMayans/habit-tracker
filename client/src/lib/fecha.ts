@@ -15,8 +15,8 @@ export function esDeHoy(iso: string): boolean {
   return diasNaturales(new Date(iso), new Date()) <= 0;
 }
 
-/** Clave de día natural, para meter fechas en un Set sin duplicados de hora. */
-function claveDia(d: Date): string {
+/** Clave de día natural, para agrupar fechas ignorando la hora. */
+export function claveDia(d: Date): string {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
