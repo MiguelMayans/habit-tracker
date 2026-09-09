@@ -68,8 +68,13 @@ export function TarjetaCategoria({
       }
     >
       {/* El nivel vive FUERA de la capa recortada; por eso puede salirse por
-          arriba de la tarjeta. */}
-      <span className="contenido-slam absolute -top-4 right-4 z-20 flex items-baseline gap-1.5">
+          arriba de la tarjeta.
+
+          `pointer-events-none` porque, al estar por delante, se tragaba los
+          toques en el trozo de franja que tapa y creaba una zona muerta. No se
+          convierte en enlace como sí hace el logotipo: es un dato, y dos
+          enlaces al mismo sitio dentro de la misma tarjeta ya son los justos. */}
+      <span className="contenido-slam pointer-events-none absolute -top-4 right-4 z-20 flex items-baseline gap-1.5">
         <span className="texto-contorno text-[9px] font-bold tracking-[0.24em] text-hueso">
           NIVEL
         </span>
@@ -85,14 +90,23 @@ export function TarjetaCategoria({
         // arriba de la franja sin que la tarjeta lo corte ni empuje la altura
         // de la franja. Y va desplazado a la izquierda para que, al crecer, el
         // extremo derecho apenas se mueva y no se meta debajo del nivel.
+        //
+        // Lleva enlace propio, hermano del de la tarjeta y no anidado en él:
+        // al ir por delante se tragaba los toques, y el nombre de la categoría
+        // —que es lo que más pide que lo pulses— no llevaba a ninguna parte.
+        // Además es el único sitio donde ese nombre existe como texto, porque
+        // con logotipo la franja no lo escribe: sin este enlace, el de la
+        // tarjeta se anuncia solo con sus cifras.
         <h2 className="contenido-slam absolute -top-7 left-0 z-20 m-0">
-          <img
-            src={logotipo.src}
-            alt={c.name}
-            width={logotipo.ancho}
-            height={logotipo.alto}
-            className="h-[98px] w-auto max-w-none"
-          />
+          <Link to={`/categories/${c.id}`} className="block">
+            <img
+              src={logotipo.src}
+              alt={c.name}
+              width={logotipo.ancho}
+              height={logotipo.alto}
+              className="h-[98px] w-auto max-w-none"
+            />
+          </Link>
         </h2>
       )}
 
