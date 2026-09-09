@@ -5,6 +5,8 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/src/index.js",
     "db:seed": "tsx src/db/seed.ts"
   },
   "devDependencies": {

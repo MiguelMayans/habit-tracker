@@ -1,0 +1,4 @@
+# La app es una SPA: el enrutado vive en el cliente y el servidor de estáticos
+# no conoce /categories/1 ni /log-activity. Sin esto, recargar en cualquier
+# pantalla que no sea la home devuelve un 404 de Netlify.
+/*  /index.html  200

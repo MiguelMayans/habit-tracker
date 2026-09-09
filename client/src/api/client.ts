@@ -3,7 +3,13 @@
  * las páginas usan useState/useEffect a mano en esta fase.
  */
 
-export const API_URL = "http://localhost:3000";
+/**
+ * En producción la inyecta Vite al construir (`VITE_API_URL`), porque el
+ * backend vive en otro dominio. El valor de local queda como respaldo para
+ * que `pnpm dev` siga funcionando sin configurar nada.
+ */
+export const API_URL =
+  import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export type Category = {
   id: number;

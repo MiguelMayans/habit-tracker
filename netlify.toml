@@ -1,0 +1,14 @@
+# El repo es un monorepo de pnpm y Netlify construye desde la raíz, así que
+# hay que decirle dónde vive el cliente y dónde deja el build.
+[build]
+  base = "client"
+  command = "pnpm build"
+  publish = "dist"
+
+[build.environment]
+  # Sin esto Netlify elige una versión de Node por su cuenta, que puede no ser
+  # la que compila este proyecto.
+  NODE_VERSION = "22"
+
+# VITE_API_URL se configura en el panel de Netlify, no aquí: apunta al backend
+# de Render y no tiene por qué vivir en el repositorio.
