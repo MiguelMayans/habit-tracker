@@ -129,7 +129,7 @@ export function TarjetaCategoria({
           </div>
 
           {/* Zona negra: los datos se leen mejor y vuelve el amarillo. */}
-          <div className="relative px-3.5 pt-3 pb-3">
+          <div className="relative px-3.5 pt-3 pb-2">
             <div className="contenido-slam relative z-10">
               <div className="barra-xp relative h-4 overflow-hidden bg-[#242424]">
                 <div
@@ -165,23 +165,18 @@ export function TarjetaCategoria({
           </div>
         </Link>
 
-        {/* Una categoría sin focos ocuparía este hueco con una etiqueta muerta.
-            En su sitio, el atajo a lo único que se puede hacer ahí. */}
+        {/* Ni franja propia ni fondo distinto: la primera versión apilaba tres
+            rectángulos oscuros —barra, panel y una caja por foco— y la tarjeta
+            se volvía un mazacote. Aquí el mando es una línea más de la misma
+            micro-tipografía que los datos de arriba, y lo único que dice que
+            se puede tocar es el triángulo en el color de la categoría. */}
         {c.focusCount === 0 ? (
-          <Link
-            to={`/categories/${c.id}`}
-            className="block border-t border-hueso/10 bg-[#141414] px-3.5 py-2"
-          >
-            <span className="contenido-slam flex items-center gap-2">
-              <span className="text-[10px] font-bold tracking-[0.16em] text-hueso/40">
-                SIN FOCOS TODAVÍA
-              </span>
-              <span
-                className="ml-auto text-[10px] font-bold tracking-[0.14em]"
-                style={{ color: acento }}
-              >
-                AÑADIR ↴
-              </span>
+          // Una categoría sin focos ocuparía esta línea con una etiqueta
+          // muerta. En su sitio, el atajo a lo único que se puede hacer ahí.
+          <Link to={`/categories/${c.id}`} className="block px-3.5 pb-3">
+            <span className="contenido-slam block text-[9.5px] font-bold tracking-[0.16em] text-hueso/30">
+              SIN FOCOS ·{" "}
+              <span style={{ color: acento }}>AÑADIR EL PRIMERO</span>
             </span>
           </Link>
         ) : (
@@ -190,45 +185,42 @@ export function TarjetaCategoria({
             onClick={onAlternar}
             aria-expanded={abierto}
             aria-controls={idPanel}
-            className="block w-full border-t border-hueso/10 bg-[#141414] px-3.5 py-2 text-left"
+            className="block w-full px-3.5 pb-3 text-left"
           >
-            <span className="contenido-slam flex items-center gap-2">
-              <span className="text-[10px] font-bold tracking-[0.16em] text-hueso/55">
-                {c.focusCount} {c.focusCount === 1 ? "FOCO" : "FOCOS"}
-              </span>
+            <span className="contenido-slam flex items-center gap-1.5 text-[9.5px] font-bold tracking-[0.16em] text-hueso/40">
               <span
-                className="ml-auto text-[11px] leading-none"
+                className="inline-block text-[8px] leading-none"
                 style={{
                   color: acento,
-                  display: "inline-block",
-                  transform: abierto ? "rotate(180deg)" : undefined,
+                  transform: abierto ? "rotate(90deg)" : undefined,
                 }}
               >
-                ▼
+                ▶
               </span>
+              {c.focusCount} {c.focusCount === 1 ? "FOCO" : "FOCOS"}
             </span>
           </button>
         )}
 
         {abierto && (
-          <div
-            id={idPanel}
-            className="border-t border-hueso/10 bg-[#0b0b0b] px-3.5 py-3"
-          >
+          <div id={idPanel} className="px-3.5 pb-3.5">
             <div className="contenido-slam">
               {cargandoFocos && (
-                <div className="esqueleto h-9 w-full" aria-label="Cargando focos" />
+                <div className="grid gap-2.5" aria-label="Cargando focos">
+                  <div className="esqueleto h-3 w-2/3" />
+                  <div className="esqueleto h-3 w-1/2" />
+                </div>
               )}
 
               {errorFocos && (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-baseline gap-2">
                   <p className="m-0 text-[10px] font-bold text-cuerpo">
                     {errorFocos}
                   </p>
                   <button
                     type="button"
                     onClick={cargarFocos}
-                    className="text-[10px] font-bold tracking-[0.14em] text-hueso/60 underline"
+                    className="text-[9.5px] font-bold tracking-[0.14em] text-hueso/60 underline"
                   >
                     REINTENTAR
                   </button>
@@ -236,7 +228,13 @@ export function TarjetaCategoria({
               )}
 
               {focos && !cargandoFocos && !errorFocos && (
-                <ul className="grid gap-2">
+                // Un solo filete en el color de la categoría para toda la
+                // lista, en vez de un borde por foco: agrupa igual y mete un
+                // trazo donde antes había cinco.
+                <ul
+                  className="grid gap-3 border-l-2 pl-3"
+                  style={{ borderColor: acento }}
+                >
                   {focos.map((f, j) => (
                     <FilaFocoHome
                       key={f.id}
@@ -282,27 +280,28 @@ function FilaFocoHome({
   const contenido = (
     <>
       <div className="flex items-baseline gap-2">
-        {esHijo && <span className="text-[10px] text-hueso/35">↳</span>}
-        <span className="truncate font-display text-[14px] leading-none text-hueso uppercase">
+        {esHijo && (
+          <span className="shrink-0 text-[9px] leading-none text-hueso/30">↳</span>
+        )}
+        <span className="truncate font-display text-[13px] leading-none text-hueso uppercase">
           {f.name}
         </span>
-        {f.frozen && (
-          <span
-            className="shrink-0 bg-amarillo px-1.5 py-0.5 text-[7.5px] font-bold tracking-[0.16em] text-negro"
-            style={{ transform: "skewX(-10deg)" }}
-          >
-            MAESTRÍA
-          </span>
-        )}
-        <span className="ml-auto shrink-0 text-[9px] font-bold tracking-[0.14em] text-hueso/60">
-          NV{" "}
-          <b className="font-display text-[13px] tracking-normal text-hueso">
-            {f.level}
-          </b>
+        {/* Congelado siempre es el nivel máximo, así que el rótulo dice lo
+            mismo que diría el número y además dice por qué no se puede tocar.
+            En su versión anterior era una placa amarilla: demasiada tinta para
+            una lista que solo se ojea. */}
+        <span
+          className={`ml-auto shrink-0 text-[9px] font-bold tracking-[0.14em] ${
+            f.frozen ? "text-amarillo" : "text-hueso/45"
+          }`}
+        >
+          {f.frozen ? "MAESTRÍA" : `NV ${f.level}`}
         </span>
       </div>
 
-      <div className="barra-xp mt-1.5 h-[6px] overflow-hidden bg-[#242424]">
+      {/* Un filete de 2px en vez de la barra de 6: aquí el progreso se ojea,
+          no se consulta. El detalle de la categoría sigue teniéndola entera. */}
+      <div className="mt-1.5 h-[2px] bg-hueso/12">
         <div
           className="h-full"
           style={{
@@ -314,23 +313,17 @@ function FilaFocoHome({
     </>
   );
 
-  const clases = `block bg-[#141414] py-2 pr-2.5 pl-2.5 ${f.frozen ? "opacity-65" : ""}`;
-  const estilo = { borderLeft: `3px solid ${acento}` };
-
   return (
     <li
-      className={`anim-fila ${esHijo ? "ml-4" : ""}`}
+      className={`anim-fila ${esHijo ? "pl-3" : ""}`}
       style={{ "--retardo": `${retardo}s` } as React.CSSProperties}
     >
       {f.frozen ? (
-        <div className={clases} style={estilo}>
-          {contenido}
-        </div>
+        <div>{contenido}</div>
       ) : (
         <Link
           to={`/log-activity?categoria=${categoryId}&foco=${f.id}`}
-          className={clases}
-          style={estilo}
+          className="block"
         >
           {contenido}
         </Link>
