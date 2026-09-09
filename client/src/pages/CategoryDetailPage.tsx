@@ -327,15 +327,47 @@ export function CategoryDetailPage() {
 
   return (
     <div className="px-4 pt-6 pb-32">
-      <Link
-        to="/"
-        className="anim-fila inline-block bg-hueso px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-negro"
-        style={{ transform: "skewX(-10deg)" }}
-      >
-        <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-          ← CATEGORÍAS
+      {/* El nivel comparte fila con el enlace de volver, en la esquina opuesta.
+          Es el único hueco libre de la pantalla: los logotipos de categoría van
+          a sangre por los cuatro lados, así que colocarlo sobre la cabecera
+          —que es donde pediría estar— le caería encima al dibujo.
+
+          La placa de hueso es lo que le da fuerza: el amarillo sobre negro se
+          diluye entre las otras cosas amarillas, y sobre blanco con el contorno
+          negro de la rotulación se despega. La sombra dura va en el color de la
+          categoría porque una negra, sobre fondo negro, no se vería. */}
+      <div className="flex items-start justify-between gap-4">
+        <Link
+          to="/"
+          className="anim-fila inline-block bg-hueso px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-negro"
+          style={{ transform: "skewX(-10deg)" }}
+        >
+          <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
+            ← CATEGORÍAS
+          </span>
+        </Link>
+
+        <span
+          className="anim-cinta flex shrink-0 items-center gap-2 bg-hueso py-1 pr-3.5 pl-3"
+          style={{
+            transform: "skewX(-10deg)",
+            boxShadow: `6px 6px 0 ${acento}`,
+          }}
+        >
+          <span
+            className="inline-block text-[9px] font-bold tracking-[0.2em] text-negro"
+            style={{ transform: "skewX(10deg)" }}
+          >
+            NIVEL
+          </span>
+          <b
+            className="texto-rotulo-fino inline-block font-display text-[38px] leading-[0.8] text-amarillo"
+            style={{ transform: "skewX(10deg)" }}
+          >
+            {category.level}
+          </b>
         </span>
-      </Link>
+      </div>
 
       {/* Cabecera: misma banda a sangre que la home, pero en el color de la
           categoría, para que se note en cuál estás. */}
@@ -382,56 +414,36 @@ export function CategoryDetailPage() {
         </div>
       </header>
 
-      {/* Nivel y progreso, juntos: el número solo, flotando encima del título,
-          quedaba huérfano y además empujaba la portada hacia abajo. Aquí manda
-          por tamaño y está pegado a la barra que precisamente lo mide. */}
+      {/* Progreso a ancho completo: el nivel ya no le roba la mitad de la fila
+          desde la izquierda, así que la barra ocupa lo que mide la pantalla. */}
       <div
-        className="anim-fila relative flex items-end gap-4"
+        className="anim-fila relative"
         style={{ "--retardo": "0.1s" } as React.CSSProperties}
       >
-        <div className="shrink-0">
-          <span className="block text-[9px] font-bold tracking-[0.24em] text-hueso/70">
-            NIVEL
-          </span>
-          {/* El bloque se recorta al alto real del número: `leading-[0.72]` y
-              el margen negativo quitan el hueco que la fuente deja por encima
-              de las cifras, que si no descuadra el alineado con la barra. */}
-          <b className="texto-rotulo -mt-0.5 block font-display text-[76px] leading-[0.72] text-amarillo">
-            {category.level}
-          </b>
-          {/* Zócalo en el color de la categoría: ata el número a dónde estás. */}
-          <i
-            className="mt-1.5 block h-[5px] w-full"
-            style={{ background: acento, transform: "skewX(-16deg)" }}
+        <div className="barra-xp relative h-4 overflow-hidden bg-[#242424]">
+          <div
+            className="barra-xp-relleno relative h-full bg-amarillo"
+            style={
+              {
+                width: `${Math.round(category.progress * 100)}%`,
+                "--retardo": "0.3s",
+              } as React.CSSProperties
+            }
           />
         </div>
-
-        <div className="min-w-0 flex-1 pb-1">
-          <div className="barra-xp relative h-4 overflow-hidden bg-[#242424]">
-            <div
-              className="barra-xp-relleno relative h-full bg-amarillo"
-              style={
-                {
-                  width: `${Math.round(category.progress * 100)}%`,
-                  "--retardo": "0.3s",
-                } as React.CSSProperties
-              }
-            />
-          </div>
-          <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold tracking-[0.06em] text-hueso/75">
-            <span>{category.currentXp} XP</span>
-            <i className="h-[3px] w-[3px] rotate-45 bg-hueso/55" />
-            <span>
-              {category.atMaxLevel ? (
-                <b className="text-amarillo">NIVEL MÁXIMO</b>
-              ) : (
-                <>
-                  <b className="text-amarillo">{category.xpToNextLevel}</b> AL NV{" "}
-                  {category.level + 1}
-                </>
-              )}
-            </span>
-          </div>
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold tracking-[0.06em] text-hueso/75">
+          <span>{category.currentXp} XP</span>
+          <i className="h-[3px] w-[3px] rotate-45 bg-hueso/55" />
+          <span>
+            {category.atMaxLevel ? (
+              <b className="text-amarillo">NIVEL MÁXIMO</b>
+            ) : (
+              <>
+                <b className="text-amarillo">{category.xpToNextLevel}</b> AL NV{" "}
+                {category.level + 1}
+              </>
+            )}
+          </span>
         </div>
       </div>
 
