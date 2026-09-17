@@ -289,14 +289,59 @@ body {
   text-shadow: 4px 4px 0 var(--color-black);
 }
 
-/* The disclosure arrow of the focus panel.
+/* The focus disclosure.
  *
- * A cut shape and not the ▶ character: that one is painted by the system font,
- * aligns differently in every browser — sitting high or low against the
- * baseline depending on where you open it — and cannot transition as it
- * rotates, so it used to jump. Drawn, it turns with the same `steps(2)` as the
- * rest of the app.
+ * The control and the list used to be two unrelated things: a label with an
+ * arrow, and a vertical rule down the side of the list. Here they are ONE
+ * object — a bracket with a head and a stem. The tab is the head; opening it
+ * grows the stem down through the focuses, and each row hangs off that stem by
+ * a tick. That is what the disclosure means structurally, instead of an arrow
+ * standing in for it.
+ *
+ * Closed the tab is an outline, open it fills — the same pressed idiom as the
+ * intensity chips, so the state reads without learning anything new. It fills
+ * with the CATEGORY accent and not yellow: yellow stays reserved for the
+ * category level and for XP.
  */
+.focus-tab {
+  display: inline-flex;
+  align-items: baseline;
+  padding: 3px 11px 4px;
+  border: 2px solid var(--accent, var(--color-bone));
+  color: var(--accent, var(--color-bone));
+  transform: skewX(-10deg);
+  transition:
+    background-color 0.12s steps(2),
+    color 0.12s steps(2);
+}
+
+.focus-tab[data-open="true"] {
+  background: var(--accent, var(--color-bone));
+  color: var(--color-black);
+}
+
+/* The tab is skewed; its contents are counter-skewed so the figures read
+   level, exactly as in .slam-button. */
+.focus-tab > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  transform: skewX(10deg);
+}
+
+/* The empty slot: same shape, dashed, so it reads as a place where something
+   is missing rather than as a control that does nothing. */
+.focus-tab-empty {
+  border-style: dashed;
+  border-color: rgb(245 245 240 / 0.22);
+  color: rgb(245 245 240 / 0.4);
+}
+
+/* A cut shape and not the ▶ character: that one is painted by the system font,
+   aligns differently in every browser — sitting high or low against the
+   baseline depending on where you open it — and cannot transition as it
+   rotates, so it used to jump. Drawn, it turns with the same `steps(2)` as the
+   rest of the app. */
 .disclosure-arrow {
   width: 7px;
   height: 9px;
@@ -305,8 +350,40 @@ body {
   transition: transform 0.14s steps(2);
 }
 
-.disclosure-arrow[data-open="true"] {
+.focus-tab[data-open="true"] .disclosure-arrow {
   transform: rotate(90deg);
+}
+
+/* The stem, hanging off the tab, and the tick that joins each focus to it.
+   The tick is what turns a list with a rule beside it into a bracket: without
+   it the rule is decoration, with it every row is visibly attached.
+
+   A child focus sits further in and its tick is longer, so the branching is
+   drawn rather than spelled out — which is why the rows no longer carry a "↳".
+   `top` is tuned to the cap height of the 13px display name, so the tick meets
+   the word and not the gap above it. */
+.focus-branch {
+  border-left: 2px solid var(--accent, var(--color-bone));
+}
+
+.focus-branch > li {
+  position: relative;
+}
+
+.focus-branch > li::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: -14px;
+  width: 10px;
+  height: 2px;
+  background: var(--accent, var(--color-bone));
+}
+
+.focus-branch > li[data-child="true"]::before {
+  left: -26px;
+  width: 22px;
+  opacity: 0.55;
 }
 
 /* The XP bar and its fill. */

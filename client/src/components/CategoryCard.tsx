@@ -64,6 +64,7 @@ export function CategoryCard({
         {
           "--rotation": TILTS[i % TILTS.length],
           "--delay": `${0.16 + i * 0.07}s`,
+          "--accent": accent,
           marginLeft: OFFSETS[i % OFFSETS.length],
         } as React.CSSProperties
       }
@@ -181,18 +182,29 @@ export function CategoryCard({
           </div>
         </Link>
 
-        {/* Neither its own band nor a different background: the first version
-            stacked three dark rectangles — bar, panel and a box per focus —
-            and the card turned into a slab. Here the control is one more line
-            of the same micro-typography as the stats above, and the only thing
-            saying it can be touched is the triangle in the category colour. */}
+        {/* Still no band of its own and no separate background: the first
+            version stacked three dark rectangles — bar, panel and a box per
+            focus — and the card turned into a slab. What changed is that the
+            control is no longer a line of text with an arrow beside it: it is
+            the head of the bracket the list hangs from. */}
         {c.focusCount === 0 ? (
           // A category with no focuses would spend this line on a dead label.
-          // In its place, a shortcut to the only thing you can do there.
-          <Link to={`/categories/${c.id}`} className="block px-3.5 pt-1.5 pb-3.5">
-            <span className="slam-content block text-[9.5px] font-bold tracking-[0.16em] text-bone/30">
-              SIN FOCOS ·{" "}
-              <span style={{ color: accent }}>AÑADIR EL PRIMERO</span>
+          // In its place, the same tab drawn as an empty slot, leading to the
+          // only thing you can do there.
+          <Link
+            to={`/categories/${c.id}`}
+            className="block px-3.5 pt-2 pb-4"
+            aria-label={`${c.name}: añadir el primer foco`}
+          >
+            <span className="slam-content inline-block">
+              <span className="focus-tab focus-tab-empty">
+                <span>
+                  <b className="font-display text-[15px] leading-none">+</b>
+                  <span className="text-[8px] font-bold tracking-[0.2em]">
+                    PRIMER FOCO
+                  </span>
+                </span>
+              </span>
             </span>
           </Link>
         ) : (
@@ -201,21 +213,28 @@ export function CategoryCard({
             onClick={onToggle}
             aria-expanded={isOpen}
             aria-controls={panelId}
-            className="block w-full px-3.5 pt-1.5 pb-3.5 text-left"
+            // Abierto, el hueco de abajo se cierra: el tallo tiene que nacer
+            // pegado a la pestaña o dejan de leerse como una sola pieza.
+            className={`block px-3.5 pt-2 text-left ${isOpen ? "pb-0" : "pb-4"}`}
           >
-            <span className="slam-content flex items-center gap-2 text-[9.5px] font-bold tracking-[0.16em] text-bone/55">
-              <i
-                className="disclosure-arrow shrink-0"
-                data-open={isOpen}
-                style={{ color: accent }}
-              />
-              {c.focusCount} {c.focusCount === 1 ? "FOCO" : "FOCOS"}
+            <span className="slam-content inline-block">
+              <span className="focus-tab" data-open={isOpen}>
+                <span>
+                  <i className="disclosure-arrow shrink-0 self-center" />
+                  <b className="font-display text-[15px] leading-none">
+                    {c.focusCount}
+                  </b>
+                  <span className="text-[8px] font-bold tracking-[0.2em]">
+                    {c.focusCount === 1 ? "FOCO" : "FOCOS"}
+                  </span>
+                </span>
+              </span>
             </span>
           </button>
         )}
 
         {isOpen && (
-          <div id={panelId} className="px-3.5 pb-3.5">
+          <div id={panelId} className="px-3.5 pt-2 pb-4">
             <div className="slam-content">
               {loadingFocuses && (
                 <div className="grid gap-2.5" aria-label="Cargando focos">
@@ -240,15 +259,11 @@ export function CategoryCard({
               )}
 
               {focuses && !loadingFocuses && !focusesError && (
-                // A single rule in the category colour for the whole list,
-                // instead of a border per focus: it groups just as well and
-                // draws one stroke where there used to be five. With 20px
-                // between focuses the rule is enough to keep the list reading
-                // as one block.
-                <ul
-                  className="grid gap-5 border-l-2 pl-3.5"
-                  style={{ borderColor: accent }}
-                >
+                // The stem of the bracket whose head is the tab above, with
+                // a tick joining each focus to it. One stroke for the whole
+                // list instead of a border per focus, and the ticks are what
+                // stop that stroke from being decoration.
+                <ul className="focus-branch grid gap-5 pl-3.5">
                   {focuses.map((f, j) => (
                     <HomeFocusRow
                       key={f.id}
@@ -294,9 +309,8 @@ function HomeFocusRow({
   const content = (
     <>
       <div className="flex items-baseline gap-2">
-        {isChild && (
-          <span className="shrink-0 text-[9px] leading-none text-bone/30">↳</span>
-        )}
+        {/* No "↳" any more: the branch is drawn by the longer tick on an
+            indented row, so the glyph would be saying it a second time. */}
         <span className="truncate font-display text-[13px] leading-none text-bone uppercase">
           {f.name}
         </span>
@@ -350,6 +364,7 @@ function HomeFocusRow({
   return (
     <li
       className={`anim-row ${isChild ? "pl-3" : ""}`}
+      data-child={isChild}
       style={{ "--delay": `${delay}s` } as React.CSSProperties}
     >
       {f.frozen ? (
