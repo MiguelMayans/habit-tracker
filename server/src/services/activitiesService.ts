@@ -23,8 +23,8 @@ import {
 } from "../lib/xpCurve.js";
 
 /**
- * Regla de negocio incumplida por los datos de entrada. La ruta la traduce a un
- * 400: es culpa del cliente, no un fallo del servidor.
+ * A business rule broken by the incoming data. The route turns it into a 400:
+ * it is the client's fault, not a server failure.
  */
 export class ActivityValidationError extends Error {
   constructor(message: string) {
@@ -41,7 +41,7 @@ export type RegisterActivityData = {
   date: Date;
 };
 
-/** Cómo quedó una entidad tras recibir la XP. */
+/** How an entity ended up after taking the XP. */
 export type XpOutcome = {
   id: number;
   levelBefore: number;
@@ -49,18 +49,19 @@ export type XpOutcome = {
   leveledUp: boolean;
   totalXp: number;
   /**
-   * Progreso dentro del nivel ANTES y DESPUÉS, 0..1. Van los dos porque la
-   * interfaz anima la barra de uno al otro: sin el de partida solo podría
-   * pintar el estado final, que es justo lo que no se siente.
+   * In-level progress BEFORE and AFTER, 0..1. Both are sent because the
+   * interface animates the bar from one to the other: without the starting
+   * point it could only paint the final state, which is exactly the part you
+   * do not feel.
    */
   progressBefore: number;
   progressAfter: number;
   xpToNextLevel: number;
   atMaxLevel: boolean;
   /**
-   * Solo tiene sentido real en un Foco: al llegar a `FOCUS_CURVE.maxLevel` se
-   * congela y deja de admitir XP hasta que se le engendre un hijo. En una
-   * categoría siempre sale en `false` porque no existe ese estado.
+   * Only truly meaningful on a Focus: on reaching `FOCUS_CURVE.maxLevel` it
+   * freezes and stops taking XP until a child is spawned from it. On a
+   * category it always comes back `false`, because that state does not exist.
    */
   frozen: boolean;
 };
@@ -80,10 +81,10 @@ export type UndoActivityResult = {
 };
 
 /**
- * Aplica la XP sobre un nivel/XP previos. El nivel nunca baja: si el cálculo
- * diera menos que el nivel actual (curva retocada, datos migrados), se conserva
- * el mayor. Encaja con la regla de "nunca restar XP ni bajar niveles" de
- * AGENTS.md.
+ * Applies XP on top of a previous level/XP. The level never drops: if the
+ * computation came out below the current level (a tweaked curve, migrated
+ * data), the higher one is kept. This matches the "never subtract XP or lower
+ * levels" rule in AGENTS.md.
  */
 function applyXp(
   current: { level: number; currentXp: number },
@@ -91,21 +92,21 @@ function applyXp(
   curve: XpCurve,
 ): { level: number; currentXp: number } {
   const totalXp = current.currentXp + xp;
-  const calculado = calculateLevelForXp(
+  const computed = calculateLevelForXp(
     totalXp,
     curve.base,
     curve.exponent,
     curve.maxLevel,
   );
 
-  return { level: Math.max(current.level, calculado), currentXp: totalXp };
+  return { level: Math.max(current.level, computed), currentXp: totalXp };
 }
 
 /**
- * Revierte lo que aplicó `applyXp`. A propósito NO lleva el `Math.max` que sí
- * lleva `applyXp`: aquí el nivel SÍ tiene que poder bajar, o el número
- * miente. Ver la excepción de "deshacer" en docs/DESIGN.md — no es un
- * castigo, es corregir un dato que se introdujo mal.
+ * Reverts what `applyXp` applied. It deliberately does NOT carry the
+ * `Math.max` that `applyXp` has: here the level MUST be able to drop, or the
+ * number lies. See the undo exception in docs/DESIGN.md — this is not a
+ * punishment, it is correcting a figure that was entered wrong.
  */
 function revertXp(
   current: { level: number; currentXp: number },
@@ -124,53 +125,49 @@ function revertXp(
 }
 
 /**
- * Si `fecha` cae en el día natural de hoy, según el reloj del servidor. Sirve
- * solo para acotar la ventana de "deshacer" a un despiste reciente: no hace
- * falta que sea exacto al segundo entre husos horarios distintos, con que
- * discrimine "hoy" de "otro día" ya cumple su propósito.
+ * Whether `date` falls on today's calendar day, by the server's clock. Its only
+ * job is to bound the undo window to a recent slip: it does not need to be
+ * exact to the second across time zones — telling "today" from "another day"
+ * is enough for the purpose.
  */
-function esDeHoy(fecha: Date): boolean {
-  const ahora = new Date();
+function isToday(date: Date): boolean {
+  const now = new Date();
   return (
-    fecha.getFullYear() === ahora.getFullYear() &&
-    fecha.getMonth() === ahora.getMonth() &&
-    fecha.getDate() === ahora.getDate()
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
   );
 }
 
-/** Construye el resumen de XP de una entidad, con el antes y el después. */
-function resumirXp(
+/** Builds an entity's XP summary, carrying the before and the after. */
+function summariseXp(
   id: number,
-  antes: { level: number; currentXp: number },
-  despues: { level: number; currentXp: number },
+  before: { level: number; currentXp: number },
+  after: { level: number; currentXp: number },
   curve: XpCurve,
   frozen = false,
 ): XpOutcome {
-  const progresoAntes = getLevelProgress(antes.currentXp, antes.level, curve);
-  const progresoDespues = getLevelProgress(
-    despues.currentXp,
-    despues.level,
-    curve,
-  );
+  const progressBefore = getLevelProgress(before.currentXp, before.level, curve);
+  const progressAfter = getLevelProgress(after.currentXp, after.level, curve);
 
   return {
     id,
-    levelBefore: antes.level,
-    levelAfter: despues.level,
-    leveledUp: despues.level > antes.level,
-    totalXp: despues.currentXp,
-    progressBefore: progresoAntes.progress,
-    progressAfter: progresoDespues.progress,
-    xpToNextLevel: progresoDespues.xpToNextLevel,
-    atMaxLevel: progresoDespues.atMaxLevel,
+    levelBefore: before.level,
+    levelAfter: after.level,
+    leveledUp: after.level > before.level,
+    totalXp: after.currentXp,
+    progressBefore: progressBefore.progress,
+    progressAfter: progressAfter.progress,
+    xpToNextLevel: progressAfter.xpToNextLevel,
+    atMaxLevel: progressAfter.atMaxLevel,
     frozen,
   };
 }
 
 /**
- * Registra una actividad y propaga la XP en cascada: al Foco (si lo hay) y
- * SIEMPRE a la categoría. Todo dentro de una transacción, así que o se escribe
- * la actividad y ambas subidas de XP, o no se escribe nada.
+ * Logs an activity and cascades the XP: to the Focus (when there is one) and
+ * ALWAYS to the category. All inside one transaction, so either the activity
+ * and both XP gains are written, or nothing is.
  */
 export async function registerActivity(
   data: RegisterActivityData,
@@ -202,16 +199,16 @@ export async function registerActivity(
       }
 
       if (focus.frozen) {
-        // Congelado en el nivel máximo es maestría; por debajo solo puede
-        // venir de haberlo cerrado a mano. Decirle "has alcanzado la
-        // maestría" a un foco de nivel 3 que diste por terminado es mentir.
-        const motivo =
+        // Frozen at the maximum level is mastery; below it, the only way in
+        // is a manual close. Telling a level-3 focus you called done that it
+        // "reached mastery" would be a lie.
+        const reason =
           focus.level >= FOCUS_CURVE.maxLevel
             ? "ha alcanzado la maestría y está congelado"
             : "está cerrado";
 
         throw new ActivityValidationError(
-          `El foco "${focus.name}" ${motivo}: ya no admite más XP. Tócalo ` +
+          `El foco "${focus.name}" ${reason}: ya no admite más XP. Tócalo ` +
             `para engendrar un foco hijo especializado y registra la ` +
             `actividad ahí, o reábrelo desde su categoría.`,
         );
@@ -233,27 +230,27 @@ export async function registerActivity(
 
     let focusOutcome: XpOutcome | null = null;
     if (focus) {
-      const siguiente = applyXp(focus, xpGained, FOCUS_CURVE);
-      // Al llegar al nivel máximo se congela: dispara aquí, en el mismo golpe
-      // de XP que lo alcanza, no en una pasada aparte que habría que acordarse
-      // de ejecutar.
-      const frozen = siguiente.level >= FOCUS_CURVE.maxLevel;
-      await updateFocusXp(focus.id, { ...siguiente, frozen }, tx);
+      const next = applyXp(focus, xpGained, FOCUS_CURVE);
+      // Reaching the maximum level freezes it: this fires here, in the same XP
+      // hit that reaches it, not in a separate pass someone has to remember to
+      // run.
+      const frozen = next.level >= FOCUS_CURVE.maxLevel;
+      await updateFocusXp(focus.id, { ...next, frozen }, tx);
 
-      focusOutcome = resumirXp(focus.id, focus, siguiente, FOCUS_CURVE, frozen);
+      focusOutcome = summariseXp(focus.id, focus, next, FOCUS_CURVE, frozen);
     }
 
-    const siguienteCategoria = applyXp(category, xpGained, CATEGORY_CURVE);
-    await updateCategoryXp(category.id, siguienteCategoria, tx);
+    const nextCategory = applyXp(category, xpGained, CATEGORY_CURVE);
+    await updateCategoryXp(category.id, nextCategory, tx);
 
     return {
       activity,
       xpGained,
       focus: focusOutcome,
-      category: resumirXp(
+      category: summariseXp(
         category.id,
         category,
-        siguienteCategoria,
+        nextCategory,
         CATEGORY_CURVE,
       ),
     };
@@ -261,10 +258,10 @@ export async function registerActivity(
 }
 
 /**
- * Deshace un registro: borra la actividad y revierte su XP en cascada, al
- * Foco (si lo tenía) y a la categoría. Acotado a actividades de hoy — ver la
- * excepción de docs/DESIGN.md — para que sea corrección de un despiste
- * reciente y no un mecanismo para revisar un día entero con perspectiva.
+ * Undoes a log: deletes the activity and cascades its XP back, to the Focus
+ * (if it had one) and to the category. Bounded to today's activities — see the
+ * exception in docs/DESIGN.md — so it stays a correction of a recent slip and
+ * does not become a way to revisit a whole day in hindsight.
  */
 export async function deleteActivity(id: number): Promise<UndoActivityResult> {
   return db.transaction(async (tx) => {
@@ -273,7 +270,7 @@ export async function deleteActivity(id: number): Promise<UndoActivityResult> {
       throw new ActivityValidationError(`La actividad ${id} no existe`);
     }
 
-    if (!esDeHoy(activity.date)) {
+    if (!isToday(activity.date)) {
       throw new ActivityValidationError(
         "Solo se puede deshacer una actividad registrada hoy",
       );
@@ -291,27 +288,27 @@ export async function deleteActivity(id: number): Promise<UndoActivityResult> {
     let focusOutcome: XpOutcome | null = null;
     if (activity.focusId !== null) {
       const focus = await getFocusById(activity.focusId, tx);
-      // El foco pudo borrarse después de registrar la actividad (se
-      // desvincula, no se borra): entonces solo queda revertir la categoría.
+      // The focus may have been deleted after the activity was logged (it is
+      // detached, not deleted): then only the category needs reverting.
       if (focus) {
-        const revertido = revertXp(focus, xpGained, FOCUS_CURVE);
-        // Si estaba congelado y el nivel cae por debajo del máximo, se
-        // descongela: ya no es cierto que esté en nivel 20.
-        const frozen = revertido.level >= FOCUS_CURVE.maxLevel;
-        await updateFocusXp(focus.id, { ...revertido, frozen }, tx);
+        const reverted = revertXp(focus, xpGained, FOCUS_CURVE);
+        // If it was frozen and the level falls below the maximum, it thaws:
+        // it is no longer true that it sits at level 20.
+        const frozen = reverted.level >= FOCUS_CURVE.maxLevel;
+        await updateFocusXp(focus.id, { ...reverted, frozen }, tx);
 
-        focusOutcome = resumirXp(
+        focusOutcome = summariseXp(
           focus.id,
           focus,
-          revertido,
+          reverted,
           FOCUS_CURVE,
           frozen,
         );
       }
     }
 
-    const categoriaRevertida = revertXp(category, xpGained, CATEGORY_CURVE);
-    await updateCategoryXp(category.id, categoriaRevertida, tx);
+    const revertedCategory = revertXp(category, xpGained, CATEGORY_CURVE);
+    await updateCategoryXp(category.id, revertedCategory, tx);
 
     await deleteActivityRow(activity.id, tx);
 
@@ -319,10 +316,10 @@ export async function deleteActivity(id: number): Promise<UndoActivityResult> {
       activityId: activity.id,
       xpLost: xpGained,
       focus: focusOutcome,
-      category: resumirXp(
+      category: summariseXp(
         category.id,
         category,
-        categoriaRevertida,
+        revertedCategory,
         CATEGORY_CURVE,
       ),
     };

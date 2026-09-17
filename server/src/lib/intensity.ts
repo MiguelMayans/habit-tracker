@@ -1,12 +1,12 @@
 import type { activities } from "../db/schema.js";
 
 /**
- * Derivado del enum del schema: si allí cambian las intensidades, esto deja de
- * compilar en lugar de desincronizarse en silencio.
+ * Derived from the schema enum: if the intensities change there, this stops
+ * compiling instead of silently drifting out of sync.
  */
 export type Intensity = (typeof activities.$inferSelect)["intensity"];
 
-/** Única fuente de verdad de la conversión intensidad → XP. */
+/** The single source of truth for the intensity → XP conversion. */
 export const XP_BY_INTENSITY: Record<Intensity, number> = {
   chispa: 10,
   impulso: 20,

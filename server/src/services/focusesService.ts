@@ -9,8 +9,8 @@ import { detachActivitiesFromFocus } from "../repositories/activitiesRepository.
 import { FOCUS_CURVE, getLevelProgress } from "../lib/xpCurve.js";
 
 /**
- * Un Foco con su progreso dentro del nivel, para poder pintar la barra sin que
- * el cliente tenga que duplicar la curva. Mismo criterio que las categorías.
+ * A Focus with its progress within the level, so the bar can be drawn without
+ * the client duplicating the curve. Same reasoning as for categories.
  */
 export type FocusWithProgress = Focus & {
   xpIntoLevel: number;
@@ -20,7 +20,7 @@ export type FocusWithProgress = Focus & {
   atMaxLevel: boolean;
 };
 
-function conProgreso(focus: Focus): FocusWithProgress {
+function withProgress(focus: Focus): FocusWithProgress {
   return {
     ...focus,
     ...getLevelProgress(focus.currentXp, focus.level, FOCUS_CURVE),
@@ -28,17 +28,18 @@ function conProgreso(focus: Focus): FocusWithProgress {
 }
 
 export type DeleteFocusResult = {
-  /** Actividades que quedaron sin foco, pero siguen contando en la categoría. */
+  /** Activities left without a focus that still count toward the category. */
   activitiesDetached: number;
 };
 
 /**
- * Borra un foco. Las actividades NO se borran: ocurrieron, y su XP ya está
- * sumada en la categoría — quitarlas sería restar XP, que va contra la regla
- * central de docs/DESIGN.md. Se quedan en la categoría, sin foco.
+ * Deletes a focus. The activities are NOT deleted: they happened, and their XP
+ * is already counted in the category — removing them would subtract XP, which
+ * goes against the central rule in docs/DESIGN.md. They stay on the category,
+ * with no focus.
  *
- * Un foco con hijos sí se rechaza: el hijo es una especialización del padre y
- * borrarlo lo dejaría colgando de nada.
+ * A focus with children is refused: a child is a specialisation of its parent,
+ * and deleting the parent would leave it hanging off nothing.
  */
 export async function deleteFocus(id: number): Promise<DeleteFocusResult> {
   return db.transaction(async (tx) => {
@@ -47,10 +48,10 @@ export async function deleteFocus(id: number): Promise<DeleteFocusResult> {
       throw new FocusValidationError(`El foco ${id} no existe`);
     }
 
-    const hijos = await focusesRepository.countChildFocuses(id, tx);
-    if (hijos > 0) {
+    const children = await focusesRepository.countChildFocuses(id, tx);
+    if (children > 0) {
       throw new FocusValidationError(
-        `El foco "${focus.name}" tiene ${hijos} foco(s) hijo. Borra primero los hijos.`,
+        `El foco "${focus.name}" tiene ${children} foco(s) hijo. Borra primero los hijos.`,
       );
     }
 
@@ -65,12 +66,12 @@ export async function getFocusesByCategoryWithProgress(
   categoryId: number,
 ): Promise<FocusWithProgress[]> {
   const focuses = await focusesRepository.getFocusesByCategory(categoryId);
-  return focuses.map(conProgreso);
+  return focuses.map(withProgress);
 }
 
 /**
- * Regla de negocio incumplida por los datos de entrada. La ruta la traduce a un
- * 400: es culpa del cliente, no un fallo del servidor.
+ * A business rule broken by the incoming data. The route turns it into a 400:
+ * it is the client's fault, not a server failure.
  */
 export class FocusValidationError extends Error {
   constructor(message: string) {
@@ -80,13 +81,13 @@ export class FocusValidationError extends Error {
 }
 
 /**
- * Crea un Foco. Si viene con padre, aplica la regla de "gemado" de
- * docs/DESIGN.md: solo un Foco ya congelado (nivel 20, trofeo de maestría)
- * puede generar un hijo más especializado.
+ * Creates a Focus. When a parent is supplied, it applies the "spawning" rule
+ * from docs/DESIGN.md: only an already frozen Focus (level 20, the mastery
+ * trophy) can produce a more specialised child.
  */
 export async function createFocus(data: CreateFocusData): Promise<Focus> {
-  // Sin esto la FK de la BBDD salta como error de constraint y acabaría en un
-  // 500, cuando en realidad es un dato mal enviado por el cliente.
+  // Without this, the database FK fires as a constraint error and would end up
+  // a 500, when in fact it is bad data sent by the client.
   const category = await getCategoryById(data.categoryId);
   if (!category) {
     throw new FocusValidationError(
@@ -109,8 +110,8 @@ export async function createFocus(data: CreateFocusData): Promise<Focus> {
       );
     }
 
-    // Un hijo es una especialización del padre, así que vive en su misma
-    // categoría. Sin esto la rama quedaría partida entre dos categorías.
+    // A child is a specialisation of its parent, so it lives in the same
+    // category. Without this, the branch would be split across two.
     if (parent.categoryId !== data.categoryId) {
       throw new FocusValidationError(
         `Un foco hijo debe pertenecer a la misma categoría que su padre: ` +
@@ -124,34 +125,34 @@ export async function createFocus(data: CreateFocusData): Promise<Focus> {
 }
 
 /**
- * Lo que el usuario puede cambiar a mano de un foco: su nombre y si está
- * cerrado. La XP y el nivel no se tocan nunca por aquí.
+ * What the user can change on a focus by hand: its name and whether it is
+ * closed. XP and level are never touched through here.
  *
- * Sobre cerrar: `frozen` ya existía para el trofeo de maestría de nivel 20,
- * y significa "no acepta más actividad, pero sí puede engendrar un hijo".
- * Eso es exactamente lo que hace falta para dar un foco por terminado antes
- * de tiempo — acabaste el libro, perdiste los cuatro kilos—, así que se
- * reutiliza en vez de añadir una segunda bandera que diría casi lo mismo.
+ * On closing: `frozen` already existed for the level-20 mastery trophy, and it
+ * means "takes no more activity, but can spawn a child". That is exactly what
+ * is needed to call a focus done ahead of time — you finished the book, you
+ * lost the four kilos — so it is reused rather than adding a second flag that
+ * would say almost the same thing.
  *
- * Los dos casos se distinguen sin guardar nada más: congelado en el nivel
- * máximo es maestría, congelado por debajo es un cierre a mano. Por eso la
- * maestría no se puede reabrir y un cierre sí: lo primero se ganó, lo segundo
- * es una decisión, y las decisiones se cambian de opinión.
+ * The two cases are told apart without storing anything else: frozen at the
+ * maximum level is mastery, frozen below it is a manual close. That is why
+ * mastery cannot be reopened and a close can: the first was earned, the second
+ * is a decision, and people change their minds about decisions.
  */
 export async function updateFocus(
   id: number,
-  cambios: { name?: string; frozen?: boolean },
+  changes: { name?: string; frozen?: boolean },
 ): Promise<Focus> {
   const focus = await focusesRepository.getFocusById(id);
   if (!focus) {
     throw new FocusValidationError(`El foco ${id} no existe`);
   }
 
-  if (cambios.frozen === true && focus.frozen) {
+  if (changes.frozen === true && focus.frozen) {
     throw new FocusValidationError(`El foco "${focus.name}" ya está cerrado`);
   }
 
-  if (cambios.frozen === false) {
+  if (changes.frozen === false) {
     if (!focus.frozen) {
       throw new FocusValidationError(`El foco "${focus.name}" no está cerrado`);
     }
@@ -162,5 +163,5 @@ export async function updateFocus(
     }
   }
 
-  return focusesRepository.updateFocus(id, cambios);
+  return focusesRepository.updateFocus(id, changes);
 }

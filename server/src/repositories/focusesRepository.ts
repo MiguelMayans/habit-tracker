@@ -17,16 +17,16 @@ export async function getFocusesByCategory(
 }
 
 /**
- * Nº de focos por categoría, en una sola consulta agrupada. Las categorías sin
- * focos no salen en el resultado.
+ * Focus count per category, as a single grouped query. Categories with no
+ * focuses do not appear in the result.
  */
 export async function countFocusesByCategory(): Promise<Map<number, number>> {
-  const filas = await db
+  const rows = await db
     .select({ categoryId: focuses.categoryId, total: count() })
     .from(focuses)
     .groupBy(focuses.categoryId);
 
-  return new Map(filas.map((f) => [f.categoryId, f.total]));
+  return new Map(rows.map((f) => [f.categoryId, f.total]));
 }
 
 export async function getFocusById(
@@ -43,24 +43,24 @@ export async function getFocusById(
 }
 
 /**
- * level, currentXp y frozen los pone el schema por defecto (1, 0, false).
+ * level, currentXp and frozen come from the schema defaults (1, 0, false).
  */
 export async function createFocus(data: CreateFocusData): Promise<Focus> {
   const [focus] = await db.insert(focuses).values(data).returning();
   return focus;
 }
 
-/** Cuántos focos hijos cuelgan de este, para no dejarlos huérfanos. */
+/** How many child focuses hang off this one, so none are left orphaned. */
 export async function countChildFocuses(
   parentFocusId: number,
   executor: DbOrTx = db,
 ): Promise<number> {
-  const [fila] = await executor
+  const [row] = await executor
     .select({ total: count() })
     .from(focuses)
     .where(eq(focuses.parentFocusId, parentFocusId));
 
-  return fila?.total ?? 0;
+  return row?.total ?? 0;
 }
 
 export async function deleteFocus(
@@ -70,7 +70,7 @@ export async function deleteFocus(
   await executor.delete(focuses).where(eq(focuses.id, id));
 }
 
-/** Los campos que el usuario edita a mano. La XP nunca se toca por aquí. */
+/** The fields the user edits by hand. XP is never touched through here. */
 export async function updateFocus(
   id: number,
   values: { name?: string; frozen?: boolean },

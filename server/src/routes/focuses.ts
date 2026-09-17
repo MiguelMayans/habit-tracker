@@ -20,8 +20,8 @@ focusesRouter.get("/categories/:categoryId/focuses", async (req, res) => {
   }
 
   try {
-    // 404 si la categoría no existe: una lista vacía no distinguiría entre
-    // "categoría sin focos" y "categoría inexistente".
+    // 404 when the category does not exist: an empty list would not tell
+    // "category with no focuses" apart from "category that is not there".
     const category = await getCategoryById(categoryId);
     if (!category) {
       res.status(404).json({ message: "Categoría no encontrada" });
@@ -30,7 +30,7 @@ focusesRouter.get("/categories/:categoryId/focuses", async (req, res) => {
 
     res.json(await getFocusesByCategoryWithProgress(categoryId));
   } catch (error) {
-    logger.error({ err: error, categoryId }, "Error al listar focos");
+    logger.error({ err: error, categoryId }, "Failed to list focuses");
     res.status(500).json({ message: "Error al listar focos" });
   }
 });
@@ -50,7 +50,7 @@ focusesRouter.get("/focuses/:id", async (req, res) => {
     }
     res.json(focus);
   } catch (error) {
-    logger.error({ err: error, id }, "Error al obtener el foco");
+    logger.error({ err: error, id }, "Failed to fetch the focus");
     res.status(500).json({ message: "Error al obtener el foco" });
   }
 });
@@ -70,7 +70,7 @@ focusesRouter.delete("/focuses/:id", async (req, res) => {
       return;
     }
 
-    logger.error({ err: error, id }, "Error al borrar el foco");
+    logger.error({ err: error, id }, "Failed to delete the focus");
     res.status(500).json({ message: "Error al borrar el foco" });
   }
 });
@@ -114,7 +114,7 @@ focusesRouter.patch("/focuses/:id", async (req, res) => {
       return;
     }
 
-    logger.error({ err: error, id }, "Error al actualizar el foco");
+    logger.error({ err: error, id }, "Failed to update the focus");
     res.status(500).json({ message: "Error al actualizar el foco" });
   }
 });
@@ -151,13 +151,13 @@ focusesRouter.post("/focuses", async (req, res) => {
     });
     res.status(201).json(focus);
   } catch (error) {
-    // Regla de negocio incumplida → 400, no 500.
+    // A broken business rule → 400, not 500.
     if (error instanceof FocusValidationError) {
       res.status(400).json({ message: error.message });
       return;
     }
 
-    logger.error({ err: error }, "Error al crear el foco");
+    logger.error({ err: error }, "Failed to create the focus");
     res.status(500).json({ message: "Error al crear el foco" });
   }
 });

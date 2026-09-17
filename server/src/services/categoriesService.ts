@@ -8,12 +8,12 @@ import { getLastActivityDateByCategory } from "../repositories/activitiesReposit
 import { CATEGORY_CURVE, getLevelProgress } from "../lib/xpCurve.js";
 
 /**
- * Lo que la categoría necesita para pintarse en la home: además de la fila,
- * el progreso dentro del nivel (la barra no puede salir de `currentXp`, que es
- * acumulada histórica), cuántos focos tiene y cuándo recibió XP por última vez.
+ * What a category needs in order to render on the home: on top of the row, the
+ * progress within its level (the bar cannot come from `currentXp`, which is a
+ * historical total), how many focuses it has, and when it last took XP.
  *
- * Se calcula aquí y no en el cliente para que la curva de XP siga teniendo una
- * única fuente de verdad en `lib/xpCurve.ts`.
+ * Computed here and not on the client so the XP curve keeps a single source of
+ * truth in `lib/xpCurve.ts`.
  */
 export type CategoryWithProgress = Category & {
   xpIntoLevel: number;
@@ -25,7 +25,7 @@ export type CategoryWithProgress = Category & {
   lastActivityAt: string | null;
 };
 
-function enriquecer(
+function enrich(
   category: Category,
   focusCount: number,
   lastActivity: Date | undefined,
@@ -41,7 +41,7 @@ function enriquecer(
 export async function getCategoriesWithProgress(): Promise<
   CategoryWithProgress[]
 > {
-  // Tres consultas en paralelo, no una por categoría.
+  // Three queries in parallel, not one per category.
   const [categories, focusCounts, lastActivities] = await Promise.all([
     getAllCategories(),
     countFocusesByCategory(),
@@ -49,7 +49,7 @@ export async function getCategoriesWithProgress(): Promise<
   ]);
 
   return categories.map((c) =>
-    enriquecer(c, focusCounts.get(c.id) ?? 0, lastActivities.get(c.id)),
+    enrich(c, focusCounts.get(c.id) ?? 0, lastActivities.get(c.id)),
   );
 }
 
@@ -64,7 +64,7 @@ export async function getCategoryWithProgress(
     getLastActivityDateByCategory(),
   ]);
 
-  return enriquecer(
+  return enrich(
     category,
     focusCounts.get(id) ?? 0,
     lastActivities.get(id),

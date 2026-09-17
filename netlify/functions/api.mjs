@@ -1,27 +1,27 @@
 import serverless from "serverless-http";
 import { app } from "../../server/dist/src/app.js";
 
-// Se importa el JavaScript ya compilado por tsc y no el TypeScript de origen:
-// los imports del servidor llevan extensión .js al estilo NodeNext, y el
-// empaquetador de funciones no los resuelve de vuelta a .ts. Por eso el
-// comando de build de Netlify construye el servidor antes que el cliente.
+// This imports the JavaScript already compiled by tsc rather than the
+// TypeScript source: the server's imports carry NodeNext-style .js extensions,
+// and the function bundler does not resolve them back to .ts. That is why
+// Netlify's build command builds the server before the client.
 
-const envuelta = serverless(app);
+const wrapped = serverless(app);
 
 /**
- * Express tiene que ver las mismas rutas que en local —/categories, /focuses,
- * /activities—, así que hay que quitarle el prefijo por el que ha llegado.
+ * Express has to see the same routes it sees locally — /categories, /focuses,
+ * /activities — so the prefix it arrived under has to be stripped.
  *
- * Se contemplan los dos prefijos posibles a propósito: según cómo resuelva
- * Netlify la reescritura, la petición puede llegar con la ruta original
- * (/api/categories) o con la de la función ya expandida
- * (/.netlify/functions/api/categories). Depender de que sea una u otra es
- * justo el tipo de suposición que solo se descubre rota en producción.
+ * Both possible prefixes are handled on purpose: depending on how Netlify
+ * resolves the rewrite, the request can arrive with the original path
+ * (/api/categories) or with the function path already expanded
+ * (/.netlify/functions/api/categories). Depending on which one it is happens
+ * to be exactly the kind of assumption you only find broken in production.
  */
 export const handler = async (event, context) => {
-  const ruta = (event.path ?? "/")
+  const path = (event.path ?? "/")
     .replace(/^\/\.netlify\/functions\/api/, "")
     .replace(/^\/api(?=\/|$)/, "");
 
-  return envuelta({ ...event, path: ruta === "" ? "/" : ruta }, context);
+  return wrapped({ ...event, path: path === "" ? "/" : path }, context);
 };

@@ -21,16 +21,6 @@ export async function getCategoryById(
   return category ?? null;
 }
 
-export async function getCategoryBySlug(slug: string): Promise<Category | null> {
-  const [category] = await db
-    .select()
-    .from(categories)
-    .where(eq(categories.slug, slug))
-    .limit(1);
-
-  return category ?? null;
-}
-
 export async function updateCategoryXp(
   id: number,
   values: { level: number; currentXp: number },

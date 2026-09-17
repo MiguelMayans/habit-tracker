@@ -52,61 +52,52 @@ export async function getActivitiesByCategory(
 }
 
 /**
- * Fecha de la última actividad de cada categoría, en una sola consulta
- * agrupada. Alimenta el indicador de inactividad de la home (docs/DESIGN.md).
+ * The date of each category's last activity, as a single grouped query. This
+ * feeds the inactivity indicator on the home (docs/DESIGN.md).
  *
- * `date` se guarda como unixepoch en segundos, de ahí el ×1000.
+ * `date` is stored as unixepoch in seconds, hence the ×1000.
  */
 export async function getLastActivityDateByCategory(): Promise<
   Map<number, Date>
 > {
-  const filas = await db
+  const rows = await db
     .select({
       categoryId: activities.categoryId,
-      ultima: sql<number>`max(${activities.date})`,
+      last: sql<number>`max(${activities.date})`,
     })
     .from(activities)
     .groupBy(activities.categoryId);
 
   return new Map(
-    filas
-      .filter((f) => f.ultima !== null)
-      .map((f) => [f.categoryId, new Date(f.ultima * 1000)]),
+    rows
+      .filter((f) => f.last !== null)
+      .map((f) => [f.categoryId, new Date(f.last * 1000)]),
   );
 }
 
 /**
- * Desvincula las actividades de un foco sin borrarlas: la actividad ocurrió y
- * su XP ya cuenta en la categoría. Devuelve cuántas se desvincularon.
+ * Detaches a focus's activities without deleting them: the activity happened
+ * and its XP already counts toward the category. Returns how many were
+ * detached.
  */
 export async function detachActivitiesFromFocus(
   focusId: number,
   executor: DbOrTx = db,
 ): Promise<number> {
-  const filas = await executor
+  const rows = await executor
     .update(activities)
     .set({ focusId: null })
     .where(eq(activities.focusId, focusId))
     .returning({ id: activities.id });
 
-  return filas.length;
-}
-
-export async function getActivitiesByFocus(
-  focusId: number,
-): Promise<Activity[]> {
-  return db
-    .select()
-    .from(activities)
-    .where(eq(activities.focusId, focusId))
-    .orderBy(desc(activities.date));
+  return rows.length;
 }
 
 /**
- * Una actividad con el contexto que el cliente no puede resolver por su
- * cuenta cuando la lista es GLOBAL (no de una categoría o foco concretos):
- * de qué categoría es y, si tiene foco, su nombre y si está congelado AHORA
- * — no como estaba cuando se registró la actividad.
+ * An activity with the context the client cannot resolve on its own when the
+ * list is GLOBAL (not scoped to one category or focus): which category it
+ * belongs to and, if it has a focus, that focus's name and whether it is
+ * frozen NOW — not how it stood when the activity was logged.
  */
 export type ActivityWithContext = Activity & {
   categorySlug: string;
@@ -115,9 +106,9 @@ export type ActivityWithContext = Activity & {
 };
 
 /**
- * Actividades de todas las categorías, en una sola consulta con join —no una
- * por categoría—, para alimentar la racha, el resumen de hoy y los focos
- * recientes de la home.
+ * Activities across all categories, as a single joined query — not one per
+ * category — to feed the streak, today's summary and the rhythm strip on the
+ * home screen.
  */
 export async function getRecentActivities({
   since,

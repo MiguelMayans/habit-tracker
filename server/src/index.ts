@@ -3,8 +3,8 @@ import { app } from "./app.js";
 import { logger } from "./lib/logger.js";
 
 /**
- * Arranque para desarrollo. En producción no se ejecuta este fichero: la app
- * la sirve la función de Netlify, que importa `app` directamente.
+ * Development startup. This file never runs in production: there the app is
+ * served by the Netlify function, which imports `app` directly.
  */
 const PORT = process.env.PORT || 3000;
 

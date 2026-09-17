@@ -1,9 +1,9 @@
 /**
- * Curva de XP. Todo lo de este archivo es puro: mismo input, mismo output, sin
- * tocar la BBDD.
+ * The XP curve. Everything in this file is pure: same input, same output, with
+ * no database involved.
  *
- * `currentXp` se guarda siempre como XP acumulada total histórica, nunca se
- * resetea al subir de nivel. El nivel se deriva de esa cifra.
+ * `currentXp` is always stored as total accumulated XP over time; it is never
+ * reset on level-up. The level is derived from that figure.
  */
 
 export type XpCurve = {
@@ -12,16 +12,16 @@ export type XpCurve = {
   maxLevel: number;
 };
 
-/** Ver docs/DESIGN.md: Focos llegan a 20, categorías a 99 con curva más lenta. */
+/** See docs/DESIGN.md: focuses cap at 20, categories at 99 on a slower curve. */
 export const FOCUS_CURVE: XpCurve = { base: 8, exponent: 1.35, maxLevel: 20 };
 export const CATEGORY_CURVE: XpCurve = { base: 35, exponent: 0.7, maxLevel: 99 };
 
 /**
- * Coste en XP de alcanzar el nivel `level` desde el anterior. El acumulado
- * arranca en n=2: el nivel 1 es el punto de partida y no cuesta nada, así que
- * el primer salto real (1 → 2) vale `xpCostForLevel(2)`.
+ * The XP cost of reaching `level` from the one below. The running total starts
+ * at n=2: level 1 is the starting point and costs nothing, so the first real
+ * jump (1 → 2) is worth `xpCostForLevel(2)`.
  */
-export function xpCostForLevel(
+function xpCostForLevel(
   level: number,
   base: number,
   exponent: number,
@@ -30,10 +30,10 @@ export function xpCostForLevel(
 }
 
 /**
- * Nivel que corresponde a una XP total acumulada: va restando el coste de
- * alcanzar cada nivel, desde el 2, hasta que la XP restante ya no alcanza para
- * el siguiente. Topa en `maxLevel` — la XP sigue acumulándose por encima, pero
- * el nivel no.
+ * The level that corresponds to a total accumulated XP: it subtracts the cost
+ * of reaching each level, starting at 2, until the remaining XP no longer
+ * covers the next one. It caps at `maxLevel` — XP keeps accumulating beyond
+ * that, but the level does not.
  */
 export function calculateLevelForXp(
   totalXp: number,
@@ -44,12 +44,12 @@ export function calculateLevelForXp(
   if (!Number.isFinite(totalXp) || totalXp <= 0) return 1;
 
   let level = 1;
-  let restante = totalXp;
+  let remaining = totalXp;
 
   while (level < maxLevel) {
-    const coste = xpCostForLevel(level + 1, base, exponent);
-    if (restante < coste) break;
-    restante -= coste;
+    const cost = xpCostForLevel(level + 1, base, exponent);
+    if (remaining < cost) break;
+    remaining -= cost;
     level += 1;
   }
 
@@ -57,10 +57,10 @@ export function calculateLevelForXp(
 }
 
 /**
- * XP total acumulada necesaria para estar en `level`. Inversa de
- * `calculateLevelForXp`, útil para pintar barras de progreso.
+ * Total accumulated XP needed to sit at `level`. The inverse of
+ * `calculateLevelForXp`, useful for drawing progress bars.
  */
-export function totalXpForLevel(
+function totalXpForLevel(
   level: number,
   base: number,
   exponent: number,
@@ -73,23 +73,23 @@ export function totalXpForLevel(
 }
 
 export type LevelProgress = {
-  /** XP acumulada dentro del nivel actual, no la total histórica. */
+  /** XP accumulated within the current level, not the historical total. */
   xpIntoLevel: number;
-  /** Coste completo de este nivel. 0 en el nivel tope. */
+  /** The full cost of this level. 0 at the maximum level. */
   xpForNextLevel: number;
-  /** Lo que falta para el siguiente. 0 en el nivel tope. */
+  /** What is left to reach the next one. 0 at the maximum level. */
   xpToNextLevel: number;
-  /** 0..1, para pintar la barra. */
+  /** 0..1, for drawing the bar. */
   progress: number;
   atMaxLevel: boolean;
 };
 
 /**
- * Progreso DENTRO del nivel actual, que es lo único que significa algo en una
- * barra: `currentXp` es acumulada histórica y crecería para siempre.
+ * Progress WITHIN the current level, which is the only thing that means
+ * anything on a bar: `currentXp` is a historical total and would grow forever.
  *
- * Recibe el nivel ya almacenado en vez de recalcularlo, para que la barra
- * concuerde siempre con el nivel que muestra la interfaz.
+ * It takes the already-stored level rather than recomputing it, so the bar
+ * always agrees with the level the interface is showing.
  */
 export function getLevelProgress(
   totalXp: number,

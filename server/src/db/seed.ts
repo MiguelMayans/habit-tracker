@@ -3,10 +3,13 @@ import { categories } from "./schema.js";
 import { logger } from "../lib/logger.js";
 
 /**
- * Las 5 categorías del sistema. Son fijas: no se crean ni se borran desde la
- * app, solo se siembran aquí. Ver docs/DESIGN.md.
+ * The 5 system categories. They are fixed: never created or deleted from the
+ * app, only seeded here. See docs/DESIGN.md.
+ *
+ * Names and slugs stay in Spanish — they are the data itself, and the slugs
+ * are already stored in production.
  */
-const CATEGORIAS_FIJAS = [
+const FIXED_CATEGORIES = [
   { name: "Cuerpo", slug: "cuerpo" },
   { name: "Mente", slug: "mente" },
   { name: "Corazón", slug: "corazon" },
@@ -15,15 +18,15 @@ const CATEGORIAS_FIJAS = [
 ];
 
 /**
- * Idempotente: se apoya en el índice único de `slug`, así que las filas que ya
- * existan se ignoran en lugar de duplicarse. Importante que sea DO NOTHING y no
- * un upsert — una categoría ya sembrada tiene nivel y XP acumulados, y
- * sobrescribirla los borraría.
+ * Idempotent: it leans on the unique index over `slug`, so rows that already
+ * exist are ignored instead of duplicated. It matters that this is DO NOTHING
+ * and not an upsert — a category that has already been seeded carries an
+ * accumulated level and XP, and overwriting it would wipe them.
  */
 async function seed() {
-  const insertadas = await db
+  const inserted = await db
     .insert(categories)
-    .values(CATEGORIAS_FIJAS)
+    .values(FIXED_CATEGORIES)
     .onConflictDoNothing({ target: categories.slug })
     .returning({ slug: categories.slug });
 
@@ -31,17 +34,17 @@ async function seed() {
 
   logger.info(
     {
-      insertadas: insertadas.map((c) => c.slug),
-      yaExistian: CATEGORIAS_FIJAS.length - insertadas.length,
-      totalEnBbdd: total.length,
+      inserted: inserted.map((c) => c.slug),
+      alreadyPresent: FIXED_CATEGORIES.length - inserted.length,
+      totalInDb: total.length,
     },
-    "Seed de categorías completado",
+    "Category seed completed",
   );
 }
 
 seed()
   .then(() => process.exit(0))
   .catch((error) => {
-    logger.error({ err: error }, "Seed de categorías fallido");
+    logger.error({ err: error }, "Category seed failed");
     process.exit(1);
   });

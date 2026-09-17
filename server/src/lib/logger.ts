@@ -1,20 +1,21 @@
 import pino from "pino";
 
 /**
- * El transporte con colorines es OPT-IN, y a propósito no mira `NODE_ENV`.
+ * The colourised transport is OPT-IN, and deliberately does not look at
+ * `NODE_ENV`.
  *
- * Antes se activaba siempre que `NODE_ENV !== "production"`. En la función de
- * Netlify eso era cierto, así que pino intentaba cargar `pino-pretty` — que es
- * una devDependency y no viaja en el paquete desplegado— y el módulo reventaba
- * AL IMPORTARSE: fallaban todas las rutas con un 502, no una.
+ * It used to switch on whenever `NODE_ENV !== "production"`. Inside the
+ * Netlify function that was true, so pino tried to load `pino-pretty` — a
+ * devDependency that does not travel in the deployed bundle — and the module
+ * blew up ON IMPORT: every route returned a 502, not just one.
  *
- * Con una variable propia, que solo pone el script `dev`, el fallo deja de ser
- * posible: cualquier entorno que no sea el de desarrollo local registra en
- * JSON plano y no referencia nada que pueda faltar.
+ * With a dedicated variable, set only by the `dev` script, that failure stops
+ * being possible: any environment other than local development logs plain JSON
+ * and references nothing that could be missing.
  */
-const bonito = process.env.LOG_PRETTY === "1";
+const pretty = process.env.LOG_PRETTY === "1";
 
 export const logger = pino({
-  level: bonito ? "debug" : "info",
-  transport: bonito ? { target: "pino-pretty" } : undefined,
+  level: pretty ? "debug" : "info",
+  transport: pretty ? { target: "pino-pretty" } : undefined,
 });

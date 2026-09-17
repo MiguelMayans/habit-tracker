@@ -8,19 +8,19 @@ import { focusesRouter } from "./routes/focuses.js";
 import { activitiesRouter } from "./routes/activities.js";
 
 /**
- * La app de Express, sin escuchar en ningún puerto.
+ * The Express app, not listening on any port.
  *
- * Está separada del arranque porque tiene dos vidas: en local la levanta
- * `index.ts` con `listen`, y en producción la envuelve la función de Netlify,
- * donde no hay puerto que abrir — quien escucha es la plataforma.
+ * It is kept apart from the startup because it has two lives: locally
+ * `index.ts` brings it up with `listen`, and in production the Netlify
+ * function wraps it, where there is no port to open — the platform listens.
  */
 export const app = express();
 
 app.use(pinoHttp({ logger }));
 
-// En producción el cliente y la API comparten dominio, así que no hay CORS que
-// resolver. Esto es para desarrollo, donde Vite sirve en :5173 y el servidor
-// en :3000 y el navegador los trata como orígenes distintos.
+// In production the client and the API share a domain, so there is no CORS to
+// resolve. This is for development, where Vite serves on :5173 and the server
+// on :3000, and the browser treats them as different origins.
 app.use(cors({ origin: process.env.CORS_ORIGIN?.split(",") ?? true }));
 
 app.use(express.json());

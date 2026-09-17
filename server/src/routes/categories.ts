@@ -12,13 +12,13 @@ categoriesRouter.get("/categories", async (req, res) => {
     const categories = await getCategoriesWithProgress();
     res.json(categories);
   } catch (error) {
-    logger.error({ err: error }, "Error al listar categorías");
+    logger.error({ err: error }, "Failed to list categories");
     res.status(500).json({ message: "Error al listar categorías" });
   }
 });
 
 categoriesRouter.get("/categories/:id", async (req, res) => {
-  // Sin validar, un ":id" no numérico llegaría como NaN a la consulta.
+  // Unvalidated, a non-numeric ":id" would reach the query as NaN.
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) {
     res.status(400).json({ message: "El id debe ser un número entero" });
@@ -33,7 +33,7 @@ categoriesRouter.get("/categories/:id", async (req, res) => {
     }
     res.json(category);
   } catch (error) {
-    logger.error({ err: error, id }, "Error al obtener la categoría");
+    logger.error({ err: error, id }, "Failed to fetch the category");
     res.status(500).json({ message: "Error al obtener la categoría" });
   }
 });

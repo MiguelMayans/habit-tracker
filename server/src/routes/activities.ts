@@ -1,11 +1,9 @@
 import { Router } from "express";
 import {
   getActivitiesByCategory,
-  getActivitiesByFocus,
   getRecentActivities,
 } from "../repositories/activitiesRepository.js";
 import { getCategoryById } from "../repositories/categoriesRepository.js";
-import { getFocusById } from "../repositories/focusesRepository.js";
 import {
   registerActivity,
   deleteActivity,
@@ -26,8 +24,8 @@ activitiesRouter.post("/activities", async (req, res) => {
     return;
   }
 
-  // La descripción es opcional: lo que cuenta es que la actividad ocurrió y
-  // con qué intensidad. Ausente o vacía se guarda como cadena vacía.
+  // The description is optional: what counts is that the activity happened,
+  // and at what intensity. Absent or empty, it is stored as an empty string.
   if (description !== undefined && typeof description !== "string") {
     res.status(400).json({ message: "description debe ser un texto" });
     return;
@@ -47,10 +45,10 @@ activitiesRouter.post("/activities", async (req, res) => {
     return;
   }
 
-  // Sin date se asume "ahora": el registro es retroactivo, pero lo normal es
-  // apuntar algo recién hecho.
-  const fecha = date === undefined ? new Date() : new Date(date);
-  if (Number.isNaN(fecha.getTime())) {
+  // With no date, "now" is assumed: logging is retroactive, but the normal
+  // case is jotting down something you just did.
+  const when = date === undefined ? new Date() : new Date(date);
+  if (Number.isNaN(when.getTime())) {
     res
       .status(400)
       .json({ message: "date, si se envía, debe ser una fecha válida" });
@@ -58,22 +56,22 @@ activitiesRouter.post("/activities", async (req, res) => {
   }
 
   try {
-    const resultado = await registerActivity({
+    const result = await registerActivity({
       categoryId,
       focusId,
       description: description?.trim() ?? "",
       intensity,
-      date: fecha,
+      date: when,
     });
-    res.status(201).json(resultado);
+    res.status(201).json(result);
   } catch (error) {
-    // Regla de negocio incumplida → 400, no 500.
+    // A broken business rule → 400, not 500.
     if (error instanceof ActivityValidationError) {
       res.status(400).json({ message: error.message });
       return;
     }
 
-    logger.error({ err: error }, "Error al registrar la actividad");
+    logger.error({ err: error }, "Failed to log the activity");
     res.status(500).json({ message: "Error al registrar la actividad" });
   }
 });
@@ -93,15 +91,15 @@ activitiesRouter.delete("/activities/:id", async (req, res) => {
       return;
     }
 
-    logger.error({ err: error, id }, "Error al deshacer la actividad");
+    logger.error({ err: error, id }, "Failed to undo the activity");
     res.status(500).json({ message: "Error al deshacer la actividad" });
   }
 });
 
 /**
- * Actividades de todas las categorías, para la racha, el resumen de hoy y los
- * focos recientes de la home (docs/DESIGN.md). `since` e `limit` son los dos
- * únicos filtros: no hace falta paginación de verdad para una app personal.
+ * Activities across all categories, for the streak, today's summary and the
+ * rhythm strip on the home (docs/DESIGN.md). `since` and `limit` are the only
+ * two filters: a personal app does not need real pagination.
  */
 activitiesRouter.get("/activities", async (req, res) => {
   let since: Date | undefined;
@@ -129,7 +127,7 @@ activitiesRouter.get("/activities", async (req, res) => {
   try {
     res.json(await getRecentActivities({ since, limit }));
   } catch (error) {
-    logger.error({ err: error }, "Error al listar actividades recientes");
+    logger.error({ err: error }, "Failed to list recent activities");
     res.status(500).json({ message: "Error al listar actividades recientes" });
   }
 });
@@ -150,28 +148,7 @@ activitiesRouter.get("/categories/:categoryId/activities", async (req, res) => {
 
     res.json(await getActivitiesByCategory(categoryId));
   } catch (error) {
-    logger.error({ err: error, categoryId }, "Error al listar actividades");
-    res.status(500).json({ message: "Error al listar actividades" });
-  }
-});
-
-activitiesRouter.get("/focuses/:focusId/activities", async (req, res) => {
-  const focusId = Number(req.params.focusId);
-  if (!Number.isInteger(focusId)) {
-    res.status(400).json({ message: "El focusId debe ser un número entero" });
-    return;
-  }
-
-  try {
-    const focus = await getFocusById(focusId);
-    if (!focus) {
-      res.status(404).json({ message: "Foco no encontrado" });
-      return;
-    }
-
-    res.json(await getActivitiesByFocus(focusId));
-  } catch (error) {
-    logger.error({ err: error, focusId }, "Error al listar actividades");
+    logger.error({ err: error, categoryId }, "Failed to list activities");
     res.status(500).json({ message: "Error al listar actividades" });
   }
 });

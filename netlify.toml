@@ -1,26 +1,26 @@
-# Cliente y API en el mismo sitio de Netlify. Vivir en el mismo dominio es lo
-# que hace que no haya CORS que configurar en producción.
+# Client and API on the same Netlify site. Living on one domain is what removes
+# any CORS to configure in production.
 #
-# Se construye desde la RAÍZ y no con `base = "client"`: esto es un workspace
-# de pnpm, y si la instalación se lanza dentro de client/ pnpm resuelve el
-# workspace desde un sitio que no es su raíz.
+# The build runs from the ROOT and not with `base = "client"`: this is a pnpm
+# workspace, and launching the install inside client/ makes pnpm resolve the
+# workspace from somewhere that is not its root.
 #
-# El servidor se compila ANTES que el cliente porque la función importa su
-# JavaScript ya construido (ver netlify/functions/api.mjs).
+# The server is built BEFORE the client because the function imports its
+# already-built JavaScript (see netlify/functions/api.mjs).
 [build]
   command = "pnpm --filter server build && pnpm --filter client build"
   publish = "client/dist"
   functions = "netlify/functions"
 
 [build.environment]
-  # Sin esto Netlify elige una versión de Node por su cuenta, que puede no ser
-  # la que compila este proyecto.
+  # Without this, Netlify picks a Node version on its own, which may not be the
+  # one that compiles this project.
   NODE_VERSION = "22"
-  # La API es de la misma casa, así que basta una ruta relativa. Al no ser una
-  # URL absoluta, tampoco hay nada que rellenar a mano en el panel.
+  # The API is served from the same place, so a relative path is enough. Not
+  # being an absolute URL, there is also nothing to fill in by hand in the UI.
   VITE_API_URL = "/api"
 
-# Las reglas de redirección NO viven aquí: están las dos juntas y en orden en
-# client/public/_redirects. Repartidas entre los dos ficheros dependían del
-# orden de precedencia entre ellos, y el comodín de la SPA acababa atrapando
-# las llamadas a /api.
+# The redirect rules do NOT live here: both sit together, in order, in
+# client/public/_redirects. Split across the two files they depended on the
+# precedence between them, and the SPA catch-all ended up swallowing the calls
+# to /api.
