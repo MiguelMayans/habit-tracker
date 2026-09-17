@@ -1,68 +1,180 @@
 @import "tailwindcss";
 
 @theme {
-  /* Colores de sistema. Negro puro: el contraste máximo es el recurso. */
-  --color-amarillo: #ffe500;
-  --color-negro: #000000;
-  --color-hueso: #f5f5f0;
+  /* System colours. Pure black: maximum contrast is the whole device. */
+  --color-yellow: #ffe500;
+  --color-black: #000000;
+  --color-bone: #f5f5f0;
 
-  /* Colores de categoría — croma alto sobre negro casi puro */
+  /* Category colours — high chroma over near-pure black. The slugs are
+   database values, so these names stay in Spanish. */
   --color-cuerpo: #ff2036;
   --color-disciplina: #ff8a00;
   --color-mente: #9945ff;
   --color-ingenio: #00f0c8;
   --color-corazon: #ff2e88;
 
-  /* Tipografía display (Dela Gothic One) para títulos */
+  /* Display face (Dela Gothic One) for headings */
   --font-display: "Dela Gothic One", system-ui, sans-serif;
-  /* Tipografía de datos: Dela Gothic pesa demasiado por debajo de 14px */
-  --font-datos: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  /* Data face: Dela Gothic is far too heavy below 14px */
+  --font-data: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
 
-  /* Inclinación estándar del texto display */
-  --skew-display: -10deg;
 }
 
 body {
-  background-color: var(--color-negro);
-  color: var(--color-hueso);
-  font-family: var(--font-datos);
+  background-color: var(--color-black);
+  color: var(--color-bone);
+  font-family: var(--font-data);
 }
 
 /* ------------------------------------------------------------------ *
- * Lenguaje visual Persona: sombras duras sin blur, paneles inclinados,
- * cortes de esquina y texturas en CSS puro (sin imágenes que mantener).
+ * Persona visual language: hard shadows with no blur, skewed panels,
+ * cut corners and textures in plain CSS (no images to maintain).
  * ------------------------------------------------------------------ */
 
-/* Texto display inclinado con sombra dura doble (negro pegado + acento
-   desplazado). El recurso base: sin blur. */
-@utility text-slam {
-  transform: skewX(var(--skew-display));
-  letter-spacing: -0.01em;
-  text-shadow:
-    5px 5px 0 var(--color-negro),
-    10px 10px 0 var(--color-cuerpo);
+/* ---- The scene: the interrogation room ---- */
+
+/*
+ * One hard beam of light crossing a black room, with the content underneath.
+ *
+ * The backdrop used to be a field of red stripes repeated edge to edge: a
+ * uniform pattern flattens the screen and competes with cards that are
+ * already at full colour. Here the backdrop composes instead of repeating —
+ * there is a lit zone and a dead zone — and the halftone only exists INSIDE
+ * the beam, which is where light would reveal it. At the previous 7% it was
+ * invisible; at 16% inside the cone it reads, and outside it is not needed.
+ *
+ * Every layer is `fixed`: the backdrop is a still stage the content travels
+ * across, not a cloth that stretches to 3000px on a long history screen.
+ */
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
-/* Igual que text-slam pero además girado, para títulos sueltos. */
-@utility text-slam-tilt {
-  transform: rotate(-3deg) skewX(var(--skew-display));
-  letter-spacing: -0.01em;
-  text-shadow:
-    5px 5px 0 var(--color-negro),
-    10px 10px 0 var(--color-cuerpo);
+/* The room. Black, but not flat: it lightens toward the light source. */
+.scene-room {
+  background: radial-gradient(
+    118% 84% at 14% -12%,
+    #1a191f 0%,
+    #08080a 52%,
+    #000 100%
+  );
 }
 
-/* Panel inclinado con sombra sólida. El giro propio de cada panel se pasa
-   con --rotacion. El contenido va contra-inclinado aparte, para que el
-   panel se lea diagonal pero el texto siga siendo legible. */
-@utility panel-slam {
-  transform: rotate(var(--rotacion, 0deg)) skewX(var(--skew-display));
-  box-shadow: 5px 5px 0 var(--color-negro);
+/* The beam. A trapezoid cut by hand — no soft gradient — entering from the
+   top left and widening as it descends.
+   `--light` can be overridden by whichever screen you are on, to tint the beam
+   with that category's colour; the fallback goes in each usage rather than as
+   a declaration of its own, or it would always beat what :root sets. */
+.scene-beam {
+  clip-path: polygon(-12% -2%, 15% -2%, 134% 102%, 33% 102%);
+  background: linear-gradient(
+    168deg,
+    color-mix(in srgb, var(--light, var(--color-bone)) 10%, transparent) 0%,
+    color-mix(in srgb, var(--light, var(--color-bone)) 4%, transparent) 46%,
+    transparent 88%
+  );
+  animation: lamp-on 0.9s steps(1) backwards;
 }
 
-/* ---- Texturas de fondo ---- */
+/* The halftone, clipped by the parent's clip-path: outside the beam there is
+   no pattern, because there is no light. It fades downward through a mask,
+   the same way the beam itself would die out. */
+.scene-beam::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    var(--light, var(--color-bone)) 1.1px,
+    transparent 1.5px
+  );
+  background-size: 7px 7px;
+  opacity: 0.16;
+  -webkit-mask-image: linear-gradient(
+    170deg,
+    #000 0%,
+    #000 38%,
+    transparent 84%
+  );
+  mask-image: linear-gradient(170deg, #000 0%, #000 38%, transparent 84%);
+}
 
-.textura-diagonales {
+/* Dust motes in the beam.
+ *
+ * Each mote is ONE CELL of the halftone, not a dot added on top: 7px square
+ * with the same radial-gradient, placed at a multiple of 7 so it lands exactly
+ * on the grid. That is why it reads as one of your own dots lighting up rather
+ * than a stray spark.
+ *
+ * They sit inside the beam, so the clip-path crops them for free: the ones
+ * falling outside the cone simply are not painted, with nothing to compute.
+ *
+ * Each has its own cycle and delay, sharing no common multiples, so the set
+ * never lines up again. The flare occupies 30% of the cycle and there are 18
+ * motes, so on average about five are lit at once: enough to see dust floating
+ * in the beam without it blinking like a Christmas tree.
+ *
+ * A mote is fatter than a halftone dot (1.9px against 1.1px) and carries a
+ * hard ring around it. That is what makes it read at a glance: raising the
+ * opacity alone just makes it one more white dot among hundreds.
+ */
+.mote {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background-image: radial-gradient(
+    var(--light, var(--color-bone)) 1.9px,
+    color-mix(in srgb, var(--light, var(--color-bone)) 32%, transparent) 2.3px,
+    transparent 3.2px
+  );
+  opacity: 0;
+  animation: mote var(--cycle) var(--delay) ease-in-out infinite;
+}
+
+/* The table. A lit 4px red edge and the surface falling away to black:
+   enough to close the scene at the bottom without shouting, which is what a
+   solid red band right behind the log button would have done. */
+.scene-table {
+  top: auto;
+  right: -12vw;
+  bottom: -30px;
+  left: -12vw;
+  height: 108px;
+  background: linear-gradient(
+    to bottom,
+    var(--color-cuerpo) 0 4px,
+    #1c0207 4px,
+    #050001 100%
+  );
+  transform: rotate(-2.4deg);
+}
+
+/* Grain. It lives in an embedded SVG because real noise is not made from
+   gradients: any repeated CSS pattern reads as a grid. Still nothing to
+   maintain as a file. */
+.scene-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='r'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23r)'/%3E%3C/svg%3E");
+  opacity: 0.055;
+}
+
+/* Vignette: darkens the corners so the eye falls to the centre. */
+.scene-vignette {
+  background: radial-gradient(
+    126% 96% at 50% 38%,
+    transparent 42%,
+    rgb(0 0 0 / 0.72) 100%
+  );
+}
+
+/* ---- Textures for the result modal ---- */
+
+/* Only the result modal uses these: it is a celebration screen you look at
+   for three seconds, and movement earns its place there. On the app backdrop
+   these two layers looped constantly without saying anything. */
+.texture-diagonals {
   position: absolute;
   inset: -120px -60px;
   background-image: repeating-linear-gradient(
@@ -70,70 +182,64 @@ body {
     color-mix(in srgb, var(--color-cuerpo) 22%, transparent) 0 3px,
     transparent 3px 26px
   );
-  animation: correr 6s linear infinite;
+  animation: run 6s linear infinite;
   pointer-events: none;
 }
 
-/* Halftone. Va DETRÁS del contenido, nunca encima: una textura superpuesta
-   sobre las tarjetas actúa como veladura y les come el color. */
-.textura-trama {
+/* Halftone. It goes BEHIND the content, never on top: a texture laid over
+   the cards acts as a veil and eats their colour. */
+.texture-halftone {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(var(--color-hueso) 1px, transparent 1.4px);
+  background-image: radial-gradient(var(--color-bone) 1px, transparent 1.4px);
   background-size: 7px 7px;
   opacity: 0.07;
   pointer-events: none;
 }
 
-/* ---- Piezas ---- */
+/* ---- Pieces ---- */
 
-/* Bloque roto que va detrás del título de pantalla. */
-.bloque-roto {
-  clip-path: polygon(0 6%, 100% 0, 96% 100%, 2% 92%);
-}
-
-/* Banda clara a sangre: respaldo del logotipo, cuyo contorno es negro y sobre
-   fondo negro se perdería. No se ajusta al logo — cruza la pantalla entera de
-   borde a borde y deja que la flecha asome por debajo, que es lo que la hace
-   leer como cartel y no como caja de fondo. El recorte a los lados lo hace el
-   `overflow-hidden` del layout. */
-.banda-sangre {
+/* Light bleed band: a backing for the wordmark, whose outline is black and
+   would be lost on a black background. It does not hug the logo — it crosses
+   the whole screen edge to edge and lets the arrow poke out below, which is
+   what makes it read as a poster and not a background box. The sides are
+   clipped by the layout's `overflow-hidden`. */
+.bleed-band {
   position: absolute;
   left: -50vw;
   right: -50vw;
-  background: var(--banda-fondo, var(--color-hueso));
-  box-shadow: 0 9px 0 var(--banda-reborde, var(--color-cuerpo));
-  transform: rotate(var(--banda-giro, -4deg));
+  background: var(--band-bg, var(--color-bone));
+  box-shadow: 0 9px 0 var(--band-edge, var(--color-cuerpo));
+  transform: rotate(var(--band-tilt, -4deg));
   pointer-events: none;
 }
 
-.banda-sangre::after {
+.bleed-band::after {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(var(--color-negro) 1px, transparent 1.4px);
+  background-image: radial-gradient(var(--color-black) 1px, transparent 1.4px);
   background-size: 6px 6px;
   opacity: 0.12;
 }
 
-/* Tarjeta de categoría: inclinada. Solo la transformación, sin recorte, para
-   que el nivel pueda sobresalir por arriba. La transformación vive aquí y no
-   en un style inline, porque los estilos inline ganan siempre y dejarían el
-   :hover muerto. */
-.tarjeta-categoria {
-  transform: rotate(var(--rotacion, 0deg)) skewX(-7deg);
+/* Category card: skewed. The transform only, with no clipping, so the level
+   can spill over the top. The transform lives here and not in an inline
+   style, because inline styles always win and would leave :hover dead. */
+.category-card {
+  transform: rotate(var(--rotation, 0deg)) skewX(-7deg);
   transition: transform 0.12s steps(2);
 }
 
-.tarjeta-categoria:hover {
-  transform: rotate(var(--rotacion, 0deg)) skewX(-7deg) translate(-3px, -3px);
+.category-card:hover {
+  transform: rotate(var(--rotation, 0deg)) skewX(-7deg) translate(-3px, -3px);
 }
 
-/* El recorte de la esquina va en una capa interior, no en la tarjeta entera.
-   La sombra dura se pinta con drop-shadow y no con box-shadow: clip-path
-   recorta también la box-shadow, así que en la silueta cortada no llegaba a
-   verse nunca. drop-shadow sí sigue el contorno recortado, y sigue sin blur. */
-.tarjeta-recorte {
+/* The corner cut goes on an inner layer, not the whole card. The hard shadow
+   is painted with drop-shadow rather than box-shadow: clip-path also clips
+   box-shadow, so on the cut silhouette it never showed at all. drop-shadow
+   does follow the clipped outline, and still has no blur. */
+.card-clip {
   overflow: hidden;
   clip-path: polygon(
     0 0,
@@ -144,96 +250,107 @@ body {
   );
 }
 
-/* Contenido de la tarjeta: contra-inclinado para que el texto se lea recto
-   aunque el panel siga siendo diagonal. Sin fondo: la tarjeta va a color
-   completo y el contraste lo dan los contornos de texto de abajo. */
-.contenido-slam {
+/* Card content: counter-skewed so the text reads level while the panel stays
+   diagonal. No background: the card runs at full colour and the contrast comes
+   from the text outlines below. */
+.slam-content {
   transform: skewX(7deg);
 }
 
-/* Contorno negro duro en las cuatro direcciones. Es lo que hace legible el
-   texto claro sobre CUALQUIER color de categoría sin meter una placa de fondo:
-   blanco sobre Ingenio da 1.4:1 y sobre Disciplina 2.3:1, ilegible sin esto.
-   Sin desenfoque, como todo lo demás. */
-@utility texto-contorno {
+/* Hard black outline in all four directions. This is what makes light text
+   legible over ANY category colour without adding a backing plate: white on
+   Ingenio gives 1.4:1 and on Disciplina 2.3:1, unreadable without it. No
+   blur, like everything else. */
+@utility text-outline {
   text-shadow:
-    1px 1px 0 var(--color-negro),
-    -1px 1px 0 var(--color-negro),
-    1px -1px 0 var(--color-negro),
-    -1px -1px 0 var(--color-negro);
+    1px 1px 0 var(--color-black),
+    -1px 1px 0 var(--color-black),
+    1px -1px 0 var(--color-black),
+    -1px -1px 0 var(--color-black);
 }
 
-/* Rotulación tipo logotipo. La clave es `paint-order: stroke fill`: sin eso el
-   contorno se pinta ENCIMA del relleno y se come la letra por dentro; con eso
-   queda por detrás y engorda la silueta, que es lo que hace el logo. Encima,
-   sombra dura doble (amarillo oscuro + negro) para el relieve. */
-@utility texto-rotulo {
-  -webkit-text-stroke: 5px var(--color-negro);
+/* Wordmark-style lettering. The key is `paint-order: stroke fill`: without it
+   the stroke paints OVER the fill and eats the letter from the inside; with
+   it, the stroke sits behind and thickens the silhouette, which is what makes
+   a logo. On top of that, a double hard shadow (dark yellow + black) for
+   relief. */
+@utility text-sign {
+  -webkit-text-stroke: 5px var(--color-black);
   paint-order: stroke fill;
   text-shadow:
     5px 5px 0 #a87400,
-    9px 9px 0 var(--color-negro);
+    9px 9px 0 var(--color-black);
 }
 
-/* La misma construcción a menor escala, para texto de tamaño medio. */
-@utility texto-rotulo-fino {
-  -webkit-text-stroke: 3.5px var(--color-negro);
+/* The same construction at a smaller scale, for medium-sized text. */
+@utility text-sign-fine {
+  -webkit-text-stroke: 3.5px var(--color-black);
   paint-order: stroke fill;
-  text-shadow: 4px 4px 0 var(--color-negro);
+  text-shadow: 4px 4px 0 var(--color-black);
 }
 
-/* Igual pero además con sombra desplazada, para el nombre de categoría. */
-@utility texto-golpe {
-  text-shadow:
-    1px 1px 0 var(--color-negro),
-    -1px 1px 0 var(--color-negro),
-    1px -1px 0 var(--color-negro),
-    -1px -1px 0 var(--color-negro),
-    4px 4px 0 var(--color-negro);
+/* The disclosure arrow of the focus panel.
+ *
+ * A cut shape and not the ▶ character: that one is painted by the system font,
+ * aligns differently in every browser — sitting high or low against the
+ * baseline depending on where you open it — and cannot transition as it
+ * rotates, so it used to jump. Drawn, it turns with the same `steps(2)` as the
+ * rest of the app.
+ */
+.disclosure-arrow {
+  width: 7px;
+  height: 9px;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  transition: transform 0.14s steps(2);
 }
 
-/* Barra de XP y su relleno. */
-.barra-xp {
+.disclosure-arrow[data-open="true"] {
+  transform: rotate(90deg);
+}
+
+/* The XP bar and its fill. */
+.xp-bar {
   clip-path: polygon(0 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
 }
 
-/* `backwards` y no `both`: con `both` el fotograma final quedaría fijado para
-   siempre y bloquearía cualquier :hover o cambio posterior.
-   El `overflow` recorta el destello al ANCHO DEL RELLENO: sin él lo recortaba
-   el carril, y la banda blanca seguía viajando por la parte vacía de la barra,
-   más allá de donde llega el progreso. */
-.barra-xp-relleno {
+/* `backwards` and not `both`: with `both` the final keyframe would be pinned
+   forever and would block any :hover or later change.
+   The `overflow` clips the sheen to the WIDTH OF THE FILL: without it the
+   track did the clipping, and the white band kept travelling across the empty
+   part of the bar, past where progress actually reaches. */
+.xp-bar-fill {
   overflow: hidden;
-  animation: llenar 0.95s var(--retardo, 0s) cubic-bezier(0.2, 0.9, 0.25, 1)
+  animation: fill 0.95s var(--delay, 0s) cubic-bezier(0.2, 0.9, 0.25, 1)
     backwards;
 }
 
-/* Destello que recorre la barra. Bordes duros, sin degradado: es una banda
-   sólida que cruza, no un brillo difuminado. */
-.barra-xp-relleno::after {
+/* A sheen running across the bar. Hard edges, no gradient: it is a solid band
+   crossing, not a soft glow. */
+.xp-bar-fill::after {
   content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
     100deg,
     transparent 0 44%,
-    var(--color-hueso) 44% 56%,
+    var(--color-bone) 44% 56%,
     transparent 56% 100%
   );
-  animation: brillo 3.4s steps(24) infinite;
+  animation: sheen 3.4s steps(24) infinite;
 }
 
-/* Corte lateral de píldoras y botones. */
-.corte-pildora {
+/* Side cut for pills and buttons. */
+.pill-cut {
   clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
 }
 
-/* ---- Controles de formulario ---- */
+/* ---- Form controls ---- */
 
-/* El marco es lo que se inclina; el control de dentro va contra-inclinado.
-   Si se inclinara el propio input, el texto que escribe el usuario saldría
-   torcido — aceptable en una etiqueta, molesto en un textarea. */
-.campo-marco {
+/* The frame is what skews; the control inside is counter-skewed. Skewing the
+   input itself would render whatever the user types on a slant — acceptable
+   in a label, irritating in a textarea. */
+.field-frame {
   background: #111;
   border: 2px solid rgb(245 245 240 / 0.3);
   transform: skewX(-7deg);
@@ -242,87 +359,87 @@ body {
     box-shadow 0.1s steps(2);
 }
 
-.campo-marco:focus-within {
-  border-color: var(--color-amarillo);
-  box-shadow: 5px 5px 0 var(--color-amarillo);
+.field-frame:focus-within {
+  border-color: var(--color-yellow);
+  box-shadow: 5px 5px 0 var(--color-yellow);
 }
 
-.campo {
+.field {
   display: block;
   width: 100%;
   padding: 11px 14px;
   background: transparent;
   border: 0;
-  color: var(--color-hueso);
-  font-family: var(--font-datos);
+  color: var(--color-bone);
+  font-family: var(--font-data);
   font-weight: 600;
   transform: skewX(7deg);
 }
 
-.campo:focus {
+.field:focus {
   outline: none;
 }
 
-/* Las opciones del desplegable las pinta el sistema: fondo oscuro explícito
-   o algunos navegadores las sacan en blanco sobre blanco. */
-.campo option {
+/* Select options are painted by the system: an explicit dark background, or
+   some browsers render them white on white. */
+.field option {
   background: #111;
-  color: var(--color-hueso);
+  color: var(--color-bone);
 }
 
-/* Etiqueta de campo: pestaña sólida por encima del control. */
-.etiqueta-campo {
+/* Field label: a solid tab sitting above the control. */
+.field-label {
   display: inline-block;
   padding: 2px 9px;
-  background: var(--color-hueso);
-  color: var(--color-negro);
+  background: var(--color-bone);
+  color: var(--color-black);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.2em;
   transform: skewX(-10deg);
 }
 
-/* Botón principal: inclinado, sombra dura, y al pulsar cae sobre su sombra. */
-.boton-slam {
+/* Primary button: skewed, hard shadow, and on press it falls onto it. */
+.slam-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
   min-height: 48px;
   padding: 0 22px;
-  background: var(--color-amarillo);
-  color: var(--color-negro);
+  background: var(--color-yellow);
+  color: var(--color-black);
   font-family: var(--font-display);
   font-size: 13px;
   text-transform: uppercase;
   transform: skewX(-10deg);
-  box-shadow: 6px 6px 0 var(--color-negro);
+  box-shadow: 6px 6px 0 var(--color-black);
   transition:
     transform 0.08s steps(2),
     box-shadow 0.08s steps(2);
 }
 
-.boton-slam > * {
+.slam-button > * {
   transform: skewX(10deg);
 }
 
-.boton-slam:not(:disabled):hover {
+.slam-button:not(:disabled):hover {
   transform: skewX(-10deg) translate(-2px, -2px);
-  box-shadow: 9px 9px 0 var(--color-negro);
+  box-shadow: 9px 9px 0 var(--color-black);
 }
 
-.boton-slam:not(:disabled):active {
+.slam-button:not(:disabled):active {
   transform: skewX(-10deg) translate(5px, 5px);
-  box-shadow: 1px 1px 0 var(--color-negro);
+  box-shadow: 1px 1px 0 var(--color-black);
 }
 
-.boton-slam:disabled {
+.slam-button:disabled {
   opacity: 0.35;
-  box-shadow: 3px 3px 0 var(--color-negro);
+  box-shadow: 3px 3px 0 var(--color-black);
 }
 
-/* Ficha de intensidad: se elige pulsando, no desplegando. */
-.ficha-intensidad {
+/* Intensity chip: chosen by tapping, not by opening a select. */
+.intensity-chip {
   position: relative;
   padding: 12px 8px 11px;
   background: #111;
@@ -330,7 +447,7 @@ body {
   border: 2px solid rgb(245 245 240 / 0.22);
   font-family: var(--font-display);
   text-transform: uppercase;
-  transform: rotate(var(--rotacion, 0deg)) skewX(-7deg);
+  transform: rotate(var(--rotation, 0deg)) skewX(-7deg);
   transition:
     transform 0.1s steps(2),
     box-shadow 0.1s steps(2),
@@ -338,42 +455,82 @@ body {
     color 0.1s steps(2);
 }
 
-.ficha-intensidad > * {
+.intensity-chip > * {
   transform: skewX(7deg);
 }
 
-.ficha-intensidad[aria-pressed="true"] {
-  background: var(--color-amarillo);
-  border-color: var(--color-amarillo);
-  color: var(--color-negro);
+.intensity-chip[aria-pressed="true"] {
+  background: var(--color-yellow);
+  border-color: var(--color-yellow);
+  color: var(--color-black);
   box-shadow: 5px 5px 0 var(--color-cuerpo);
-  transform: rotate(var(--rotacion, 0deg)) skewX(-7deg) translate(-2px, -3px);
+  transform: rotate(var(--rotation, 0deg)) skewX(-7deg) translate(-2px, -3px);
 }
 
-/* Elemento que responde a pulsación mantenida. Sin esto, mantener el dedo
-   selecciona el texto y saca la lupa del sistema encima. El scroll se
-   mantiene: `touch-action` sigue en automático a propósito. */
-.pulsable-larga {
+/* An element that responds to press-and-hold. Without this, holding a finger
+   selects the text and pops the system magnifier over it. Scrolling is kept:
+   `touch-action` stays automatic on purpose. */
+.long-pressable {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
 
-/* ---- Movimiento ---- */
+/* ---- Motion ---- */
 
-@keyframes correr {
+/* A mote's flare: it rises and falls, no cuts. It is the only thing in the
+   backdrop that loops, and it is a 2px dot. */
+@keyframes mote {
+  0%,
+  55%,
+  100% {
+    opacity: 0;
+  }
+  70% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 0;
+  }
+}
+
+/* The fluorescent tube kicking in: two dry flickers and then it holds. It is
+   the backdrop's only movement, and it happens once, when the app opens. */
+@keyframes lamp-on {
+  0% {
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  11% {
+    opacity: 0.1;
+  }
+  17% {
+    opacity: 0.85;
+  }
+  22% {
+    opacity: 0.2;
+  }
+  30%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes run {
   to {
     background-position: 44px 0;
   }
 }
 
-@keyframes llenar {
+@keyframes fill {
   from {
     width: 0;
   }
 }
 
-@keyframes brillo {
+@keyframes sheen {
   0%,
   74% {
     transform: translateX(-100%);
@@ -384,103 +541,83 @@ body {
   }
 }
 
-@keyframes entra-bloque {
-  from {
-    opacity: 0;
-    transform: rotate(-3.5deg) translateX(-70px);
-  }
-}
-
-@keyframes entra-titulo {
-  from {
-    opacity: 0;
-    transform: rotate(-3deg) skewX(-10deg) scale(1.7);
-  }
-}
-
-/* El logotipo ya trae su propia inclinación dibujada, así que entra solo con
-   escala: cualquier skew añadido lo deformaría. */
-@keyframes entra-logo {
+/* The wordmark already carries its own drawn skew, so it enters on scale
+   alone: any added skew would deform it. */
+@keyframes enter-logo {
   from {
     opacity: 0;
     transform: scale(1.55);
   }
 }
 
-@keyframes entra-cinta {
+@keyframes enter-ribbon {
   from {
     opacity: 0;
     transform: skewX(-10deg) translateX(-30px);
   }
 }
 
-@keyframes entra-tarjeta {
+@keyframes enter-card {
   from {
     opacity: 0;
-    transform: rotate(var(--rotacion, 0deg)) skewX(-18deg) translateX(-70px);
+    transform: rotate(var(--rotation, 0deg)) skewX(-18deg) translateX(-70px);
   }
 }
 
-@keyframes entra-fab {
+@keyframes enter-fab {
   from {
     opacity: 0;
     transform: skewX(-10deg) translateY(26px) scale(0.86);
   }
 }
 
-@keyframes latido {
+@keyframes beat {
   0%,
   100% {
     box-shadow:
-      5px 5px 0 var(--color-negro),
+      5px 5px 0 var(--color-black),
       10px 10px 0 var(--color-cuerpo);
   }
   50% {
     box-shadow:
-      5px 5px 0 var(--color-negro),
+      5px 5px 0 var(--color-black),
       15px 15px 0 var(--color-cuerpo);
   }
 }
 
-.anim-bloque {
-  animation: entra-bloque 0.44s cubic-bezier(0.2, 1.35, 0.4, 1) backwards;
-}
-.anim-titulo {
-  animation: entra-titulo 0.5s 0.06s cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
-}
 .anim-logo {
-  animation: entra-logo 0.5s 0.06s cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
+  animation: enter-logo 0.5s 0.06s cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
 }
-.anim-cinta {
-  animation: entra-cinta 0.4s 0.16s cubic-bezier(0.2, 1.35, 0.4, 1) backwards;
+.anim-ribbon {
+  animation: enter-ribbon 0.4s 0.16s cubic-bezier(0.2, 1.35, 0.4, 1) backwards;
 }
-.anim-tarjeta {
-  animation: entra-tarjeta 0.5s var(--retardo, 0s)
+.anim-card {
+  animation: enter-card 0.5s var(--delay, 0s)
     cubic-bezier(0.2, 1.35, 0.35, 1) backwards;
 }
 .anim-fab {
   animation:
-    entra-fab 0.45s 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) backwards,
-    latido 2.8s 1.5s ease-in-out infinite;
+    enter-fab 0.45s 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) backwards,
+    beat 2.8s 1.5s ease-in-out infinite;
 }
 
-/* Entrada escalonada genérica, para filas de formulario y listas. El retardo
-   se pasa con --retardo desde el componente. */
-@keyframes entra-fila {
+/* Generic staggered entrance, for form rows and lists. The component passes
+   the offset through --delay. */
+@keyframes enter-row {
   from {
     opacity: 0;
     transform: translateX(-26px) skewX(-12deg);
   }
 }
-.anim-fila {
-  animation: entra-fila 0.4s var(--retardo, 0s) cubic-bezier(0.2, 1.3, 0.4, 1)
+.anim-row {
+  animation: enter-row 0.4s var(--delay, 0s) cubic-bezier(0.2, 1.3, 0.4, 1)
     backwards;
 }
 
-/* Bloque de carga: late en vez de mostrar un gris muerto. Nunca dice qué
-   forma tendrá el contenido real —sería mentir sobre datos que aún no han
-   llegado—, solo que algo está en camino. */
-@keyframes pulso-carga {
+/* Loading block: it pulses instead of showing a dead grey. It never claims
+   what shape the real content will take — that would be lying about data that
+   has not arrived — only that something is on its way. */
+@keyframes loading-pulse {
   from {
     opacity: 0.35;
   }
@@ -488,12 +625,12 @@ body {
     opacity: 0.7;
   }
 }
-.esqueleto {
+.skeleton {
   background: #1c1c1c;
-  animation: pulso-carga 1.1s ease-in-out infinite alternate;
+  animation: loading-pulse 1.1s ease-in-out infinite alternate;
 }
 
-/* Golpe de llegada del resultado: entra grande y se asienta. */
+/* The result landing: it enters large and settles. */
 @keyframes slam {
   from {
     opacity: 0;
@@ -504,33 +641,10 @@ body {
   animation: slam 0.42s cubic-bezier(0.16, 1.45, 0.4, 1) backwards;
 }
 
-/* Destello de subida de nivel: cortes secos, sin fundido. */
-@keyframes flash-nivel {
-  0%,
-  100% {
-    background-color: var(--color-negro);
-  }
-  12%,
-  20% {
-    background-color: var(--color-hueso);
-  }
-  28%,
-  36% {
-    background-color: var(--color-negro);
-  }
-  44%,
-  52% {
-    background-color: var(--color-amarillo);
-  }
-}
-.anim-flash-nivel {
-  animation: flash-nivel 1.1s steps(1) 2;
-}
+/* ---- Level up ---- */
 
-/* ---- Subida de nivel ---- */
-
-/* Estallido de rayos que sale de detrás del número. */
-@keyframes estalla {
+/* A burst of rays coming out from behind the number. */
+@keyframes burst {
   from {
     opacity: 0;
     transform: rotate(-40deg) scale(0.2);
@@ -543,14 +657,14 @@ body {
     transform: rotate(0deg) scale(1);
   }
 }
-/* Mismo motivo: el estado final del estallido se declara en la clase. */
-.anim-estallido {
+/* Same reason: the burst's resting state is declared on the class. */
+.anim-burst {
   opacity: 0.55;
-  animation: estalla 0.7s cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
+  animation: burst 0.7s cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
 }
 
-/* El número del nivel nuevo entra enorme y se asienta de golpe. */
-@keyframes cae-nivel {
+/* The new level number enters huge and slams into place. */
+@keyframes level-drop {
   0% {
     opacity: 0;
     transform: scale(3.2) rotate(-14deg);
@@ -564,13 +678,13 @@ body {
     transform: scale(1) rotate(-2deg);
   }
 }
-.anim-cae-nivel {
+.anim-level-drop {
   transform: rotate(-2deg);
-  animation: cae-nivel 0.5s cubic-bezier(0.2, 1.2, 0.35, 1) backwards;
+  animation: level-drop 0.5s cubic-bezier(0.2, 1.2, 0.35, 1) backwards;
 }
 
-/* Fogonazo a pantalla completa. Cortes secos, sin fundido. */
-@keyframes fogonazo {
+/* Full-screen flash. Dry cuts, no fading. */
+@keyframes flash {
   0%,
   100% {
     opacity: 0;
@@ -588,16 +702,16 @@ body {
     opacity: 0.7;
   }
 }
-/* La opacidad de reposo va aquí, no solo en los fotogramas: al terminar, la
-   animación devuelve el elemento a SU estilo base. Sin este 0, el velo blanco
-   se quedaba a opacidad 1 y dejaba la pantalla en blanco para siempre. */
-.anim-fogonazo {
+/* The resting opacity goes here, not only in the keyframes: when it ends, the
+   animation returns the element to ITS base style. Without this 0, the white
+   veil stayed at opacity 1 and left the screen blank forever. */
+.anim-flash {
   opacity: 0;
-  animation: fogonazo 0.9s steps(1) 1;
+  animation: flash 0.9s steps(1) 1;
 }
 
-/* Vibración corta del panel al impactar. */
-@keyframes sacude {
+/* A short shake of the panel on impact. */
+@keyframes shake {
   0%,
   100% {
     transform: translate(0, 0);
@@ -615,17 +729,17 @@ body {
     transform: translate(3px, 2px);
   }
 }
-.anim-sacude {
-  animation: sacude 0.36s steps(2) 2;
+.anim-shake {
+  animation: shake 0.36s steps(2) 2;
 }
 
-/* Marca lo que acaba de aparecer en una lista: sin esto, crear algo abajo del
-   todo no se distingue de que no haya pasado nada. */
-@keyframes destaca {
+/* Marks whatever just appeared in a list: without this, creating something at
+   the very bottom is indistinguishable from nothing happening. */
+@keyframes highlight {
   0%,
   20%,
   40% {
-    outline-color: var(--color-amarillo);
+    outline-color: var(--color-yellow);
   }
   10%,
   30%,
@@ -634,13 +748,13 @@ body {
     outline-color: transparent;
   }
 }
-.anim-destaca {
+.anim-highlight {
   outline: 3px solid transparent;
   outline-offset: 4px;
-  animation: destaca 1.6s steps(1) 1;
+  animation: highlight 1.6s steps(1) 1;
 }
 
-/* Nadie debería marearse por una barra de XP. */
+/* Nobody should get motion sick from an XP bar. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

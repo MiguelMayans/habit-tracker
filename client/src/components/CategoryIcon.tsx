@@ -1,23 +1,26 @@
 import type { CSSProperties, ReactNode } from "react";
 
 /**
- * Un icono por categoría, en SVG de trazo sobre rejilla de 24.
+ * One icon per category, as stroked SVG on a 24 grid.
  *
- * No son iconos de interfaz genéricos: cada uno lleva un gesto propio —
- * llamas, rayos, chispas— para que tengan carácter en vez de parecer sacados
- * de una librería. El adorno va siempre separado de la forma principal, para
- * que a 26px no se emborrone.
+ * These are not generic interface icons: each one carries a gesture of its own
+ * — flames, rays, sparks — so they have character instead of looking pulled
+ * from a library. The flourish is always kept apart from the main shape, so it
+ * does not smudge at 26px.
  *
- * Dibujados aquí y no como imágenes: escalan sin pixelarse, heredan el color
- * con `currentColor` y no añaden assets que mantener, igual que las texturas.
+ * Drawn here rather than shipped as images: they scale without pixelating,
+ * inherit colour through `currentColor`, and add no assets to maintain — the
+ * same reasoning as the textures.
+ *
+ * The keys are category slugs, which are database values and stay in Spanish.
  */
-const TRAZOS: Record<string, ReactNode> = {
-  // Cuerpo → mancuerna levantada en diagonal, con estelas de movimiento.
+const STROKES: Record<string, ReactNode> = {
+  // Cuerpo → a dumbbell lifted on the diagonal, with motion trails.
   cuerpo: (
     <>
       <g transform="rotate(-24 12 12)">
-        {/* Los discos van rellenos y no a trazo: una mancuerna dibujada solo
-            con líneas se lee como una "H". La masa es lo que la identifica. */}
+        {/* The plates are filled rather than stroked: a dumbbell drawn with
+            lines alone reads as an "H". The mass is what identifies it. */}
         <rect
           x="5.2"
           y="6.6"
@@ -42,7 +45,7 @@ const TRAZOS: Record<string, ReactNode> = {
     </>
   ),
 
-  // Mente → ojo que despierta, con rayos saliendo hacia arriba.
+  // Mente → an eye waking up, with rays coming off the top.
   mente: (
     <>
       <path d="M2.4 13.6s3.7-5.4 9.6-5.4 9.6 5.4 9.6 5.4-3.7 5.4-9.6 5.4S2.4 13.6 2.4 13.6z" />
@@ -51,8 +54,8 @@ const TRAZOS: Record<string, ReactNode> = {
     </>
   ),
 
-  // Corazón → corazón ardiendo. La llama es el gesto que lo separa de un
-  // corazón de icono cualquiera.
+  // Corazón → a burning heart. The flame is the gesture that separates it
+  // from any other heart icon.
   corazon: (
     <>
       <path d="M12 21.6s-7.3-4.8-7.3-9.6a4.3 4.3 0 0 1 7.3-2.9 4.3 4.3 0 0 1 7.3 2.9c0 4.8-7.3 9.6-7.3 9.6z" />
@@ -60,7 +63,7 @@ const TRAZOS: Record<string, ReactNode> = {
     </>
   ),
 
-  // Disciplina → el bucle que vuelve a empezar, con una chispa de constancia.
+  // Disciplina → the loop that starts over, with a spark of persistence.
   disciplina: (
     <>
       <path d="M20.8 13a8.4 8.4 0 1 1-2.5-6" />
@@ -73,7 +76,7 @@ const TRAZOS: Record<string, ReactNode> = {
     </>
   ),
 
-  // Ingenio → la bombilla en el instante de encenderse, con destellos.
+  // Ingenio → the bulb at the instant it lights, with glints.
   ingenio: (
     <>
       <path d="M12 3.6a6 6 0 0 0-3.5 10.9c.6.5 1 1.3 1 2.1h5c0-.8.4-1.6 1-2.1A6 6 0 0 0 12 3.6z" />
@@ -87,7 +90,7 @@ type Props = {
   slug: string;
   className?: string;
   style?: CSSProperties;
-  /** Grosor sobre la rejilla de 24. Cuanto más pequeño se pinte, más grueso. */
+  /** Stroke width on the 24 grid. The smaller it renders, the thicker. */
   strokeWidth?: number;
 };
 
@@ -97,8 +100,8 @@ export function CategoryIcon({
   style,
   strokeWidth = 2.2,
 }: Props) {
-  const trazo = TRAZOS[slug];
-  if (!trazo) return null;
+  const stroke = STROKES[slug];
+  if (!stroke) return null;
 
   return (
     <svg
@@ -112,7 +115,7 @@ export function CategoryIcon({
       style={style}
       aria-hidden="true"
     >
-      {trazo}
+      {stroke}
     </svg>
   );
 }

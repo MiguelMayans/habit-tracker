@@ -5,77 +5,77 @@ import {
   type Category,
   type RecentActivity,
 } from "../api/client";
-import { calcularRacha, esDeHoy, fechaLarga } from "../lib/fecha";
-import { XP_POR_INTENSIDAD } from "../lib/intensity";
-import { TarjetaCategoria } from "../components/TarjetaCategoria";
-import { TiraDeRitmo } from "../components/TiraDeRitmo";
-import { TarjetasEsqueleto } from "../components/TarjetasEsqueleto";
-import { PanelError } from "../components/PanelError";
+import { calculateStreak, isToday, longDate } from "../lib/dates";
+import { XP_BY_INTENSITY } from "../lib/intensity";
+import { CategoryCard } from "../components/CategoryCard";
+import { RhythmStrip } from "../components/RhythmStrip";
+import { SkeletonCards } from "../components/SkeletonCards";
+import { ErrorPanel } from "../components/ErrorPanel";
 import logo from "../assets/logo.png";
 
-// Suficiente para una racha de meses: la racha se corta en cuanto falta un
-// día, así que traer más solo serviría para rachas irrealmente largas.
-const RECIENTES_LIMITE = 300;
+// Enough for a streak of months: a streak breaks the moment a day is missing,
+// so fetching more would only serve unrealistically long ones.
+const RECENT_LIMIT = 300;
 
 export function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [recientes, setRecientes] = useState<RecentActivity[]>([]);
+  const [recent, setRecent] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const cargar = useCallback(() => {
-    Promise.all([
-      getCategories(),
-      getRecentActivities({ limit: RECIENTES_LIMITE }),
-    ])
+  const load = useCallback(() => {
+    Promise.all([getCategories(), getRecentActivities({ limit: RECENT_LIMIT })])
       .then(([cats, acts]) => {
         setCategories(cats);
-        setRecientes(acts);
+        setRecent(acts);
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    cargar();
-  }, [cargar]);
+    load();
+  }, [load]);
 
-  // El reset de loading/error vive en el evento que lo provoca (el botón),
-  // no dentro del efecto: así una llamada síncrona a setState no dispara un
-  // segundo render en cascada mientras React sincroniza el efecto.
-  function onReintentar() {
+  // Resetting loading/error lives in the event that causes it (the button) and
+  // not inside the effect: that way a synchronous setState does not trigger a
+  // second cascading render while React is syncing the effect.
+  function onRetry() {
     setLoading(true);
     setError(null);
-    cargar();
+    load();
   }
 
-  const racha = calcularRacha(recientes.map((a) => a.date));
-  const deHoy = recientes.filter((a) => esDeHoy(a.date));
-  const xpDeHoy = deHoy.reduce((sum, a) => sum + XP_POR_INTENSIDAD[a.intensity], 0);
+  const streak = calculateStreak(recent.map((a) => a.date));
+  const fromToday = recent.filter((a) => isToday(a.date));
+  const todayXp = fromToday.reduce(
+    (sum, a) => sum + XP_BY_INTENSITY[a.intensity],
+    0,
+  );
 
   if (loading)
     return (
       <div className="px-4 pt-8 pb-32">
-        <TarjetasEsqueleto n={5} />
+        <SkeletonCards n={5} />
       </div>
     );
   if (error)
     return (
       <div className="px-4 pt-8 pb-32">
-        <PanelError mensaje={error} onReintentar={onReintentar} />
+        <ErrorPanel message={error} onRetry={onRetry} />
       </div>
     );
 
   return (
     <div className="px-4 pt-8 pb-32">
       <header className="relative mb-10 px-1">
-        {/* El logotipo sustituye al título tipográfico. Ancho fluido con tope,
-            para que en móvil ocupe el ancho disponible y no crezca de más en
-            pantallas grandes. width/height evitan el salto de maquetación
-            mientras carga. */}
-        {/* La banda va suelta en la cabecera, no dentro del h1: tiene que
-            desbordar el ancho del contenedor para llegar a los dos bordes. */}
-        <div className="banda-sangre anim-logo top-[-16px] z-0 h-[128px]" />
+        {/* The wordmark replaces a typographic title. Fluid width with a cap,
+            so on a phone it takes the space available and does not overgrow on
+            large screens. width/height prevent the layout jump while loading.
+
+            The band sits loose in the header, not inside the h1: it has to
+            overflow the container's width to reach both edges. */}
+        <div className="bleed-band anim-logo top-[-16px] z-0 h-[128px]" />
 
         <h1 className="relative z-10 m-0 w-full max-w-[340px]">
           <img
@@ -86,47 +86,48 @@ export function CategoriesPage() {
             className="anim-logo block h-auto w-full"
           />
         </h1>
-        {/* relative + z-10: los papeles del logo van posicionados y, sin esto,
-            se pintan por encima de las cintas y las tapan.
+        {/* relative + z-10: the paper shapes in the logo are positioned and,
+            without this, they paint over the ribbons and cover them.
 
-            Las dos cintas comparten fila y se van a los extremos en vez de
-            apilarse: apiladas quedaban pegadas y se leían como un bloque
-            amarillo. `flex-wrap` las devuelve a dos líneas si no caben. */}
+            The two ribbons share a row and push to opposite ends rather than
+            stacking: stacked they sat flush against each other and read as one
+            yellow block. `flex-wrap` puts them back on two lines if they do
+            not fit. */}
         <div className="relative z-10 mt-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5">
           <p
-            className="anim-cinta m-0 inline-block bg-amarillo px-4 py-1.5 text-[12px] font-bold tracking-[0.18em] text-negro"
+            className="anim-ribbon m-0 inline-block bg-yellow px-4 py-1.5 text-[12px] font-bold tracking-[0.18em] text-black"
             style={{
               transform: "rotate(-2.5deg) skewX(-10deg)",
-              boxShadow: "4px 4px 0 var(--color-negro)",
+              boxShadow: "4px 4px 0 var(--color-black)",
             }}
           >
             <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-              {fechaLarga(new Date())}
+              {longDate(new Date())}
             </span>
           </p>
 
-          {deHoy.length > 0 && (
+          {fromToday.length > 0 && (
             <span
-              className="anim-cinta inline-block bg-amarillo px-3 py-1 text-[10px] font-bold tracking-[0.14em] text-negro"
+              className="anim-ribbon inline-block bg-yellow px-3 py-1 text-[10px] font-bold tracking-[0.14em] text-black"
               style={{
                 transform: "rotate(-1.5deg) skewX(-10deg)",
-                boxShadow: "3px 3px 0 var(--color-negro)",
+                boxShadow: "3px 3px 0 var(--color-black)",
               }}
             >
               <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-                HOY · {deHoy.length} · +{xpDeHoy} XP
+                HOY · {fromToday.length} · +{todayXp} XP
               </span>
             </span>
           )}
         </div>
       </header>
 
-      <TiraDeRitmo actividades={recientes} racha={racha} />
+      <RhythmStrip activities={recent} streak={streak} />
 
-      {/* Hueco algo mayor de lo normal: el nivel sobresale por arriba. */}
+      {/* A slightly larger gap than usual: the level spills over the top. */}
       <ul className="grid gap-6">
         {categories.map((c, i) => (
-          <TarjetaCategoria key={c.id} category={c} indice={i} />
+          <CategoryCard key={c.id} category={c} index={i} />
         ))}
       </ul>
     </div>

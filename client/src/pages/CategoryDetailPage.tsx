@@ -13,67 +13,67 @@ import {
   type Focus,
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
+import { useLight } from "../lib/useLight";
 import { CategoryIcon } from "../components/CategoryIcon";
-import { logotipoDeCategoria } from "../lib/logotipoCategoria";
-import { esDeHoy, fechaRelativaCorta } from "../lib/fecha";
-import { XP_POR_INTENSIDAD } from "../lib/intensity";
-import { usePulsacionLarga } from "../lib/usePulsacionLarga";
-import { DialogoConfirmar } from "../components/DialogoConfirmar";
-import { FilaActividad } from "../components/FilaActividad";
-import { TarjetasEsqueleto } from "../components/TarjetasEsqueleto";
-import { PanelError } from "../components/PanelError";
+import { categoryWordmark } from "../lib/categoryWordmark";
+import { isToday, shortRelativeDate } from "../lib/dates";
+import { XP_BY_INTENSITY } from "../lib/intensity";
+import { useLongPress } from "../lib/useLongPress";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { ActivityRow } from "../components/ActivityRow";
+import { SkeletonCards } from "../components/SkeletonCards";
+import { ErrorPanel } from "../components/ErrorPanel";
 
-/** Cuántas actividades se listan antes de cortar. */
-const HISTORIAL_VISIBLE = 8;
+/** How many activities are listed before cutting off. */
+const VISIBLE_HISTORY = 8;
 
-/** Giro alterno de las fichas de foco, para el efecto collage. */
-const GIROS = ["-0.9deg", "0.7deg", "-0.5deg", "1deg", "-0.7deg"];
+/** Alternating tilt on the focus tiles, for the collage effect. */
+const TILTS = ["-0.9deg", "0.7deg", "-0.5deg", "1deg", "-0.7deg"];
 
 /**
- * Pulsar un foco lleva a registrar actividad EN ese foco, con categoría y
- * foco ya elegidos.
+ * Tapping a focus leads to logging activity ON that focus, with the category
+ * and focus already chosen.
  *
- * Un foco congelado no se enlaza: está en el nivel máximo y el backend
- * rechazaría la actividad. En su lugar, un toque corto engendra su foco
- * hijo — el mismo gesto que en un foco activo lleva a registrar, aquí lleva
- * a la única acción que SÍ admite. La pulsación mantenida sigue borrando en
- * los dos casos.
+ * A frozen focus is not linked: it is at the maximum level and the backend
+ * would reject the activity. Instead, a short tap spawns its child focus —
+ * the same gesture that logs on an active focus leads here to the one action
+ * it DOES accept. A long press still deletes in both cases.
  */
-function FichaFoco({
+function FocusTile({
   frozen,
   categoryId,
   focusId,
-  onMantener,
-  onEngendrar,
+  onHold,
+  onSpawn,
   children,
 }: {
   frozen: boolean;
   categoryId: number;
   focusId: number;
-  onMantener: () => void;
-  onEngendrar: () => void;
+  onHold: () => void;
+  onSpawn: () => void;
   children: React.ReactNode;
 }) {
-  const pulsacion = usePulsacionLarga(onMantener);
+  const press = useLongPress(onHold);
 
   if (frozen) {
     return (
       <div
-        className="pulsable-larga block"
+        className="long-pressable block"
         role="button"
         tabIndex={0}
-        {...pulsacion}
+        {...press}
         onClick={(e) => {
-          // El propio hook ya traga el click cuando lo que disparó fue la
-          // pulsación larga (marca preventDefault): si ha llegado hasta aquí
-          // es que fue un toque corto de verdad.
-          pulsacion.onClick(e);
-          if (!e.defaultPrevented) onEngendrar();
+          // The hook already swallows the click when the long press is what
+          // fired (it calls preventDefault): if it got this far, it really was
+          // a short tap.
+          press.onClick(e);
+          if (!e.defaultPrevented) onSpawn();
         }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            onEngendrar();
+            onSpawn();
           }
         }}
       >
@@ -84,9 +84,9 @@ function FichaFoco({
 
   return (
     <Link
-      to={`/log-activity?categoria=${categoryId}&foco=${focusId}`}
-      className="pulsable-larga block"
-      {...pulsacion}
+      to={`/log-activity?category=${categoryId}&focus=${focusId}`}
+      className="long-pressable block"
+      {...press}
     >
       {children}
     </Link>
@@ -102,103 +102,102 @@ export function CategoryDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Del formulario de creación, separado del error de carga para que un fallo
-  // al crear no borre de la pantalla lo que ya se había cargado bien.
-  const [nombreNuevo, setNombreNuevo] = useState("");
-  const [creando, setCreando] = useState(false);
+  // From the creation form, kept apart from the loading error so a failure to
+  // create does not wipe from the screen what had already loaded fine.
+  const [newName, setNewName] = useState("");
+  const [creating, setCreating] = useState(false);
   const [errorForm, setErrorForm] = useState<string | null>(null);
-  // El foco recién creado se marca un momento en la lista: aparecer al final
-  // del scroll no se distingue de que no haya pasado nada.
-  const [focoNuevo, setFocoNuevo] = useState<number | null>(null);
+  // The newly created focus is flagged in the list for a moment: appearing at
+  // the far end of the scroll is indistinguishable from nothing happening.
+  const [newFocusId, setNewFocusId] = useState<number | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
 
-  // Al tocar un foco congelado se fija aquí como padre; el formulario de abajo
-  // pasa a crear su hijo en vez de un foco suelto.
-  const [padreEngendrar, setPadreEngendrar] = useState<Focus | null>(null);
-  const formularioRef = useRef<HTMLFormElement>(null);
-  const inputNombreRef = useRef<HTMLInputElement>(null);
+  // Tapping a frozen focus pins it here as the parent; the form below then
+  // creates its child instead of a standalone focus.
+  const [parentToSpawn, setParentToSpawn] = useState<Focus | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!padreEngendrar) return;
-    formularioRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    // Se retrasa a que el scroll suave termine: si el foco de teclado llega
-    // antes, el navegador salta directo a la posición final y se pierde la
-    // animación.
-    const t = window.setTimeout(() => inputNombreRef.current?.focus(), 350);
+    if (!parentToSpawn) return;
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Delayed until the smooth scroll finishes: if keyboard focus lands
+    // first, the browser jumps straight to the final position and the
+    // animation is lost.
+    const t = window.setTimeout(() => nameInputRef.current?.focus(), 350);
     return () => window.clearTimeout(t);
-  }, [padreEngendrar]);
+  }, [parentToSpawn]);
 
-  // Borrado por pulsación mantenida.
-  const [focoABorrar, setFocoABorrar] = useState<Focus | null>(null);
-  const [borrando, setBorrando] = useState(false);
-  const [errorBorrado, setErrorBorrado] = useState<string | null>(null);
+  // Deletion by long press.
+  const [focusToDelete, setFocusToDelete] = useState<Focus | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  // Deshacer un registro por pulsación mantenida sobre su fila del historial.
-  const [actividadADeshacer, setActividadADeshacer] = useState<Activity | null>(
+  // Undo a log by long-pressing its row in the history.
+  const [activityToUndo, setActivityToUndo] = useState<Activity | null>(
     null,
   );
-  const [deshaciendo, setDeshaciendo] = useState(false);
-  const [errorDeshacer, setErrorDeshacer] = useState<string | null>(null);
+  const [undoing, setUndoing] = useState(false);
+  const [undoError, setUndoError] = useState<string | null>(null);
 
-  const cargarFocuses = useCallback(async () => {
+  const loadFocuses = useCallback(async () => {
     setFocuses(await getFocusesByCategory(categoryId));
   }, [categoryId]);
 
-  // Renombrar: la única salida ante una errata era borrar el foco, que
-  // además desengancha sus actividades. Desproporcionado para una palabra
-  // mal escrita.
-  const [focoEditando, setFocoEditando] = useState<Focus | null>(null);
-  const [nombreEditado, setNombreEditado] = useState("");
-  const [renombrando, setRenombrando] = useState(false);
-  const [errorRenombrar, setErrorRenombrar] = useState<string | null>(null);
+  // Renaming: the only way out of a typo used to be deleting the focus, which
+  // also detaches its activities. Disproportionate for one misspelled word.
+  const [focusBeingEdited, setFocusBeingEdited] = useState<Focus | null>(null);
+  const [editedName, setEditedName] = useState("");
+  const [renaming, setRenaming] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
 
-  async function onGuardarRenombrado() {
-    if (!focoEditando) return;
-    setErrorRenombrar(null);
-    setRenombrando(true);
+  async function onSaveRename() {
+    if (!focusBeingEdited) return;
+    setRenameError(null);
+    setRenaming(true);
 
     try {
-      await updateFocus(focoEditando.id, { name: nombreEditado });
-      setFocoEditando(null);
-      await cargarFocuses();
+      await updateFocus(focusBeingEdited.id, { name: editedName });
+      setFocusBeingEdited(null);
+      await loadFocuses();
     } catch (err) {
-      setErrorRenombrar((err as Error).message);
+      setRenameError((err as Error).message);
     } finally {
-      setRenombrando(false);
+      setRenaming(false);
     }
   }
 
-  // Cerrar un foco a mano: lo das por terminado antes de llegar al nivel 20.
-  const [focoACerrar, setFocoACerrar] = useState<Focus | null>(null);
-  const [cerrando, setCerrando] = useState(false);
-  const [errorCerrar, setErrorCerrar] = useState<string | null>(null);
+  // Closing a focus by hand: calling it done before reaching level 20.
+  const [focusToClose, setFocusToClose] = useState<Focus | null>(null);
+  const [closing, setClosing] = useState(false);
+  const [closeError, setCloseError] = useState<string | null>(null);
 
-  async function onCambiarCierre(foco: Focus, cerrado: boolean) {
-    setErrorCerrar(null);
-    setCerrando(true);
+  async function onToggleClosed(focus: Focus, closed: boolean) {
+    setCloseError(null);
+    setClosing(true);
 
     try {
-      await updateFocus(foco.id, { frozen: cerrado });
-      setFocoACerrar(null);
-      await cargarFocuses();
+      await updateFocus(focus.id, { frozen: closed });
+      setFocusToClose(null);
+      await loadFocuses();
     } catch (err) {
-      setErrorCerrar((err as Error).message);
+      setCloseError((err as Error).message);
     } finally {
-      setCerrando(false);
+      setClosing(false);
     }
   }
 
-  // Se deriva en render, no en un efecto: no depende de nada externo.
-  const idValido = Number.isInteger(categoryId);
+  // Derived during render, not in an effect: it depends on nothing external.
+  const validId = Number.isInteger(categoryId);
 
-  // Se envuelve en useCallback para poder llamarla también desde el botón de
-  // reintentar, sin duplicar el fetch.
-  const cargar = useCallback(() => {
-    if (!idValido) return () => {};
+  // Wrapped in useCallback so the retry button can call it too, without
+  // duplicating the fetch.
+  const load = useCallback(() => {
+    if (!validId) return () => {};
 
-    // Si se navega a otra categoría antes de que llegue esta respuesta, se
-    // descarta: si no, una respuesta lenta podría pisar a una más reciente.
-    let cancelado = false;
+    // If you navigate to another category before this response lands, it is
+    // discarded: otherwise a slow response could overwrite a newer one.
+    let cancelled = false;
 
     Promise.all([
       getCategory(categoryId),
@@ -206,66 +205,71 @@ export function CategoryDetailPage() {
       getActivitiesByCategory(categoryId),
     ])
       .then(([cat, focs, acts]) => {
-        if (cancelado) return;
+        if (cancelled) return;
         setCategory(cat);
         setFocuses(focs);
         setActivities(acts);
       })
       .catch((e: Error) => {
-        if (!cancelado) setError(e.message);
+        if (!cancelled) setError(e.message);
       })
       .finally(() => {
-        if (!cancelado) setLoading(false);
+        if (!cancelled) setLoading(false);
       });
 
     return () => {
-      cancelado = true;
+      cancelled = true;
     };
-  }, [categoryId, idValido]);
+  }, [categoryId, validId]);
 
-  useEffect(() => cargar(), [cargar]);
+  useEffect(() => load(), [load]);
 
-  // El reset de loading/error vive en el evento que lo provoca (el botón),
-  // no dentro del efecto.
-  function onReintentar() {
+  // The scene's beam takes the colour of the category you are looking at:
+  // entering Cuerpo tints the room red. It goes before the early returns for
+  // loading and error, because hooks cannot be skipped.
+  useLight(category ? categoryColorVar(category.slug) : null);
+
+  // Resetting loading/error lives in the event that causes it (the button),
+  // not inside the effect.
+  function onRetry() {
     setLoading(true);
     setError(null);
-    cargar();
+    load();
   }
 
-  async function onCrearFocus(e: React.FormEvent) {
+  async function onCreateFocus(e: React.FormEvent) {
     e.preventDefault();
     setErrorForm(null);
-    setCreando(true);
+    setCreating(true);
 
     try {
-      const creado = await createFocus({
+      const created = await createFocus({
         categoryId,
-        name: nombreNuevo,
-        parentFocusId: padreEngendrar?.id,
+        name: newName,
+        parentFocusId: parentToSpawn?.id,
       });
-      setNombreNuevo("");
-      setPadreEngendrar(null);
-      // Refresca solo la lista, sin recargar la página.
-      await cargarFocuses();
-      setFocoNuevo(creado.id);
+      setNewName("");
+      setParentToSpawn(null);
+      // Refreshes just the list, without reloading the page.
+      await loadFocuses();
+      setNewFocusId(created.id);
     } catch (err) {
       setErrorForm((err as Error).message);
     } finally {
-      setCreando(false);
+      setCreating(false);
     }
   }
 
-  async function onBorrarFoco() {
-    if (!focoABorrar) return;
-    setErrorBorrado(null);
-    setBorrando(true);
+  async function onDeleteFocus() {
+    if (!focusToDelete) return;
+    setDeleteError(null);
+    setDeleting(true);
 
     try {
-      await deleteFocus(focoABorrar.id);
-      setFocoABorrar(null);
-      // Las actividades siguen ahí, pero ya sin foco: se recargan las dos
-      // listas para que el historial deje de atribuirlas.
+      await deleteFocus(focusToDelete.id);
+      setFocusToDelete(null);
+      // The activities are still there, but with no focus now: both lists are
+      // reloaded so the history stops attributing them.
       const [focs, acts] = await Promise.all([
         getFocusesByCategory(categoryId),
         getActivitiesByCategory(categoryId),
@@ -273,22 +277,22 @@ export function CategoryDetailPage() {
       setFocuses(focs);
       setActivities(acts);
     } catch (err) {
-      setErrorBorrado((err as Error).message);
+      setDeleteError((err as Error).message);
     } finally {
-      setBorrando(false);
+      setDeleting(false);
     }
   }
 
-  async function onDeshacerActividad() {
-    if (!actividadADeshacer) return;
-    setErrorDeshacer(null);
-    setDeshaciendo(true);
+  async function onUndoActivity() {
+    if (!activityToUndo) return;
+    setUndoError(null);
+    setUndoing(true);
 
     try {
-      await deleteActivity(actividadADeshacer.id);
-      setActividadADeshacer(null);
-      // La XP revertida pudo cambiar la categoría y el foco: se recargan las
-      // tres listas para que nada se quede con un número desactualizado.
+      await deleteActivity(activityToUndo.id);
+      setActivityToUndo(null);
+      // The reverted XP may have changed the category and the focus: all
+      // three lists are reloaded so nothing is left holding a stale number.
       const [cat, focs, acts] = await Promise.all([
         getCategory(categoryId),
         getFocusesByCategory(categoryId),
@@ -298,48 +302,49 @@ export function CategoryDetailPage() {
       setFocuses(focs);
       setActivities(acts);
     } catch (err) {
-      setErrorDeshacer((err as Error).message);
+      setUndoError((err as Error).message);
     } finally {
-      setDeshaciendo(false);
+      setUndoing(false);
     }
   }
 
-  if (!idValido)
+  if (!validId)
     return (
       <p className="px-6 py-10 text-cuerpo">El id de la categoría no es válido</p>
     );
   if (loading)
     return (
       <div className="px-4 pt-8 pb-32">
-        <TarjetasEsqueleto n={3} altura="96px" />
+        <SkeletonCards n={3} height="96px" />
       </div>
     );
   if (error)
     return (
       <div className="px-4 pt-8 pb-32">
-        <PanelError mensaje={error} onReintentar={onReintentar} />
+        <ErrorPanel message={error} onRetry={onRetry} />
       </div>
     );
   if (!category) return null;
 
-  const acento = categoryColorVar(category.slug);
-  const logotipo = logotipoDeCategoria(category.slug);
+  const accent = categoryColorVar(category.slug);
+  const wordmark = categoryWordmark(category.slug);
 
   return (
     <div className="px-4 pt-6 pb-32">
-      {/* El nivel comparte fila con el enlace de volver, en la esquina opuesta.
-          Es el único hueco libre de la pantalla: los logotipos de categoría van
-          a sangre por los cuatro lados, así que colocarlo sobre la cabecera
-          —que es donde pediría estar— le caería encima al dibujo.
+      {/* The level shares a row with the back link, in the opposite corner.
+          It is the only free space on the screen: the category wordmarks bleed
+          to all four edges, so placing it over the header — where it would ask
+          to be — would land it on top of the artwork.
 
-          La placa de hueso es lo que le da fuerza: el amarillo sobre negro se
-          diluye entre las otras cosas amarillas, y sobre blanco con el contorno
-          negro de la rotulación se despega. La sombra dura va en el color de la
-          categoría porque una negra, sobre fondo negro, no se vería. */}
+          The bone plaque is what gives it force: yellow on black dissolves
+          among the other yellow things, while on white, with the lettering's
+          black outline, it lifts off. The hard shadow takes the category
+          colour, because a black one on a black background would be
+          invisible. */}
       <div className="flex items-start justify-between gap-4">
         <Link
           to="/"
-          className="anim-fila inline-block bg-hueso px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-negro"
+          className="anim-row inline-block bg-bone px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-black"
           style={{ transform: "skewX(-10deg)" }}
         >
           <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
@@ -348,20 +353,20 @@ export function CategoryDetailPage() {
         </Link>
 
         <span
-          className="anim-cinta flex shrink-0 items-center gap-2.5 bg-hueso py-1.5 pr-4 pl-3.5"
+          className="anim-ribbon flex shrink-0 items-center gap-2.5 bg-bone py-1.5 pr-4 pl-3.5"
           style={{
             transform: "skewX(-10deg)",
-            boxShadow: `7px 7px 0 ${acento}`,
+            boxShadow: `7px 7px 0 ${accent}`,
           }}
         >
           <span
-            className="inline-block text-[10px] font-bold tracking-[0.2em] text-negro"
+            className="inline-block text-[10px] font-bold tracking-[0.2em] text-black"
             style={{ transform: "skewX(10deg)" }}
           >
             NIVEL
           </span>
           <b
-            className="texto-rotulo-fino inline-block font-display text-[56px] leading-[0.78] text-amarillo"
+            className="text-sign-fine inline-block font-display text-[56px] leading-[0.78] text-yellow"
             style={{ transform: "skewX(10deg)" }}
           >
             {category.level}
@@ -369,33 +374,33 @@ export function CategoryDetailPage() {
         </span>
       </div>
 
-      {/* Cabecera: misma banda a sangre que la home, pero en el color de la
-          categoría, para que se note en cuál estás. */}
+      {/* Header: the same bleed band as the home, but in the category's
+          colour, so it is obvious which one you are in. */}
       <header className="relative mt-5 mb-7">
         <div className="relative">
-          {/* La banda se centra sobre el título con top + margen negativo (la
-              mitad de su alto): no puede usar translate porque el giro ya
-              ocupa la transformación. Así vale igual para un logotipo alto
-              que para uno bajo. */}
+          {/* The band is centred on the title with top + a negative margin
+              (half its height): it cannot use translate, because the tilt
+              already occupies the transform. This works the same for a tall
+              wordmark as for a short one. */}
           <div
-            className="banda-sangre anim-logo top-1/2 -mt-14 z-0 h-[112px]"
+            className="bleed-band anim-logo top-1/2 -mt-14 z-0 h-[112px]"
             style={
               {
-                "--banda-fondo": acento,
-                "--banda-reborde": "var(--color-negro)",
+                "--band-bg": accent,
+                "--band-edge": "var(--color-black)",
               } as React.CSSProperties
             }
           />
 
-          {logotipo ? (
+          {wordmark ? (
             <h1 className="relative z-10 m-0">
-              {/* A ancho completo: el logotipo manda en la pantalla y se sale
-                  de la banda por arriba y por abajo, como en la home. */}
+              {/* Full width: the wordmark owns this screen and spills out of
+                  the band top and bottom, the same as on the home. */}
               <img
-                src={logotipo.src}
+                src={wordmark.src}
                 alt={category.name}
-                width={logotipo.ancho}
-                height={logotipo.alto}
+                width={wordmark.width}
+                height={wordmark.height}
                 className="block h-auto w-full"
               />
             </h1>
@@ -404,9 +409,9 @@ export function CategoryDetailPage() {
               <CategoryIcon
                 slug={category.slug}
                 strokeWidth={2.4}
-                className="h-9 w-9 shrink-0 text-negro"
+                className="h-9 w-9 shrink-0 text-black"
               />
-              <h1 className="texto-rotulo m-0 font-display text-[38px] leading-[0.9] text-hueso uppercase">
+              <h1 className="text-sign m-0 font-display text-[38px] leading-[0.9] text-bone uppercase">
                 {category.name}
               </h1>
             </div>
@@ -414,32 +419,32 @@ export function CategoryDetailPage() {
         </div>
       </header>
 
-      {/* Progreso a ancho completo: el nivel ya no le roba la mitad de la fila
-          desde la izquierda, así que la barra ocupa lo que mide la pantalla. */}
+      {/* Full-width progress: the level no longer steals half the row from
+          the left, so the bar takes the whole width of the screen. */}
       <div
-        className="anim-fila relative"
-        style={{ "--retardo": "0.1s" } as React.CSSProperties}
+        className="anim-row relative"
+        style={{ "--delay": "0.1s" } as React.CSSProperties}
       >
-        <div className="barra-xp relative h-4 overflow-hidden bg-[#242424]">
+        <div className="xp-bar relative h-4 overflow-hidden bg-[#242424]">
           <div
-            className="barra-xp-relleno relative h-full bg-amarillo"
+            className="xp-bar-fill relative h-full bg-yellow"
             style={
               {
                 width: `${Math.round(category.progress * 100)}%`,
-                "--retardo": "0.3s",
+                "--delay": "0.3s",
               } as React.CSSProperties
             }
           />
         </div>
-        <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold tracking-[0.06em] text-hueso/75">
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold tracking-[0.06em] text-bone/75">
           <span>{category.currentXp} XP</span>
-          <i className="h-[3px] w-[3px] rotate-45 bg-hueso/55" />
+          <i className="h-[3px] w-[3px] rotate-45 bg-bone/55" />
           <span>
             {category.atMaxLevel ? (
-              <b className="text-amarillo">NIVEL MÁXIMO</b>
+              <b className="text-yellow">NIVEL MÁXIMO</b>
             ) : (
               <>
-                <b className="text-amarillo">{category.xpToNextLevel}</b> AL NV{" "}
+                <b className="text-yellow">{category.xpToNextLevel}</b> AL NV{" "}
                 {category.level + 1}
               </>
             )}
@@ -447,13 +452,13 @@ export function CategoryDetailPage() {
         </div>
       </div>
 
-      {/* ---- Focos ---- */}
+      {/* ---- Focuses ---- */}
       <h2
-        className="anim-fila mt-10 inline-block bg-amarillo px-3 py-1 font-display text-[13px] text-negro uppercase"
+        className="anim-row mt-10 inline-block bg-yellow px-3 py-1 font-display text-[13px] text-black uppercase"
         style={
           {
             transform: "skewX(-10deg)",
-            "--retardo": "0.16s",
+            "--delay": "0.16s",
           } as React.CSSProperties
         }
       >
@@ -464,8 +469,8 @@ export function CategoryDetailPage() {
 
       {focuses.length > 0 && (
         <p
-          className="anim-fila mt-2 text-[9px] font-bold tracking-[0.16em] text-hueso/40"
-          style={{ "--retardo": "0.18s" } as React.CSSProperties}
+          className="anim-row mt-2 text-[9px] font-bold tracking-[0.16em] text-bone/40"
+          style={{ "--delay": "0.18s" } as React.CSSProperties}
         >
           PULSA PARA REGISTRAR
           {focuses.some((f) => f.frozen) &&
@@ -476,15 +481,15 @@ export function CategoryDetailPage() {
 
       {focuses.length === 0 ? (
         <p
-          className="anim-fila mt-4 text-sm text-hueso/60"
-          style={{ "--retardo": "0.2s" } as React.CSSProperties}
+          className="anim-row mt-4 text-sm text-bone/60"
+          style={{ "--delay": "0.2s" } as React.CSSProperties}
         >
-          Esta categoría todavía no tiene focos.
+          Esta categoría todavía no tiene focusList.
         </p>
       ) : (
         <ul className="mt-4 grid gap-3.5">
           {focuses.map((f, i) => {
-            const padre =
+            const parent =
               f.parentFocusId !== null
                 ? focuses.find((p) => p.id === f.parentFocusId)
                 : undefined;
@@ -492,57 +497,57 @@ export function CategoryDetailPage() {
             return (
               <li
                 key={f.id}
-                className={`tarjeta-categoria anim-tarjeta relative ${
-                  f.id === focoNuevo ? "anim-destaca" : ""
-                } ${padre ? "ml-7" : ""}`}
+                className={`category-card anim-card relative ${
+                  f.id === newFocusId ? "anim-highlight" : ""
+                } ${parent ? "ml-7" : ""}`}
                 style={
                   {
-                    "--rotacion": GIROS[i % GIROS.length],
-                    "--retardo": `${0.22 + i * 0.06}s`,
+                    "--rotation": TILTS[i % TILTS.length],
+                    "--delay": `${0.22 + i * 0.06}s`,
                   } as React.CSSProperties
                 }
               >
-                {focoEditando?.id === f.id ? (
-                  // Panel de edición SUSTITUYE a FichaFoco entera, no va
-                  // dentro: metido en su envoltorio (Link o pulsación
-                  // mantenida), cualquier toque en el input arrancaría
-                  // también el temporizador de pulsación larga.
+                {focusBeingEdited?.id === f.id ? (
+                  // The edit panel REPLACES the whole FocusTile rather than
+                  // sitting inside it: wrapped in its container (a Link or the
+                  // long press), any tap on the input would also start the
+                  // long-press timer.
                   <div
-                    className="tarjeta-recorte bg-negro"
-                    style={{ filter: `drop-shadow(6px 6px 0 ${acento})` }}
+                    className="card-clip bg-black"
+                    style={{ filter: `drop-shadow(6px 6px 0 ${accent})` }}
                   >
-                    <div className="contenido-slam px-3.5 py-3.5">
-                      <div className="campo-marco">
+                    <div className="slam-content px-3.5 py-3.5">
+                      <div className="field-frame">
                         <input
-                          value={nombreEditado}
-                          onChange={(e) => setNombreEditado(e.target.value)}
+                          value={editedName}
+                          onChange={(e) => setEditedName(e.target.value)}
                           autoFocus
-                          className="campo"
+                          className="field"
                         />
                       </div>
-                      {errorRenombrar && (
+                      {renameError && (
                         <p className="mt-2 text-[10px] font-bold text-cuerpo">
-                          {errorRenombrar}
+                          {renameError}
                         </p>
                       )}
                       <div className="mt-3 flex gap-2">
                         <button
                           type="button"
-                          onClick={onGuardarRenombrado}
-                          disabled={renombrando || nombreEditado.trim() === ""}
-                          className="boton-slam flex-1"
+                          onClick={onSaveRename}
+                          disabled={renaming || editedName.trim() === ""}
+                          className="slam-button flex-1"
                         >
-                          <span>{renombrando ? "Guardando…" : "Guardar"}</span>
+                          <span>{renaming ? "Guardando…" : "Guardar"}</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => setFocoEditando(null)}
-                          className="boton-slam flex-1"
+                          onClick={() => setFocusBeingEdited(null)}
+                          className="slam-button flex-1"
                           style={{
                             background: "transparent",
-                            color: "var(--color-hueso)",
+                            color: "var(--color-bone)",
                             boxShadow: "none",
-                            border: "2px solid var(--color-hueso)",
+                            border: "2px solid var(--color-bone)",
                           }}
                         >
                           <span>Cancelar</span>
@@ -552,26 +557,27 @@ export function CategoryDetailPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="absolute top-1.5 right-2 z-30 flex gap-2.5 text-[9px] font-bold tracking-[0.14em] text-hueso/45">
+                    <div className="absolute top-1.5 right-2 z-30 flex gap-2.5 text-[9px] font-bold tracking-[0.14em] text-bone/45">
                       <button
                         type="button"
                         onClick={() => {
-                          setFocoEditando(f);
-                          setNombreEditado(f.name);
-                          setErrorRenombrar(null);
+                          setFocusBeingEdited(f);
+                          setEditedName(f.name);
+                          setRenameError(null);
                         }}
                         className="underline"
                       >
                         editar
                       </button>
-                      {/* La maestría no se reabre: se ganó. Un cierre a mano
-                          sí, que es una decisión y las decisiones cambian. */}
+                      {/* Mastery does not reopen: it was earned. A manual
+                          close does, because it is a decision, and decisions
+                          change. */}
                       {f.atMaxLevel ? null : f.frozen ? (
                         <button
                           type="button"
-                          onClick={() => onCambiarCierre(f, false)}
-                          disabled={cerrando}
-                          className="text-amarillo underline"
+                          onClick={() => onToggleClosed(f, false)}
+                          disabled={closing}
+                          className="text-yellow underline"
                         >
                           reabrir
                         </button>
@@ -579,8 +585,8 @@ export function CategoryDetailPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setErrorCerrar(null);
-                            setFocoACerrar(f);
+                            setCloseError(null);
+                            setFocusToClose(f);
                           }}
                           className="underline"
                         >
@@ -588,39 +594,39 @@ export function CategoryDetailPage() {
                         </button>
                       )}
                     </div>
-                    <FichaFoco
+                    <FocusTile
                       frozen={f.frozen}
                       categoryId={categoryId}
                       focusId={f.id}
-                      onMantener={() => {
-                        setErrorBorrado(null);
-                        setFocoABorrar(f);
+                      onHold={() => {
+                        setDeleteError(null);
+                        setFocusToDelete(f);
                       }}
-                      onEngendrar={() => setPadreEngendrar(f)}
+                      onSpawn={() => setParentToSpawn(f)}
                     >
                       <div
-                        className="tarjeta-recorte bg-negro"
-                        style={{ filter: `drop-shadow(6px 6px 0 ${acento})` }}
+                        className="card-clip bg-black"
+                        style={{ filter: `drop-shadow(6px 6px 0 ${accent})` }}
                       >
-                        <div className="contenido-slam px-3.5 pt-3 pb-3.5">
+                        <div className="slam-content px-3.5 pt-3 pb-3.5">
                         <div className="flex items-center gap-2.5">
-                          <h3 className="m-0 font-display text-[17px] leading-none text-hueso uppercase">
+                          <h3 className="m-0 font-display text-[17px] leading-none text-bone uppercase">
                             {f.name}
                           </h3>
                           {f.frozen && (
-                            // Congelado en el nivel máximo es maestría; por
-                            // debajo, solo puede venir de haberlo cerrado a
-                            // mano. No hace falta guardar cuál de las dos.
+                            // Frozen at the maximum level is mastery; below
+                            // it, the only way in is a manual close. There is
+                            // no need to store which of the two it was.
                             <span
                               className="px-2 py-0.5 text-[8px] font-bold tracking-[0.18em]"
                               style={{
                                 transform: "skewX(-10deg)",
                                 background: f.atMaxLevel
-                                  ? "var(--color-amarillo)"
+                                  ? "var(--color-yellow)"
                                   : "transparent",
                                 color: f.atMaxLevel
-                                  ? "var(--color-negro)"
-                                  : "var(--color-hueso)",
+                                  ? "var(--color-black)"
+                                  : "var(--color-bone)",
                                 boxShadow: f.atMaxLevel
                                   ? undefined
                                   : "inset 0 0 0 1.5px rgb(245 245 240 / 0.45)",
@@ -629,57 +635,57 @@ export function CategoryDetailPage() {
                               {f.atMaxLevel ? "MAESTRÍA" : "CERRADO"}
                             </span>
                           )}
-                          <span className="ml-auto flex items-baseline gap-1 text-[9px] font-bold tracking-[0.16em] text-hueso/70">
+                          <span className="ml-auto flex items-baseline gap-1 text-[9px] font-bold tracking-[0.16em] text-bone/70">
                             NV{" "}
-                            <b className="font-display text-[16px] tracking-normal text-hueso">
+                            <b className="font-display text-[16px] tracking-normal text-bone">
                               {f.level}
                             </b>
                           </span>
                         </div>
 
-                        {padre && (
-                          <p className="mt-1 text-[9px] font-bold tracking-[0.1em] text-hueso/45">
-                            ↳ DE {padre.name}
+                        {parent && (
+                          <p className="mt-1 text-[9px] font-bold tracking-[0.1em] text-bone/45">
+                            ↳ DE {parent.name}
                           </p>
                         )}
 
-                        <div className="barra-xp relative mt-2.5 h-3 overflow-hidden bg-[#242424]">
+                        <div className="xp-bar relative mt-2.5 h-3 overflow-hidden bg-[#242424]">
                           <div
-                            className="barra-xp-relleno relative h-full"
+                            className="xp-bar-fill relative h-full"
                             style={
                               {
                                 width: `${Math.round(f.progress * 100)}%`,
-                                background: f.frozen ? acento : "var(--color-amarillo)",
-                                "--retardo": `${0.42 + i * 0.06}s`,
+                                background: f.frozen ? accent : "var(--color-yellow)",
+                                "--delay": `${0.42 + i * 0.06}s`,
                               } as React.CSSProperties
                             }
                           />
                         </div>
 
-                        <div className="mt-2 flex items-center gap-2 text-[9.5px] font-semibold tracking-[0.06em] text-hueso/70">
+                        <div className="mt-2 flex items-center gap-2 text-[9.5px] font-semibold tracking-[0.06em] text-bone/70">
                           <span>{f.currentXp} XP</span>
-                          <i className="h-[3px] w-[3px] rotate-45 bg-hueso/50" />
+                          <i className="h-[3px] w-[3px] rotate-45 bg-bone/50" />
                           <span>
                             {f.atMaxLevel ? (
-                              <b className="text-amarillo">MAESTRÍA · NV 20</b>
+                              <b className="text-yellow">MAESTRÍA · NV 20</b>
                             ) : f.frozen ? (
-                              <b className="text-hueso/60">DADO POR TERMINADO</b>
+                              <b className="text-bone/60">DADO POR TERMINADO</b>
                             ) : (
                               <>
-                                <b className="text-amarillo">{f.xpToNextLevel}</b> AL NV{" "}
+                                <b className="text-yellow">{f.xpToNextLevel}</b> AL NV{" "}
                                 {f.level + 1}
                               </>
                             )}
                           </span>
                           {f.frozen && (
-                            <span className="ml-auto text-[9px] font-bold tracking-[0.1em] text-amarillo">
+                            <span className="ml-auto text-[9px] font-bold tracking-[0.1em] text-yellow">
                               TOCA PARA ENGENDRAR ↴
                             </span>
                           )}
                           </div>
                         </div>
                       </div>
-                    </FichaFoco>
+                    </FocusTile>
                   </>
                 )}
               </li>
@@ -688,34 +694,34 @@ export function CategoryDetailPage() {
         </ul>
       )}
 
-      {/* ---- Nuevo foco ---- */}
-      <form onSubmit={onCrearFocus} className="mt-11" ref={formularioRef}>
+      {/* ---- New focus ---- */}
+      <form onSubmit={onCreateFocus} className="mt-11" ref={formRef}>
         <h2
-          className="anim-fila inline-block bg-hueso px-3 py-1 font-display text-[13px] text-negro uppercase"
+          className="anim-row inline-block bg-bone px-3 py-1 font-display text-[13px] text-black uppercase"
           style={
             {
               transform: "skewX(-10deg)",
-              "--retardo": "0.3s",
+              "--delay": "0.3s",
             } as React.CSSProperties
           }
         >
           <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-            {padreEngendrar ? "Nuevo foco especializado" : "Nuevo foco"}
+            {parentToSpawn ? "Nuevo foco especializado" : "Nuevo foco"}
           </span>
         </h2>
 
-        {padreEngendrar && (
-          <p className="anim-slam mt-3 flex items-center gap-2 text-[11px] font-semibold text-hueso/70">
+        {parentToSpawn && (
+          <p className="anim-slam mt-3 flex items-center gap-2 text-[11px] font-semibold text-bone/70">
             <span
-              className="bg-amarillo px-2 py-0.5 text-[9px] font-bold tracking-[0.14em] text-negro"
+              className="bg-yellow px-2 py-0.5 text-[9px] font-bold tracking-[0.14em] text-black"
               style={{ transform: "skewX(-10deg)" }}
             >
-              HIJO DE {padreEngendrar.name.toUpperCase()}
+              HIJO DE {parentToSpawn.name.toUpperCase()}
             </span>
             <button
               type="button"
-              onClick={() => setPadreEngendrar(null)}
-              className="text-hueso/50 underline"
+              onClick={() => setParentToSpawn(null)}
+              className="text-bone/50 underline"
             >
               cancelar
             </button>
@@ -723,32 +729,32 @@ export function CategoryDetailPage() {
         )}
 
         <div
-          className="anim-fila mt-4 flex items-stretch gap-3"
-          style={{ "--retardo": "0.34s" } as React.CSSProperties}
+          className="anim-row mt-4 flex items-stretch gap-3"
+          style={{ "--delay": "0.34s" } as React.CSSProperties}
         >
-          <div className="campo-marco flex-1">
+          <div className="field-frame flex-1">
             <input
-              ref={inputNombreRef}
-              value={nombreNuevo}
-              onChange={(e) => setNombreNuevo(e.target.value)}
+              ref={nameInputRef}
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
               placeholder={
-                padreEngendrar
-                  ? `Especialización de "${padreEngendrar.name}"…`
+                parentToSpawn
+                  ? `Especialización de "${parentToSpawn.name}"…`
                   : "Arduino, Inglés, Pareja…"
               }
               required
-              className="campo"
+              className="field"
             />
           </div>
           <button
             type="submit"
-            disabled={creando || nombreNuevo.trim() === ""}
-            className="boton-slam shrink-0"
+            disabled={creating || newName.trim() === ""}
+            className="slam-button shrink-0"
           >
             <span>
-              {creando
+              {creating
                 ? "Creando…"
-                : padreEngendrar
+                : parentToSpawn
                   ? "Engendrar"
                   : "Crear"}
             </span>
@@ -756,19 +762,19 @@ export function CategoryDetailPage() {
         </div>
 
         {errorForm && (
-          <p className="anim-slam mt-4 bg-cuerpo px-3 py-2 text-[11px] font-bold text-hueso">
+          <p className="anim-slam mt-4 bg-cuerpo px-3 py-2 text-[11px] font-bold text-bone">
             {errorForm}
           </p>
         )}
       </form>
 
-      {/* ---- Historial ---- */}
+      {/* ---- History ---- */}
       <h2
-        className="anim-fila mt-11 inline-block bg-hueso px-3 py-1 font-display text-[13px] text-negro uppercase"
+        className="anim-row mt-11 inline-block bg-bone px-3 py-1 font-display text-[13px] text-black uppercase"
         style={
           {
             transform: "skewX(-10deg)",
-            "--retardo": "0.38s",
+            "--delay": "0.38s",
           } as React.CSSProperties
         }
       >
@@ -777,10 +783,10 @@ export function CategoryDetailPage() {
         </span>
       </h2>
 
-      {activities.some((a) => esDeHoy(a.date)) && (
+      {activities.some((a) => isToday(a.date)) && (
         <p
-          className="anim-fila mt-2 text-[9px] font-bold tracking-[0.16em] text-hueso/40"
-          style={{ "--retardo": "0.4s" } as React.CSSProperties}
+          className="anim-row mt-2 text-[9px] font-bold tracking-[0.16em] text-bone/40"
+          style={{ "--delay": "0.4s" } as React.CSSProperties}
         >
           MANTÉN PULSADA UNA ACTIVIDAD DE HOY PARA DESHACERLA
         </p>
@@ -788,102 +794,102 @@ export function CategoryDetailPage() {
 
       {activities.length === 0 ? (
         <p
-          className="anim-fila mt-4 text-sm text-hueso/60"
-          style={{ "--retardo": "0.42s" } as React.CSSProperties}
+          className="anim-row mt-4 text-sm text-bone/60"
+          style={{ "--delay": "0.42s" } as React.CSSProperties}
         >
           Todavía no has registrado nada en esta categoría.
         </p>
       ) : (
         <>
           <ul className="mt-4 grid gap-2.5">
-            {activities.slice(0, HISTORIAL_VISIBLE).map((a, i) => (
-              <FilaActividad
+            {activities.slice(0, VISIBLE_HISTORY).map((a, i) => (
+              <ActivityRow
                 key={a.id}
-                actividad={a}
-                acento={acento}
+                activity={a}
+                accent={accent}
                 focusName={
                   a.focusId !== null
                     ? (focuses.find((f) => f.id === a.focusId)?.name ??
                       "foco borrado")
                     : null
                 }
-                retardo={0.44 + i * 0.04}
-                onMantener={() => {
-                  setErrorDeshacer(null);
-                  setActividadADeshacer(a);
+                delay={0.44 + i * 0.04}
+                onHold={() => {
+                  setUndoError(null);
+                  setActivityToUndo(a);
                 }}
               />
             ))}
           </ul>
 
-          {activities.length > HISTORIAL_VISIBLE && (
+          {activities.length > VISIBLE_HISTORY && (
             <Link
-              to={`/categories/${categoryId}/historial`}
-              className="mt-3 inline-block text-[10px] font-bold tracking-[0.16em] text-amarillo underline"
+              to={`/categories/${categoryId}/history`}
+              className="mt-3 inline-block text-[10px] font-bold tracking-[0.16em] text-yellow underline"
             >
-              VER HISTORIAL COMPLETO · Y {activities.length - HISTORIAL_VISIBLE} MÁS
+              VER VISIBLE_HISTORY COMPLETO · Y {activities.length - VISIBLE_HISTORY} MÁS
             </Link>
           )}
         </>
       )}
 
-      {focoACerrar && (
-        <DialogoConfirmar
-          tituloFranja="¿Darlo por terminado?"
-          idTitulo="titulo-cerrar-foco"
-          procesando={cerrando}
-          error={errorCerrar}
-          textoConfirmar="Cerrar"
-          textoProcesando="Cerrando…"
-          onConfirmar={() => onCambiarCierre(focoACerrar, true)}
-          onCancelar={() => setFocoACerrar(null)}
+      {focusToClose && (
+        <ConfirmDialog
+          bandTitle="¿Darlo por terminado?"
+          titleId="close-focus-title"
+          busy={closing}
+          error={closeError}
+          confirmLabel="Cerrar"
+          busyLabel="Cerrando…"
+          onConfirm={() => onToggleClosed(focusToClose, true)}
+          onCancel={() => setFocusToClose(null)}
         >
-          <p className="m-0 font-display text-[20px] leading-tight text-hueso uppercase">
-            {focoACerrar.name}
+          <p className="m-0 font-display text-[20px] leading-tight text-bone uppercase">
+            {focusToClose.name}
           </p>
-          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-hueso/55">
-            NIVEL {focoACerrar.level} · {focoACerrar.currentXp} XP
+          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-bone/55">
+            NIVEL {focusToClose.level} · {focusToClose.currentXp} XP
           </p>
 
-          <p className="mt-4 text-[11.5px] leading-relaxed text-hueso/75">
+          <p className="mt-4 text-[11.5px] leading-relaxed text-bone/75">
             Dejará de aceptar actividad y podrás{" "}
-            <b className="text-amarillo">engendrar un hijo</b> desde él, igual
+            <b className="text-yellow">engendrar un hijo</b> desde él, igual
             que si hubiera llegado al nivel 20. Su XP se queda donde está: no
             se pierde nada.
           </p>
-          <p className="mt-2 text-[11.5px] leading-relaxed text-hueso/55">
+          <p className="mt-2 text-[11.5px] leading-relaxed text-bone/55">
             Se puede reabrir cuando quieras.
           </p>
-        </DialogoConfirmar>
+        </ConfirmDialog>
       )}
 
-      {focoABorrar && (
-        <DialogoConfirmar
-          tituloFranja="¿Borrar foco?"
-          idTitulo="titulo-borrar-foco"
-          procesando={borrando}
-          error={errorBorrado}
-          textoConfirmar="Borrar"
-          textoProcesando="Borrando…"
-          onConfirmar={onBorrarFoco}
-          onCancelar={() => setFocoABorrar(null)}
+      {focusToDelete && (
+        <ConfirmDialog
+          bandTitle="¿Borrar foco?"
+          titleId="delete-focus-title"
+          busy={deleting}
+          error={deleteError}
+          confirmLabel="Borrar"
+          busyLabel="Borrando…"
+          onConfirm={onDeleteFocus}
+          onCancel={() => setFocusToDelete(null)}
         >
-          <p className="m-0 font-display text-[20px] leading-tight text-hueso uppercase">
-            {focoABorrar.name}
+          <p className="m-0 font-display text-[20px] leading-tight text-bone uppercase">
+            {focusToDelete.name}
           </p>
-          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-hueso/55">
-            NIVEL {focoABorrar.level} · {focoABorrar.currentXp} XP
+          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-bone/55">
+            NIVEL {focusToDelete.level} · {focusToDelete.currentXp} XP
           </p>
 
-          <p className="mt-4 text-[11.5px] leading-relaxed text-hueso/75">
+          <p className="mt-4 text-[11.5px] leading-relaxed text-bone/75">
             {(() => {
               const n = activities.filter(
-                (a) => a.focusId === focoABorrar.id,
+                (a) => a.focusId === focusToDelete.id,
               ).length;
               if (n === 0) return "No tiene actividades registradas.";
               return (
                 <>
-                  Sus <b className="text-amarillo">{n}</b>{" "}
+                  Sus <b className="text-yellow">{n}</b>{" "}
                   {n === 1 ? "actividad" : "actividades"} no se{" "}
                   {n === 1 ? "borra" : "borran"}: se{" "}
                   {n === 1 ? "queda" : "quedan"} en la categoría sin foco. La
@@ -893,36 +899,36 @@ export function CategoryDetailPage() {
               );
             })()}
           </p>
-        </DialogoConfirmar>
+        </ConfirmDialog>
       )}
 
-      {actividadADeshacer && (
-        <DialogoConfirmar
-          tituloFranja="¿Deshacer registro?"
-          idTitulo="titulo-deshacer-actividad"
-          procesando={deshaciendo}
-          error={errorDeshacer}
-          textoConfirmar="Deshacer"
-          textoProcesando="Deshaciendo…"
-          onConfirmar={onDeshacerActividad}
-          onCancelar={() => setActividadADeshacer(null)}
+      {activityToUndo && (
+        <ConfirmDialog
+          bandTitle="¿Deshacer registro?"
+          titleId="undo-activity-title"
+          busy={undoing}
+          error={undoError}
+          confirmLabel="Deshacer"
+          busyLabel="Deshaciendo…"
+          onConfirm={onUndoActivity}
+          onCancel={() => setActivityToUndo(null)}
         >
-          <p className="m-0 font-display text-[18px] leading-tight text-hueso uppercase">
-            {actividadADeshacer.description === ""
+          <p className="m-0 font-display text-[18px] leading-tight text-bone uppercase">
+            {activityToUndo.description === ""
               ? "Sin descripción"
-              : actividadADeshacer.description}
+              : activityToUndo.description}
           </p>
-          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-hueso/55">
-            +{XP_POR_INTENSIDAD[actividadADeshacer.intensity]} XP ·{" "}
-            {fechaRelativaCorta(actividadADeshacer.date)}
+          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-bone/55">
+            +{XP_BY_INTENSITY[activityToUndo.intensity]} XP ·{" "}
+            {shortRelativeDate(activityToUndo.date)}
           </p>
 
-          <p className="mt-4 text-[11.5px] leading-relaxed text-hueso/75">
+          <p className="mt-4 text-[11.5px] leading-relaxed text-bone/75">
             Se le resta esa XP al foco (si la tenía) y a la categoría, y el
             nivel puede bajar si corresponde. Solo puede deshacerse un
             registro de hoy.
           </p>
-        </DialogoConfirmar>
+        </ConfirmDialog>
       )}
     </div>
   );

@@ -11,36 +11,37 @@ import {
   type RegisterActivityResult,
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
-import { XP_POR_INTENSIDAD } from "../lib/intensity";
-import { ModalResultado } from "../components/ModalResultado";
+import { useLight } from "../lib/useLight";
+import { XP_BY_INTENSITY } from "../lib/intensity";
+import { ResultModal } from "../components/ResultModal";
 
-const INTENSIDADES: {
-  valor: Intensity;
-  etiqueta: string;
+const INTENSITIES: {
+  value: Intensity;
+  label: string;
   xp: number;
-  giro: string;
+  tilt: string;
 }[] = [
-  { valor: "chispa", etiqueta: "Chispa", xp: XP_POR_INTENSIDAD.chispa, giro: "-1.4deg" },
-  { valor: "impulso", etiqueta: "Impulso", xp: XP_POR_INTENSIDAD.impulso, giro: "0.9deg" },
-  { valor: "all_out", etiqueta: "All-Out", xp: XP_POR_INTENSIDAD.all_out, giro: "-1deg" },
+  { value: "chispa", label: "Chispa", xp: XP_BY_INTENSITY.chispa, tilt: "-1.4deg" },
+  { value: "impulso", label: "Impulso", xp: XP_BY_INTENSITY.impulso, tilt: "0.9deg" },
+  { value: "all_out", label: "All-Out", xp: XP_BY_INTENSITY.all_out, tilt: "-1deg" },
 ];
 
 /**
- * "Ahora" en el formato local que espera datetime-local. El registro es
- * siempre retroactivo (docs/DESIGN.md), así que no tiene sentido poder elegir
- * una fecha futura.
+ * "Now", in the local format datetime-local expects. Logging is always
+ * retroactive (docs/DESIGN.md), so being able to pick a future date would make
+ * no sense.
  */
-function ahoraLocal(): string {
+function localNow(): string {
   const d = new Date();
   return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
     .toISOString()
     .slice(0, 16);
 }
 
-/** Solo se acepta el parámetro si es un entero: viene de la URL. */
-function paramEntero(params: URLSearchParams, nombre: string): string {
-  const valor = params.get(nombre);
-  return valor !== null && /^\d+$/.test(valor) ? valor : "";
+/** The parameter is only accepted when it is an integer: it comes from the URL. */
+function intParam(params: URLSearchParams, name: string): string {
+  const value = params.get(name);
+  return value !== null && /^\d+$/.test(value) ? value : "";
 }
 
 export function LogActivityPage() {
@@ -49,95 +50,93 @@ export function LogActivityPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [focuses, setFocuses] = useState<Focus[]>([]);
 
-  // Contexto de origen: si vienes de una categoría o de un foco, llegan ya
-  // elegidos. Se lee una sola vez, al montar.
+  // Incoming context: arriving from a category or a focus, they come already
+  // chosen. Read once, on mount.
   const [categoryId, setCategoryId] = useState(() =>
-    paramEntero(searchParams, "categoria"),
+    intParam(searchParams, "category"),
   );
   const [focusId, setFocusId] = useState(() =>
-    paramEntero(searchParams, "foco"),
+    intParam(searchParams, "focus"),
   );
-  const [categoriaDeOrigen] = useState(() =>
-    paramEntero(searchParams, "categoria"),
+  const [originCategory] = useState(() =>
+    intParam(searchParams, "category"),
   );
-  // Si vienes de un foco, la categoría viene decidida: cambiarla invalidaría
-  // el foco. Se puede desbloquear a mano.
-  const [categoriaFijada, setCategoriaFijada] = useState(
-    () => paramEntero(searchParams, "foco") !== "",
+  // Arriving from a focus, the category is already decided: changing it would
+  // invalidate the focus. It can be unlocked by hand.
+  const [categoryLocked, setCategoryLocked] = useState(
+    () => intParam(searchParams, "focus") !== "",
   );
   const [description, setDescription] = useState("");
   const [intensity, setIntensity] = useState<Intensity>("chispa");
   const [date, setDate] = useState("");
-  const [editandoFecha, setEditandoFecha] = useState(false);
+  const [editingDate, setEditingDate] = useState(false);
 
-  const [enviando, setEnviando] = useState(false);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [resultado, setResultado] = useState<RegisterActivityResult | null>(
-    null,
-  );
+  const [result, setResult] = useState<RegisterActivityResult | null>(null);
 
   useEffect(() => {
     getCategories()
       .then((cats) => {
         setCategories(cats);
-        // La categoría puede venir de la URL: si no existe, se descarta aquí
-        // en vez de dejar que el fallo salte al enviar.
-        setCategoryId((actual) =>
-          actual === "" || cats.some((c) => String(c.id) === actual)
-            ? actual
+        // The category can come from the URL: if it does not exist, it is
+        // dropped here rather than letting the failure surface on submit.
+        setCategoryId((current) =>
+          current === "" || cats.some((c) => String(c.id) === current)
+            ? current
             : "",
         );
       })
       .catch((e: Error) => setError(e.message));
   }, []);
 
-  // Cambiar de categoría invalida el foco elegido y la lista: se limpia en el
-  // propio evento, no en un efecto.
-  function onCambiarCategoria(value: string) {
+  // Changing category invalidates the chosen focus and the list: cleared in
+  // the event itself, not in an effect.
+  function onChangeCategory(value: string) {
     setCategoryId(value);
     setFocusId("");
     setFocuses([]);
   }
 
-  function desbloquearCategoria() {
-    setCategoriaFijada(false);
+  function unlockCategory() {
+    setCategoryLocked(false);
     setFocusId("");
   }
 
-  // Los focos dependen de la categoría elegida.
+  // The focuses depend on the chosen category.
   useEffect(() => {
     if (categoryId === "") return;
 
-    // Descarta la respuesta si mientras tanto se ha cambiado de categoría.
-    let cancelado = false;
+    // Discard the response if the category changed in the meantime.
+    let cancelled = false;
 
     getFocusesByCategory(Number(categoryId))
       .then((f) => {
-        if (cancelado) return;
+        if (cancelled) return;
         setFocuses(f);
-        // Mismo criterio que con la categoría: un foco de la URL que no exista
-        // o esté congelado se descarta antes de poder enviarlo.
-        setFocusId((actual) =>
-          actual === "" ||
-          f.some((x) => String(x.id) === actual && !x.frozen)
-            ? actual
+        // Same rule as for the category: a focus from the URL that does not
+        // exist or is frozen is dropped before it can be submitted.
+        setFocusId((current) =>
+          current === "" ||
+          f.some((x) => String(x.id) === current && !x.frozen)
+            ? current
             : "",
         );
       })
       .catch((e: Error) => {
-        if (!cancelado) setError(e.message);
+        if (!cancelled) setError(e.message);
       });
 
     return () => {
-      cancelado = true;
+      cancelled = true;
     };
   }, [categoryId]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setResultado(null);
-    setEnviando(true);
+    setResult(null);
+    setSending(true);
 
     try {
       const res = await createActivity({
@@ -145,50 +144,55 @@ export function LogActivityPage() {
         focusId: focusId === "" ? undefined : Number(focusId),
         description,
         intensity,
-        // Sin fecha, el backend usa la actual.
+        // With no date, the backend uses the current one.
         date: date === "" ? undefined : new Date(date).toISOString(),
       });
 
-      setResultado(res);
+      setResult(res);
       setDescription("");
       setDate("");
-      setEditandoFecha(false);
+      setEditingDate(false);
     } catch (err) {
       setError((err as Error).message);
     } finally {
-      setEnviando(false);
+      setSending(false);
     }
   }
 
   /**
-   * DELETE real. Si falla, se deja lanzar: el modal atrapa el error y lo
-   * enseña en su propio diálogo, en vez de duplicar aquí ese manejo.
+   * The real DELETE. On failure it is left to throw: the modal catches the
+   * error and shows it in its own dialog, rather than duplicating that
+   * handling here.
    */
-  async function onDeshacer() {
-    if (!resultado) return;
+  async function onUndo() {
+    if (!result) return;
 
-    await deleteActivity(resultado.activity.id);
+    await deleteActivity(result.activity.id);
 
-    // La XP revertida cambió el nivel de la categoría (y del foco, si lo
-    // había): se recarga lo que alimenta los desplegables para que no se
-    // quede enseñando un nivel que ya no es real.
+    // The reverted XP changed the category's level (and the focus's, if there
+    // was one): whatever feeds the selects is reloaded so it does not sit
+    // there showing a level that is no longer real.
     const cats = await getCategories();
     setCategories(cats);
-    if (resultado.activity.focusId !== null && categoryId !== "") {
+    if (result.activity.focusId !== null && categoryId !== "") {
       setFocuses(await getFocusesByCategory(Number(categoryId)));
     }
   }
 
-  const seleccionada = categories.find((c) => String(c.id) === categoryId);
-  const acento = seleccionada
-    ? categoryColorVar(seleccionada.slug)
-    : "var(--color-amarillo)";
+  const selected = categories.find((c) => String(c.id) === categoryId);
+  const accent = selected
+    ? categoryColorVar(selected.slug)
+    : "var(--color-yellow)";
+
+  // Choosing a category lights the scene in its colour. While none is chosen
+  // the beam stays bone: it does not pre-empt a decision you have not made.
+  useLight(selected ? categoryColorVar(selected.slug) : null);
 
   return (
     <div className="px-4 pt-6 pb-32">
       <Link
         to="/"
-        className="anim-fila inline-block bg-hueso px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-negro"
+        className="anim-row inline-block bg-bone px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-black"
         style={{ transform: "skewX(-10deg)" }}
       >
         <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
@@ -196,68 +200,68 @@ export function LogActivityPage() {
         </span>
       </Link>
 
-      {/* La banda toma el color de la categoría elegida: la cabecera responde
-          a lo que estás rellenando. */}
+      {/* The band takes the chosen category's colour: the header responds to
+          what you are filling in. */}
       <header className="relative mt-7 mb-9">
         <div
-          className="banda-sangre anim-logo top-[-18px] z-0 h-[96px]"
+          className="bleed-band anim-logo top-[-18px] z-0 h-[96px]"
           style={
             {
-              "--banda-fondo": acento,
-              "--banda-reborde": "var(--color-negro)",
-              "--banda-giro": "3deg",
+              "--band-bg": accent,
+              "--band-edge": "var(--color-black)",
+              "--band-tilt": "3deg",
               transition: "background-color .12s steps(2)",
             } as React.CSSProperties
           }
         />
-        <h1 className="texto-rotulo relative z-10 m-0 font-display text-[34px] leading-[0.92] text-hueso uppercase">
+        <h1 className="text-sign relative z-10 m-0 font-display text-[34px] leading-[0.92] text-bone uppercase">
           Registrar
         </h1>
       </header>
 
       <form onSubmit={onSubmit} className="grid gap-6">
         <label
-          className="anim-fila grid gap-2"
-          style={{ "--retardo": "0.06s" } as React.CSSProperties}
+          className="anim-row grid gap-2"
+          style={{ "--delay": "0.06s" } as React.CSSProperties}
         >
-          <span className="etiqueta-campo justify-self-start">
+          <span className="field-label justify-self-start">
             <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
               CATEGORÍA
             </span>
           </span>
-          {categoriaFijada && seleccionada ? (
-            // Fijada porque vienes de un foco suyo: cambiarla dejaría el foco
-            // huérfano. Se muestra, no se edita, y se puede soltar a mano.
+          {categoryLocked && selected ? (
+            // Locked because you came from one of its focuses: changing it
+            // would orphan that focus. Shown, not editable, releasable by hand.
             <div
-              className="campo-marco flex items-center"
-              style={{ borderColor: acento }}
+              className="field-frame flex items-center"
+              style={{ borderColor: accent }}
             >
               <span
-                className="campo flex items-center gap-2.5"
+                className="field flex items-center gap-2.5"
                 style={{ width: "auto", flex: 1 }}
               >
                 <i
                   className="h-3 w-3 shrink-0"
-                  style={{ background: acento, transform: "skewX(-10deg)" }}
+                  style={{ background: accent, transform: "skewX(-10deg)" }}
                 />
-                {seleccionada.name}
+                {selected.name}
               </span>
               <button
                 type="button"
-                onClick={desbloquearCategoria}
-                className="mr-3 shrink-0 text-[9px] font-bold tracking-[0.16em] text-amarillo underline"
+                onClick={unlockCategory}
+                className="mr-3 shrink-0 text-[9px] font-bold tracking-[0.16em] text-yellow underline"
                 style={{ transform: "skewX(7deg)" }}
               >
                 CAMBIAR
               </button>
             </div>
           ) : (
-            <div className="campo-marco">
+            <div className="field-frame">
               <select
                 value={categoryId}
-                onChange={(e) => onCambiarCategoria(e.target.value)}
+                onChange={(e) => onChangeCategory(e.target.value)}
                 required
-                className="campo"
+                className="field"
               >
                 <option value="">— Elige una —</option>
                 {categories.map((c) => (
@@ -271,20 +275,20 @@ export function LogActivityPage() {
         </label>
 
         <label
-          className="anim-fila grid gap-2"
-          style={{ "--retardo": "0.12s" } as React.CSSProperties}
+          className="anim-row grid gap-2"
+          style={{ "--delay": "0.12s" } as React.CSSProperties}
         >
-          <span className="etiqueta-campo justify-self-start">
+          <span className="field-label justify-self-start">
             <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
               FOCO · OPCIONAL
             </span>
           </span>
-          <div className={`campo-marco ${categoryId === "" ? "opacity-40" : ""}`}>
+          <div className={`field-frame ${categoryId === "" ? "opacity-40" : ""}`}>
             <select
               value={focusId}
               onChange={(e) => setFocusId(e.target.value)}
               disabled={categoryId === ""}
-              className="campo"
+              className="field"
             >
               <option value="">— Sin foco —</option>
               {focuses.map((f) => (
@@ -298,49 +302,49 @@ export function LogActivityPage() {
         </label>
 
         <label
-          className="anim-fila grid gap-2"
-          style={{ "--retardo": "0.18s" } as React.CSSProperties}
+          className="anim-row grid gap-2"
+          style={{ "--delay": "0.18s" } as React.CSSProperties}
         >
-          <span className="etiqueta-campo justify-self-start">
+          <span className="field-label justify-self-start">
             <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
               QUÉ HICISTE · OPCIONAL
             </span>
           </span>
-          <div className="campo-marco">
+          <div className="field-frame">
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="Si te apetece contarlo."
-              className="campo resize-none"
+              className="field resize-none"
             />
           </div>
         </label>
 
-        {/* Tres fichas en vez de un desplegable: la intensidad es la decisión
-            con más peso del formulario y merece verse entera. */}
+        {/* Three chips instead of a select: intensity is the weightiest
+            decision in this form and deserves to be seen whole. */}
         <fieldset
-          className="anim-fila m-0 grid gap-2 border-0 p-0"
-          style={{ "--retardo": "0.24s" } as React.CSSProperties}
+          className="anim-row m-0 grid gap-2 border-0 p-0"
+          style={{ "--delay": "0.24s" } as React.CSSProperties}
         >
-          <legend className="etiqueta-campo mb-2">
+          <legend className="field-label mb-2">
             <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
               INTENSIDAD
             </span>
           </legend>
           <div className="grid grid-cols-3 gap-3">
-            {INTENSIDADES.map((i) => (
+            {INTENSITIES.map((i) => (
               <button
-                key={i.valor}
+                key={i.value}
                 type="button"
-                aria-pressed={intensity === i.valor}
-                onClick={() => setIntensity(i.valor)}
-                className="ficha-intensidad"
-                style={{ "--rotacion": i.giro } as React.CSSProperties}
+                aria-pressed={intensity === i.value}
+                onClick={() => setIntensity(i.value)}
+                className="intensity-chip"
+                style={{ "--rotation": i.tilt } as React.CSSProperties}
               >
                 <span className="block">
                   <span className="block text-[13px] leading-tight">
-                    {i.etiqueta}
+                    {i.label}
                   </span>
                   <span className="mt-1 block font-display text-[17px] leading-none">
                     {i.xp}
@@ -353,52 +357,52 @@ export function LogActivityPage() {
         </fieldset>
 
         <div
-          className="anim-fila grid gap-2"
-          style={{ "--retardo": "0.3s" } as React.CSSProperties}
+          className="anim-row grid gap-2"
+          style={{ "--delay": "0.3s" } as React.CSSProperties}
         >
-          <span className="etiqueta-campo justify-self-start">
+          <span className="field-label justify-self-start">
             <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
               CUÁNDO
             </span>
           </span>
 
-          {date === "" && !editandoFecha ? (
-            // El caso normal es registrar algo recién hecho, así que por
-            // defecto se afirma "ahora" en vez de plantar un selector de fecha
-            // que casi nunca se toca.
+          {date === "" && !editingDate ? (
+            // The normal case is logging something you just did, so the
+            // default states "now" rather than planting a date picker that
+            // almost never gets touched.
             <button
               type="button"
-              onClick={() => setEditandoFecha(true)}
-              className="campo-marco flex items-center text-left"
+              onClick={() => setEditingDate(true)}
+              className="field-frame flex items-center text-left"
             >
-              <span className="campo flex-1" style={{ width: "auto" }}>
+              <span className="field flex-1" style={{ width: "auto" }}>
                 Ahora
               </span>
               <span
-                className="mr-3 shrink-0 text-[9px] font-bold tracking-[0.16em] text-amarillo underline"
+                className="mr-3 shrink-0 text-[9px] font-bold tracking-[0.16em] text-yellow underline"
                 style={{ transform: "skewX(7deg)" }}
               >
                 OTRO MOMENTO
               </span>
             </button>
           ) : (
-            <div className="campo-marco flex items-center">
+            <div className="field-frame flex items-center">
               <input
                 type="datetime-local"
                 value={date}
-                max={ahoraLocal()}
+                max={localNow()}
                 autoFocus
                 onChange={(e) => setDate(e.target.value)}
-                className="campo flex-1"
+                className="field flex-1"
                 style={{ width: "auto" }}
               />
               <button
                 type="button"
                 onClick={() => {
                   setDate("");
-                  setEditandoFecha(false);
+                  setEditingDate(false);
                 }}
-                className="mr-3 shrink-0 text-[9px] font-bold tracking-[0.16em] text-amarillo underline"
+                className="mr-3 shrink-0 text-[9px] font-bold tracking-[0.16em] text-yellow underline"
                 style={{ transform: "skewX(7deg)" }}
               >
                 AHORA
@@ -409,27 +413,27 @@ export function LogActivityPage() {
 
         <button
           type="submit"
-          disabled={enviando || categoryId === ""}
-          className="boton-slam anim-fila mt-1 w-full"
-          style={{ "--retardo": "0.36s" } as React.CSSProperties}
+          disabled={sending || categoryId === ""}
+          className="slam-button anim-row mt-1 w-full"
+          style={{ "--delay": "0.36s" } as React.CSSProperties}
         >
-          <span>{enviando ? "Registrando…" : "Registrar"}</span>
+          <span>{sending ? "Registrando…" : "Registrar"}</span>
         </button>
       </form>
 
       {error && (
-        <p className="anim-slam mt-6 bg-cuerpo px-4 py-3 text-[12px] font-bold text-hueso">
+        <p className="anim-slam mt-6 bg-cuerpo px-4 py-3 text-[12px] font-bold text-bone">
           {error}
         </p>
       )}
 
-      {resultado && (
-        <ModalResultado
-          resultado={resultado}
-          categoria={seleccionada}
-          volverA={categoriaDeOrigen}
-          onCerrar={() => setResultado(null)}
-          onDeshacer={onDeshacer}
+      {result && (
+        <ResultModal
+          result={result}
+          category={selected}
+          backTo={originCategory}
+          onClose={() => setResult(null)}
+          onUndo={onUndo}
         />
       )}
     </div>

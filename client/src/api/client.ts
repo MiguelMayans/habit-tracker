@@ -1,24 +1,23 @@
 /**
- * Envoltorio de `fetch` sobre la API del backend. Sin librería de fetching:
- * las páginas usan useState/useEffect a mano en esta fase.
+ * A `fetch` wrapper over the backend API. No fetching library: at this stage
+ * the pages use useState/useEffect by hand.
  */
 
 /**
- * En producción la inyecta Vite al construir (`VITE_API_URL`), porque el
- * backend vive en otro dominio. El valor de local queda como respaldo para
- * que `pnpm dev` siga funcionando sin configurar nada.
+ * In production Vite injects this at build time (`VITE_API_URL`), where the
+ * API is served under the same domain as the client. The local value is the
+ * fallback, so `pnpm dev` keeps working with nothing to configure.
  */
-export const API_URL =
-  import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export type Category = {
   id: number;
   name: string;
   slug: string;
   level: number;
-  /** XP acumulada total histórica; para la barra usa `progress`. */
+  /** Total XP accumulated over time; for the bar, use `progress` instead. */
   currentXp: number;
-  /** XP dentro del nivel actual. El backend lo calcula con la curva real. */
+  /** XP within the current level. The backend derives it from the curve. */
   xpIntoLevel: number;
   xpForNextLevel: number;
   xpToNextLevel: number;
@@ -26,11 +25,11 @@ export type Category = {
   progress: number;
   atMaxLevel: boolean;
   focusCount: number;
-  /** ISO, o null si la categoría no tiene actividades todavía. */
+  /** ISO string, or null when the category has no activities yet. */
   lastActivityAt: string | null;
 };
 
-/** La fila tal cual: lo que devuelve `POST /focuses`, sin progreso calculado. */
+/** The raw row: what `POST /focuses` returns, with no progress computed. */
 export type FocusRow = {
   id: number;
   categoryId: number;
@@ -42,7 +41,7 @@ export type FocusRow = {
   frozen: boolean;
 };
 
-/** Progreso dentro del nivel, calculado en el servidor con la curva real. */
+/** Progress within the level, computed on the server from the real curve. */
 export type Progress = {
   xpIntoLevel: number;
   xpForNextLevel: number;
@@ -52,7 +51,7 @@ export type Progress = {
   atMaxLevel: boolean;
 };
 
-/** Lo que devuelve el listado de focos de una categoría. */
+/** What the focus listing of a category returns. */
 export type Focus = FocusRow & Progress;
 
 export type Intensity = "chispa" | "impulso" | "all_out";
@@ -68,10 +67,10 @@ export type Activity = {
 };
 
 /**
- * Una actividad con el contexto que solo tiene sentido en una lista GLOBAL
- * (no ya filtrada por categoría o foco): de qué categoría es y, si tiene
- * foco, su nombre y si está congelado AHORA MISMO — no como estaba cuando se
- * registró la actividad.
+ * An activity with the context that only makes sense in a GLOBAL list (one not
+ * already filtered by category or focus): which category it belongs to and, if
+ * it has a focus, that focus's name and whether it is frozen RIGHT NOW — not
+ * how it stood when the activity was logged.
  */
 export type RecentActivity = Activity & {
   categorySlug: string;
@@ -79,19 +78,19 @@ export type RecentActivity = Activity & {
   focusFrozen: boolean | null;
 };
 
-/** Cómo quedó una entidad tras recibir la XP. */
+/** How an entity ended up after taking the XP. */
 export type XpOutcome = {
   id: number;
   levelBefore: number;
   levelAfter: number;
   leveledUp: boolean;
   totalXp: number;
-  /** Progreso dentro del nivel antes y después, 0..1: la barra va de uno a otro. */
+  /** In-level progress before and after, 0..1: the bar travels between them. */
   progressBefore: number;
   progressAfter: number;
   xpToNextLevel: number;
   atMaxLevel: boolean;
-  /** Solo tiene sentido en un Foco: en una categoría siempre es `false`. */
+  /** Only meaningful on a Focus: on a category it is always `false`. */
   frozen: boolean;
 };
 
@@ -110,8 +109,8 @@ export type UndoActivityResult = {
 };
 
 /**
- * El backend devuelve los errores como { message }. Los propagamos como Error
- * con ese texto para que las páginas puedan enseñarlo tal cual.
+ * The backend returns errors as { message }. They are rethrown as an Error
+ * carrying that text, so the pages can show it verbatim.
  */
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
@@ -159,23 +158,23 @@ export function createFocus(data: {
 }
 
 /**
- * Lo que se edita a mano de un foco. `frozen: true` lo da por cerrado —
- * terminaste el libro, perdiste los kilos—: deja de aceptar actividad y pasa
- * a poder engendrar un hijo. Un cierre se puede deshacer; la maestría de
- * nivel 20 no, y el servidor la rechaza.
+ * What can be edited on a focus by hand. `frozen: true` calls it done — you
+ * finished the book, you lost the weight: it stops taking activity and becomes
+ * able to spawn a child. A manual close can be reversed; mastery at level 20
+ * cannot, and the server rejects the attempt.
  */
 export function updateFocus(
   id: number,
-  cambios: { name?: string; frozen?: boolean },
+  changes: { name?: string; frozen?: boolean },
 ): Promise<FocusRow> {
   return request<FocusRow>(`/focuses/${id}`, {
     method: "PATCH",
-    body: JSON.stringify(cambios),
+    body: JSON.stringify(changes),
   });
 }
 
 export function deleteFocus(id: number): Promise<{
-  /** Actividades que quedan sin foco pero siguen contando en la categoría. */
+  /** Activities left without a focus that still count toward the category. */
   activitiesDetached: number;
 }> {
   return request(`/focuses/${id}`, { method: "DELETE" });
@@ -184,7 +183,7 @@ export function deleteFocus(id: number): Promise<{
 export function createActivity(data: {
   categoryId: number;
   focusId?: number;
-  /** Opcional: lo que cuenta es que ocurrió y con qué intensidad. */
+  /** Optional: what matters is that it happened, and at what intensity. */
   description?: string;
   intensity: Intensity;
   date?: string;
@@ -195,7 +194,7 @@ export function createActivity(data: {
   });
 }
 
-/** Solo admite deshacer actividades de hoy: ver la excepción de docs/DESIGN.md. */
+/** Only today's activities can be undone: see the exception in docs/DESIGN.md. */
 export function deleteActivity(id: number): Promise<UndoActivityResult> {
   return request<UndoActivityResult>(`/activities/${id}`, {
     method: "DELETE",
@@ -208,13 +207,9 @@ export function getActivitiesByCategory(
   return request<Activity[]>(`/categories/${categoryId}/activities`);
 }
 
-export function getActivitiesByFocus(focusId: number): Promise<Activity[]> {
-  return request<Activity[]>(`/focuses/${focusId}/activities`);
-}
-
 /**
- * De todas las categorías, no de una: alimenta la racha, el resumen de hoy y
- * los focos recientes de la home.
+ * Across all categories, not just one: this feeds the streak, today's summary
+ * and the rhythm strip on the home screen.
  */
 export function getRecentActivities(params: {
   since?: string;

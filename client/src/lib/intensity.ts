@@ -1,12 +1,12 @@
 import type { Intensity } from "../api/client";
 
 /**
- * Espejo de XP_BY_INTENSITY (server/src/lib/intensity.ts). El cliente no
- * puede pedirle esto al servidor por cada actividad ya registrada — solo son
- * tres números fijos, así que se acepta la duplicación puntual en vez de un
- * viaje de red para algo que no cambia.
+ * Mirror of XP_BY_INTENSITY (server/src/lib/intensity.ts). The client cannot
+ * ask the server for this on every activity it already has — these are three
+ * fixed numbers, so a one-off duplication beats a network round trip for
+ * something that never changes.
  */
-export const XP_POR_INTENSIDAD: Record<Intensity, number> = {
+export const XP_BY_INTENSITY: Record<Intensity, number> = {
   chispa: 10,
   impulso: 20,
   all_out: 35,

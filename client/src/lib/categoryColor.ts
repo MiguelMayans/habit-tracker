@@ -1,18 +1,11 @@
 /**
- * Tailwind escanea el código buscando nombres de clase literales, así que un
- * `bg-${slug}` construido al vuelo no generaría CSS. Por eso el mapa es
- * explícito.
+ * Tailwind scans the source for literal class names, so a `bg-${slug}` built
+ * at runtime would never generate any CSS. Hence the explicit map.
+ *
+ * The slugs stay in Spanish on purpose: they are values stored in the
+ * database, not identifiers we are free to rename.
  */
-const CLASES_POR_SLUG: Record<string, string> = {
-  cuerpo: "bg-cuerpo",
-  disciplina: "bg-disciplina",
-  mente: "bg-mente",
-  ingenio: "bg-ingenio",
-  corazon: "bg-corazon",
-};
-
-/** Nombre de la custom property del tema, para usarla en estilos inline. */
-const VARS_POR_SLUG: Record<string, string> = {
+const VARS_BY_SLUG: Record<string, string> = {
   cuerpo: "var(--color-cuerpo)",
   disciplina: "var(--color-disciplina)",
   mente: "var(--color-mente)",
@@ -20,10 +13,7 @@ const VARS_POR_SLUG: Record<string, string> = {
   corazon: "var(--color-corazon)",
 };
 
-export function categoryColorClass(slug: string): string {
-  return CLASES_POR_SLUG[slug] ?? "bg-hueso/20";
-}
-
+/** The theme custom property name, for use in inline styles. */
 export function categoryColorVar(slug: string): string {
-  return VARS_POR_SLUG[slug] ?? "var(--color-hueso)";
+  return VARS_BY_SLUG[slug] ?? "var(--color-bone)";
 }

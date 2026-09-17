@@ -1,14 +1,14 @@
-# Las DOS reglas viven en el mismo fichero y en este orden a propósito.
+# BOTH rules live in the same file, in this order, on purpose.
 #
-# Estaban repartidas entre netlify.toml y este fichero, y el orden entre
-# ficheros distintos no es algo en lo que convenga confiar: la regla comodín
-# de abajo atrapaba /api/categories y devolvía el index.html, que es de donde
-# salía el "Unexpected token '<'". Dentro de un mismo fichero el orden sí está
-# garantizado, y gana la primera que encaja.
+# They used to be split between netlify.toml and this file, and the ordering
+# between two different files is not something to rely on: the catch-all below
+# was swallowing /api/categories and returning index.html, which is where the
+# "Unexpected token '<'" came from. Within a single file the order IS
+# guaranteed, and the first matching rule wins.
 
-# La API, a la función.
+# The API goes to the function.
 /api/*  /.netlify/functions/api/:splat  200
 
-# Todo lo demás, a la SPA: el enrutado vive en el cliente y el servidor de
-# estáticos no conoce /categories/1 ni /log-activity.
+# Everything else goes to the SPA: routing lives in the client, and the static
+# server knows nothing about /categories/1 or /log-activity.
 /*  /index.html  200
