@@ -76,7 +76,19 @@ body {
     color-mix(in srgb, var(--light, var(--color-bone)) 4%, transparent) 46%,
     transparent 88%
   );
-  animation: lamp-on 0.9s steps(1) backwards;
+  /* El foco cuelga, y lo que cuelga se mueve. El pivote está arriba y fuera
+     de la pantalla, donde estaría el gancho, así que gira como un péndulo en
+     vez de como una puerta.
+
+     `stutter` entra con un segundo de retraso a propósito: comparte la
+     propiedad `opacity` con `lamp-on`, y dos animaciones sobre la misma
+     propiedad las resuelve la última declarada. Sin el retraso se comería el
+     arranque del fluorescente. */
+  transform-origin: 12% -30%;
+  animation:
+    lamp-on 0.9s steps(1) backwards,
+    sway 19s ease-in-out infinite,
+    stutter 31s 1s steps(1) infinite;
 }
 
 /* The halftone, clipped by the parent's clip-path: outside the beam there is
@@ -130,7 +142,13 @@ body {
     transparent 3.2px
   );
   opacity: 0;
-  animation: mote var(--cycle) var(--delay) ease-in-out infinite;
+  /* El destello y el salto comparten ciclo y retardo, así que van en fase: la
+     mota se enciende, salta una celda, se apaga. El salto es de 7px exactos
+     —el paso de la trama— y con `steps`, para que nunca esté entre dos puntos
+     de la rejilla. Polvo flotando, no una partícula deslizándose. */
+  animation:
+    mote var(--cycle) var(--delay) ease-in-out infinite,
+    mote-drift var(--cycle) var(--delay) steps(3) infinite;
 }
 
 /* The table. A lit 4px red edge and the surface falling away to black:
@@ -155,8 +173,16 @@ body {
    gradients: any repeated CSS pattern reads as a grid. Still nothing to
    maintain as a file. */
 .scene-grain {
+  /* Holgura por los cuatro lados: el grano se mueve, y sin margen se vería
+     asomar el borde de la capa al desplazarse. */
+  inset: -170px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='r'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23r)'/%3E%3C/svg%3E");
   opacity: 0.055;
+  /* El grano de película nunca está quieto: quieto se lee como una textura,
+     arrastrándose se lee como película. Va en `transform` y no en
+     `background-position` porque lo primero lo compone la GPU y lo segundo
+     obliga a repintar la pantalla entera siete veces por segundo. */
+  animation: grain 1.1s steps(1) infinite;
 }
 
 /* Vignette: darkens the corners so the eye falls to the centre. */
@@ -632,6 +658,76 @@ body {
   }
   85% {
     opacity: 0;
+  }
+}
+
+/* Un grado de balanceo en 19 segundos: no lo ves moverse si lo miras fijo, lo
+   notas si no lo miras. */
+@keyframes sway {
+  0%,
+  100% {
+    transform: rotate(-0.5deg);
+  }
+  50% {
+    transform: rotate(0.5deg);
+  }
+}
+
+/* Cada medio minuto el tubo tartamudea dos fotogramas. Lo justo para que la
+   sala parezca un sitio y no un fondo. */
+@keyframes stutter {
+  0%,
+  96%,
+  100% {
+    opacity: 1;
+  }
+  96.5% {
+    opacity: 0.3;
+  }
+  97.5% {
+    opacity: 1;
+  }
+  98.2% {
+    opacity: 0.55;
+  }
+}
+
+/* Saltos sin orden aparente, ocho por vuelta. Los valores no son múltiplos
+   entre sí para que no se lea un patrón. */
+@keyframes grain {
+  0% {
+    transform: translate(0, 0);
+  }
+  12% {
+    transform: translate(-42px, 23px);
+  }
+  25% {
+    transform: translate(31px, -37px);
+  }
+  37% {
+    transform: translate(-18px, -61px);
+  }
+  50% {
+    transform: translate(57px, 12px);
+  }
+  62% {
+    transform: translate(-63px, -14px);
+  }
+  75% {
+    transform: translate(24px, 48px);
+  }
+  87% {
+    transform: translate(-37px, 35px);
+  }
+}
+
+/* Una celda hacia arriba por ciclo, en saltos de 7px. */
+@keyframes mote-drift {
+  from {
+    transform: translateY(7px);
+  }
+  to {
+    transform: translateY(-14px);
   }
 }
 
