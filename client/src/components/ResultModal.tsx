@@ -10,7 +10,7 @@ import { ConfirmDialog } from "./ConfirmDialog";
 
 /** Beats of the sequence, in ms from the moment the modal opens. */
 const T_START = 380;
-const T_FILL = 850;
+const T_FILL = 1250;
 /** The held beat between topping out and the level landing. */
 const T_HOLD = 110;
 const T_BURST = 420;
@@ -30,8 +30,12 @@ export function ResultModal({
 }: {
   result: RegisterActivityResult;
   category: Category | undefined;
-  /** Id of the category you came from, if the log arrived with context. */
-  backTo: string;
+  /**
+   * Where the trip ends. The id of the category you came from, "" for the
+   * home, or `null` when you are already looking at the screen underneath —
+   * logging from a card on the home— and there is nowhere to go back to.
+   */
+  backTo: string | null;
   onClose: () => void;
   /** Calls DELETE /activities/:id. Throws on failure — the dialog shows it. */
   onUndo: () => Promise<void>;
@@ -118,31 +122,42 @@ export function ResultModal({
           )}
         </div>
 
-        {/* Closing leaves the form ready for another; the link ends the trip by
-            taking you back where you came from. */}
+        {/* Registrado desde la home no hay viaje que cerrar: la pantalla que
+            quieres ya está detrás. El enlace decía "Ver categorías" y no hacía
+            nada visible —navegaba a "/" estando en "/"— y encima dejaba el
+            modal abierto, porque la tarjeta que lo pinta no se desmonta. Ahí
+            un solo botón, que cierra. */}
         <div
           className="anim-row mt-10 grid gap-3"
           style={{ "--delay": "0.9s" } as React.CSSProperties}
         >
-          <Link
-            to={backTo === "" ? "/" : `/categories/${backTo}`}
-            className="slam-button w-full"
-          >
-            <span>{backTo === "" ? "Ver categorías" : "Volver"}</span>
-          </Link>
-          <button
-            type="button"
-            onClick={onClose}
-            className="slam-button w-full"
-            style={{
-              background: "transparent",
-              color: "var(--color-yellow)",
-              boxShadow: "none",
-              border: "2px solid var(--color-yellow)",
-            }}
-          >
-            <span>Registrar otra</span>
-          </button>
+          {backTo === null ? (
+            <button type="button" onClick={onClose} className="slam-button w-full">
+              <span>Seguir</span>
+            </button>
+          ) : (
+            <>
+              <Link
+                to={backTo === "" ? "/" : `/categories/${backTo}`}
+                className="slam-button w-full"
+              >
+                <span>{backTo === "" ? "Ver categorías" : "Volver"}</span>
+              </Link>
+              <button
+                type="button"
+                onClick={onClose}
+                className="slam-button w-full"
+                style={{
+                  background: "transparent",
+                  color: "var(--color-yellow)",
+                  boxShadow: "none",
+                  border: "2px solid var(--color-yellow)",
+                }}
+              >
+                <span>Registrar otra</span>
+              </button>
+            </>
+          )}
 
           {canUndo && (
             <button
@@ -319,8 +334,8 @@ function XpBlock({
             // Subiendo a tope acelera; asentándose en el nivel nuevo frena.
             transition: animated
               ? data.leveledUp && width === 1
-                ? "width .85s cubic-bezier(.4,0,.9,.5)"
-                : "width .85s cubic-bezier(.2,.9,.25,1)"
+                ? "width 1.25s cubic-bezier(.4,0,.9,.5)"
+                : "width 1s cubic-bezier(.2,.9,.25,1)"
               : "none",
           }}
         />

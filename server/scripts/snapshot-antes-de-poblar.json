@@ -1,0 +1,155 @@
+{
+ "categories": [
+  {
+   "id": 1,
+   "name": "Cuerpo",
+   "slug": "cuerpo",
+   "level": 3,
+   "currentXp": 210,
+   "xpIntoLevel": 79,
+   "xpForNextLevel": 92,
+   "xpToNextLevel": 13,
+   "progress": 0.8586956521739131,
+   "atMaxLevel": false,
+   "focusCount": 2,
+   "lastActivityAt": "2026-09-23T19:32:07.000Z"
+  },
+  {
+   "id": 2,
+   "name": "Mente",
+   "slug": "mente",
+   "level": 1,
+   "currentXp": 20,
+   "xpIntoLevel": 20,
+   "xpForNextLevel": 56,
+   "xpToNextLevel": 36,
+   "progress": 0.35714285714285715,
+   "atMaxLevel": false,
+   "focusCount": 1,
+   "lastActivityAt": "2026-09-09T19:25:16.000Z"
+  },
+  {
+   "id": 3,
+   "name": "Corazón",
+   "slug": "corazon",
+   "level": 2,
+   "currentXp": 70,
+   "xpIntoLevel": 14,
+   "xpForNextLevel": 75,
+   "xpToNextLevel": 61,
+   "progress": 0.18666666666666668,
+   "atMaxLevel": false,
+   "focusCount": 1,
+   "lastActivityAt": "2026-09-23T19:33:58.000Z"
+  },
+  {
+   "id": 4,
+   "name": "Disciplina",
+   "slug": "disciplina",
+   "level": 1,
+   "currentXp": 10,
+   "xpIntoLevel": 10,
+   "xpForNextLevel": 56,
+   "xpToNextLevel": 46,
+   "progress": 0.17857142857142858,
+   "atMaxLevel": false,
+   "focusCount": 0,
+   "lastActivityAt": "2026-09-09T19:30:25.000Z"
+  },
+  {
+   "id": 5,
+   "name": "Ingenio",
+   "slug": "ingenio",
+   "level": 1,
+   "currentXp": 0,
+   "xpIntoLevel": 0,
+   "xpForNextLevel": 56,
+   "xpToNextLevel": 56,
+   "progress": 0,
+   "atMaxLevel": false,
+   "focusCount": 0,
+   "lastActivityAt": null
+  }
+ ],
+ "focuses": {
+  "1": [
+   {
+    "id": 10,
+    "categoryId": 1,
+    "parentFocusId": null,
+    "name": "Perder 4 kilos",
+    "level": 4,
+    "currentXp": 155,
+    "frozen": false,
+    "xpIntoLevel": 49,
+    "xpForNextLevel": 70,
+    "xpToNextLevel": 21,
+    "progress": 0.7,
+    "atMaxLevel": false
+   },
+   {
+    "id": 20,
+    "categoryId": 1,
+    "parentFocusId": null,
+    "name": "Otro foco",
+    "level": 1,
+    "currentXp": 0,
+    "frozen": false,
+    "xpIntoLevel": 0,
+    "xpForNextLevel": 20,
+    "xpToNextLevel": 20,
+    "progress": 0,
+    "atMaxLevel": false
+   }
+  ],
+  "2": [
+   {
+    "id": 11,
+    "categoryId": 2,
+    "parentFocusId": null,
+    "name": "Pareja",
+    "level": 2,
+    "currentXp": 20,
+    "frozen": false,
+    "xpIntoLevel": 0,
+    "xpForNextLevel": 35,
+    "xpToNextLevel": 35,
+    "progress": 0,
+    "atMaxLevel": false
+   }
+  ],
+  "3": [
+   {
+    "id": 22,
+    "categoryId": 3,
+    "parentFocusId": null,
+    "name": "Pareja",
+    "level": 3,
+    "currentXp": 70,
+    "frozen": false,
+    "xpIntoLevel": 15,
+    "xpForNextLevel": 51,
+    "xpToNextLevel": 36,
+    "progress": 0.29411764705882354,
+    "atMaxLevel": false
+   }
+  ],
+  "4": [],
+  "5": []
+ },
+ "activityIds": [
+  381,
+  380,
+  379,
+  378,
+  376,
+  375,
+  374,
+  373,
+  17,
+  13,
+  9,
+  8,
+  7
+ ]
+}

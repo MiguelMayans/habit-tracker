@@ -404,7 +404,7 @@ export function CategoryCard({
           <ResultModal
             result={result}
             category={c}
-            backTo=""
+            backTo={null}
             onClose={() => setResult(null)}
             onUndo={onUndoQuickLog}
           />,
@@ -504,7 +504,7 @@ function HomeFocusRow({
             // from the old width to the new one instead of simply appearing
             // there. Slower than the usual transitions in this app on
             // purpose: this one is meant to be watched, not just registered.
-            transition: "width 0.75s cubic-bezier(0.15, 0.85, 0.25, 1)",
+            transition: "width 1s cubic-bezier(0.15, 0.85, 0.25, 1)",
           }}
         />
       </div>
