@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   createFocus,
   deleteActivity,
@@ -119,9 +119,29 @@ export function CategoryDetailPage() {
   // how you are doing; you create a focus every few weeks. A form sitting
   // permanently open between the focuses and the history was charging rent on
   // the common case to serve the rare one.
-  const [formOpen, setFormOpen] = useState(false);
+  //
+  // Unless you arrived asking for it: the home's empty tab promises "+ PRIMER
+  // FOCO" and used to drop you at the top of this screen, leaving you to
+  // scroll and find the form yourself. The initial value is read during
+  // render, not set from an effect.
+  const [searchParams] = useSearchParams();
+  const wantsNewFocus = searchParams.get("new") === "focus";
+  const [formOpen, setFormOpen] = useState(wantsNewFocus);
+  const deepLinkHandled = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Llegar con ?new=focus baja hasta el formulario y pone el cursor dentro.
+  // Se hace una sola vez y solo mueve el DOM: no escribe estado.
+  useEffect(() => {
+    if (deepLinkHandled.current || !wantsNewFocus || !category) return;
+    if (!formRef.current) return;
+
+    deepLinkHandled.current = true;
+    formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    const t = window.setTimeout(() => nameInputRef.current?.focus(), 350);
+    return () => window.clearTimeout(t);
+  }, [wantsNewFocus, category]);
 
   useEffect(() => {
     if (!parentToSpawn) return;

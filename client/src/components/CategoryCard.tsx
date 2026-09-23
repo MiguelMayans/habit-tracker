@@ -261,7 +261,7 @@ export function CategoryCard({
           // In its place, the same tab drawn as an empty slot, leading to the
           // only thing you can do there.
           <Link
-            to={`/categories/${c.id}`}
+            to={`/categories/${c.id}?new=focus`}
             className="block px-3.5 pt-2 pb-4"
             aria-label={`${c.name}: añadir el primer foco`}
           >
