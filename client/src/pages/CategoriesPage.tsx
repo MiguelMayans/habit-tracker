@@ -127,7 +127,7 @@ export function CategoriesPage() {
       {/* A slightly larger gap than usual: the level spills over the top. */}
       <ul className="grid gap-6">
         {categories.map((c, i) => (
-          <CategoryCard key={c.id} category={c} index={i} />
+          <CategoryCard key={c.id} category={c} index={i} onLogged={load} />
         ))}
       </ul>
     </div>

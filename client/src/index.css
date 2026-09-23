@@ -354,6 +354,46 @@ body {
   transform: rotate(90deg);
 }
 
+/* Quick logging, inside the card.
+ *
+ * Tapping a focus used to leave the home for a whole form. These three chips
+ * take its place: they are ephemeral —they only exist while a row is open— so
+ * they do not add a permanent box to a card that already learned that lesson.
+ * No fill of their own, only a 2px outline, and they fill on press.
+ */
+.quick-chip {
+  flex: 1;
+  padding: 5px 4px 6px;
+  border: 2px solid rgb(245 245 240 / 0.22);
+  color: var(--color-bone);
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  transform: skewX(-10deg);
+  transition:
+    background-color 0.1s steps(2),
+    border-color 0.1s steps(2),
+    color 0.1s steps(2);
+}
+
+.quick-chip > span {
+  display: block;
+  transform: skewX(10deg);
+}
+
+.quick-chip:not(:disabled):hover {
+  border-color: var(--color-yellow);
+}
+
+.quick-chip:not(:disabled):active {
+  background: var(--color-yellow);
+  border-color: var(--color-yellow);
+  color: var(--color-black);
+}
+
+.quick-chip:disabled {
+  opacity: 0.35;
+}
+
 /* The stem, hanging off the tab, and the tick that joins each focus to it.
    The tick is what turns a list with a rule beside it into a bracket: without
    it the rule is decoration, with it every row is visibly attached.
@@ -400,6 +440,9 @@ body {
   overflow: hidden;
   animation: fill 0.95s var(--delay, 0s) cubic-bezier(0.2, 0.9, 0.25, 1)
     backwards;
+  /* Para cuando la XP cambia SIN remontar, que es lo que pasa al registrar
+     desde la propia tarjeta: sin esto el premio aparece de golpe. */
+  transition: width 0.5s cubic-bezier(0.2, 0.9, 0.25, 1);
 }
 
 /* A sheen running across the bar. Hard edges, no gradient: it is a solid band

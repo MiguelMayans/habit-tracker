@@ -1,10 +1,27 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { getFocusesByCategory, type Category, type Focus } from "../api/client";
+import {
+  createActivity,
+  deleteActivity,
+  getFocusesByCategory,
+  type Category,
+  type Focus,
+  type Intensity,
+  type RegisterActivityResult,
+} from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { sinceLastActivity } from "../lib/dates";
+import { XP_BY_INTENSITY } from "../lib/intensity";
 import { CategoryIcon } from "./CategoryIcon";
+import { ResultModal } from "./ResultModal";
 import { categoryWordmark } from "../lib/categoryWordmark";
+
+/** The three intensities, in the order they cost. */
+const INTENSITIES: { value: Intensity; label: string }[] = [
+  { value: "chispa", label: "Chispa" },
+  { value: "impulso", label: "Impulso" },
+  { value: "all_out", label: "All-Out" },
+];
 
 /** Alternating tilt and offset per card, for the collage effect. */
 const TILTS = ["-1.2deg", "0.8deg", "-0.6deg", "1.1deg", "-0.9deg"];
@@ -26,14 +43,24 @@ const OFFSETS = ["0px", "10px", "0px", "12px", "0px"];
 export function CategoryCard({
   category: c,
   index: i,
+  onLogged,
 }: {
   category: Category;
   index: number;
+  /** Refreshes the home's data after logging from inside the card. */
+  onLogged: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [focuses, setFocuses] = useState<Focus[] | null>(null);
   const [loadingFocuses, setLoadingFocuses] = useState(false);
   const [focusesError, setFocusesError] = useState<string | null>(null);
+
+  // Quick logging: which row has its intensities open, and the result when
+  // the log earns a full-screen celebration.
+  const [openRow, setOpenRow] = useState<number | null>(null);
+  const [logging, setLogging] = useState(false);
+  const [logError, setLogError] = useState<string | null>(null);
+  const [result, setResult] = useState<RegisterActivityResult | null>(null);
 
   const accent = categoryColorVar(c.slug);
   const last = sinceLastActivity(c.lastActivityAt);
@@ -54,7 +81,49 @@ export function CategoryCard({
   function onToggle() {
     const next = !isOpen;
     setIsOpen(next);
+    setOpenRow(null);
     if (next && focuses === null && !loadingFocuses) loadFocuses();
+  }
+
+  /**
+   * Logs straight from the card: two taps and no navigation.
+   *
+   * The description is left empty on purpose. It is optional by design — what
+   * counts is that it happened and at what intensity — and a form is exactly
+   * what this path exists to avoid. The full screen is still one tap away
+   * behind "CON NOTA", for when you do want to write something or backdate it.
+   */
+  async function onQuickLog(focusId: number, intensity: Intensity) {
+    setLogError(null);
+    setLogging(true);
+
+    try {
+      const res = await createActivity({
+        categoryId: c.id,
+        focusId,
+        intensity,
+      });
+      setOpenRow(null);
+
+      // The celebration is spent only where it is earned. It used to fire on
+      // every single log, including a routine +10 that changes nothing, and a
+      // celebration that always happens stops being one.
+      if (res.focus?.leveledUp || res.category.leveledUp) setResult(res);
+
+      loadFocuses();
+      onLogged();
+    } catch (e) {
+      setLogError((e as Error).message);
+    } finally {
+      setLogging(false);
+    }
+  }
+
+  async function onUndoQuickLog() {
+    if (!result) return;
+    await deleteActivity(result.activity.id);
+    loadFocuses();
+    onLogged();
   }
 
   return (
@@ -258,6 +327,12 @@ export function CategoryCard({
                 </div>
               )}
 
+              {logError && (
+                <p className="anim-slam mb-3 bg-cuerpo px-2.5 py-1.5 text-[10px] font-bold text-bone">
+                  {logError}
+                </p>
+              )}
+
               {focuses && !loadingFocuses && !focusesError && (
                 // The stem of the bracket whose head is the tab above, with
                 // a tick joining each focus to it. One stroke for the whole
@@ -272,6 +347,13 @@ export function CategoryCard({
                       accent={accent}
                       isChild={f.parentFocusId !== null}
                       delay={j * 0.05}
+                      expanded={openRow === f.id}
+                      busy={logging}
+                      onExpand={() => {
+                        setLogError(null);
+                        setOpenRow(openRow === f.id ? null : f.id);
+                      }}
+                      onPick={(intensity) => onQuickLog(f.id, intensity)}
                     />
                   ))}
                 </ul>
@@ -280,18 +362,33 @@ export function CategoryCard({
           </div>
         )}
       </div>
+
+      {/* Solo aparece si el registro ha subido un nivel: ver onQuickLog. */}
+      {result && (
+        <ResultModal
+          result={result}
+          category={c}
+          backTo=""
+          onClose={() => setResult(null)}
+          onUndo={onUndoQuickLog}
+        />
+      )}
     </li>
   );
 }
 
 /**
- * A focus inside the disclosure panel. Tapping it logs activity against that
- * focus directly, which is what makes opening the panel worth it: one tap
- * instead of three.
+ * A focus inside the disclosure panel.
  *
- * A frozen focus is not linked: it is at the maximum level and the backend
- * would reject the activity. Spawning its child still happens from the
- * category detail, which is where that form lives.
+ * Tapping it no longer leaves the home for a form: the row unfolds into its
+ * three intensities right here, and picking one logs it. Two taps and no
+ * navigation, which is the whole point of having opened the panel.
+ *
+ * "CON NOTA" keeps the long road one tap away, for when you actually want to
+ * write something down or log it with a different date.
+ *
+ * A frozen focus does not unfold: it is at the maximum level or you called it
+ * done, and the backend would reject the activity either way.
  */
 function HomeFocusRow({
   focus: f,
@@ -299,14 +396,22 @@ function HomeFocusRow({
   accent,
   isChild,
   delay,
+  expanded,
+  busy,
+  onExpand,
+  onPick,
 }: {
   focus: Focus;
   categoryId: number;
   accent: string;
   isChild: boolean;
   delay: number;
+  expanded: boolean;
+  busy: boolean;
+  onExpand: () => void;
+  onPick: (intensity: Intensity) => void;
 }) {
-  const content = (
+  const head = (
     <>
       <div className="flex items-baseline gap-2">
         {/* No "↳" any more: the branch is drawn by the longer tick on an
@@ -319,7 +424,7 @@ function HomeFocusRow({
         {f.atMaxLevel || f.frozen ? (
           <span
             className={`ml-auto shrink-0 text-[9px] font-bold tracking-[0.14em] ${
-              f.atMaxLevel ? "text-yellow" : "text-bone/35"
+              f.atMaxLevel ? "text-yellow" : "text-bone/50"
             }`}
           >
             {f.atMaxLevel ? "MAESTRÍA" : "CERRADO"}
@@ -331,7 +436,7 @@ function HomeFocusRow({
           // and for XP, so a glance tells the focus level apart from its
           // category's without reading the label.
           <span className="ml-auto flex shrink-0 items-baseline gap-1">
-            <span className="text-[8px] font-bold tracking-[0.18em] text-bone/35">
+            <span className="text-[8px] font-bold tracking-[0.18em] text-bone/50">
               NV
             </span>
             <b
@@ -355,6 +460,9 @@ function HomeFocusRow({
           style={{
             width: `${Math.round(f.progress * 100)}%`,
             background: f.frozen ? accent : "var(--color-yellow)",
+            // The XP arrives without remounting the row, so without this the
+            // reward would simply appear instead of being seen to land.
+            transition: "width 0.5s cubic-bezier(0.2, 0.9, 0.25, 1)",
           }}
         />
       </div>
@@ -368,14 +476,44 @@ function HomeFocusRow({
       style={{ "--delay": `${delay}s` } as React.CSSProperties}
     >
       {f.frozen ? (
-        <div>{content}</div>
+        <div>{head}</div>
       ) : (
-        <Link
-          to={`/log-activity?category=${categoryId}&focus=${f.id}`}
-          className="block"
+        <button
+          type="button"
+          onClick={onExpand}
+          aria-expanded={expanded}
+          className="block w-full text-left"
         >
-          {content}
-        </Link>
+          {head}
+        </button>
+      )}
+
+      {expanded && !f.frozen && (
+        <div className="anim-row mt-2.5" style={{ "--delay": "0s" } as React.CSSProperties}>
+          <div className="flex gap-2">
+            {INTENSITIES.map((i) => (
+              <button
+                key={i.value}
+                type="button"
+                disabled={busy}
+                onClick={() => onPick(i.value)}
+                className="quick-chip"
+              >
+                <span className="text-[10px] leading-tight">{i.label}</span>
+                <span className="mt-0.5 text-[12px] leading-none">
+                  +{XP_BY_INTENSITY[i.value]}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <Link
+            to={`/log-activity?category=${categoryId}&focus=${f.id}`}
+            className="mt-2 inline-block text-[9px] font-bold tracking-[0.16em] text-bone/55 underline"
+          >
+            CON NOTA U OTRA FECHA
+          </Link>
+        </div>
       )}
     </li>
   );
