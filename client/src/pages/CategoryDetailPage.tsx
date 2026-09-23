@@ -484,7 +484,7 @@ export function CategoryDetailPage() {
           className="anim-row mt-4 text-sm text-bone/60"
           style={{ "--delay": "0.2s" } as React.CSSProperties}
         >
-          Esta categoría todavía no tiene focusList.
+          Esta categoría todavía no tiene focos.
         </p>
       ) : (
         <ul className="mt-4 grid gap-3.5">
@@ -827,7 +827,7 @@ export function CategoryDetailPage() {
               to={`/categories/${categoryId}/history`}
               className="mt-3 inline-block text-[10px] font-bold tracking-[0.16em] text-yellow underline"
             >
-              VER VISIBLE_HISTORY COMPLETO · Y {activities.length - VISIBLE_HISTORY} MÁS
+              VER HISTORIAL COMPLETO · Y {activities.length - VISIBLE_HISTORY} MÁS
             </Link>
           )}
         </>
