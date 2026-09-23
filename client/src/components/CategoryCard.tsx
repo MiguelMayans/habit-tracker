@@ -1,30 +1,21 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import {
-  createActivity,
-  deleteActivity,
   getFocusesByCategory,
   type Category,
   type Focus,
   type Intensity,
-  type RegisterActivityResult,
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { sinceLastActivity } from "../lib/dates";
-import { XP_BY_INTENSITY } from "../lib/intensity";
 import { useCountUp } from "../lib/useCountUp";
+import { useQuickLog } from "../lib/useQuickLog";
 import { CategoryIcon } from "./CategoryIcon";
+import { QuickIntensities } from "./QuickIntensities";
 import { ResultModal } from "./ResultModal";
 import { categoryWordmark } from "../lib/categoryWordmark";
 import { orderByLineage } from "../lib/focusLineage";
-
-/** The three intensities, in the order they cost. */
-const INTENSITIES: { value: Intensity; label: string }[] = [
-  { value: "chispa", label: "Chispa" },
-  { value: "impulso", label: "Impulso" },
-  { value: "all_out", label: "All-Out" },
-];
 
 /** Alternating tilt and offset per card, for the collage effect. */
 const TILTS = ["-1.2deg", "0.8deg", "-0.6deg", "1.1deg", "-0.9deg"];
@@ -58,29 +49,21 @@ export function CategoryCard({
   const [loadingFocuses, setLoadingFocuses] = useState(false);
   const [focusesError, setFocusesError] = useState<string | null>(null);
 
-  // Quick logging: which row has its intensities open, and the result when
-  // the log earns a full-screen celebration.
-  const [openRow, setOpenRow] = useState<number | null>(null);
-  const [logging, setLogging] = useState(false);
-  const [logError, setLogError] = useState<string | null>(null);
-  const [result, setResult] = useState<RegisterActivityResult | null>(null);
-  // La XP recién ganada, para enseñarla sobre la fila que la ha ganado.
-  const [gain, setGain] = useState<{ focusId: number; xp: number } | null>(null);
-
-  // El +XP se retira solo. El temporizador vive en un efecto para que se
-  // cancele si te vas de la pantalla antes de que termine.
-  useEffect(() => {
-    if (!gain) return;
-    const t = window.setTimeout(() => setGain(null), 1800);
-    return () => window.clearTimeout(t);
-  }, [gain]);
-
-  // La XP de la categoría cuenta hacia arriba en vez de cambiar de golpe.
-  const xpMostrada = useCountUp(c.currentXp);
+  // El registro rápido vive en un hook compartido con el detalle de
+  // categoría: el mismo gesto tiene que significar lo mismo en los dos sitios.
+  const quick = useQuickLog({
+    categoryId: c.id,
+    onAfterChange: () => {
+      loadFocuses(true);
+      onLogged();
+    },
+  });
 
   const accent = categoryColorVar(c.slug);
   const last = sinceLastActivity(c.lastActivityAt);
   const wordmark = categoryWordmark(c.slug);
+  // La XP de la categoría cuenta hacia arriba en vez de cambiar de golpe.
+  const xpMostrada = useCountUp(c.currentXp);
   const panelId = `category-focuses-${c.id}`;
 
   /**
@@ -109,51 +92,8 @@ export function CategoryCard({
   function onToggle() {
     const next = !isOpen;
     setIsOpen(next);
-    setOpenRow(null);
+    quick.close();
     if (next && focuses === null && !loadingFocuses) loadFocuses();
-  }
-
-  /**
-   * Logs straight from the card: two taps and no navigation.
-   *
-   * The description is left empty on purpose. It is optional by design — what
-   * counts is that it happened and at what intensity — and a form is exactly
-   * what this path exists to avoid. The full screen is still one tap away
-   * behind "CON NOTA", for when you do want to write something or backdate it.
-   */
-  async function onQuickLog(focusId: number, intensity: Intensity) {
-    setLogError(null);
-    setLogging(true);
-
-    try {
-      const res = await createActivity({
-        categoryId: c.id,
-        focusId,
-        intensity,
-      });
-      setOpenRow(null);
-      setGain({ focusId, xp: res.xpGained });
-
-      // The celebration is spent only where it is earned. It used to fire on
-      // every single log, including a routine +10 that changes nothing, and a
-      // celebration that always happens stops being one.
-      if (res.focus?.leveledUp || res.category.leveledUp) setResult(res);
-
-      loadFocuses(true);
-      onLogged();
-    } catch (e) {
-      setLogError((e as Error).message);
-    } finally {
-      setLogging(false);
-    }
-  }
-
-  async function onUndoQuickLog() {
-    if (!result) return;
-    await deleteActivity(result.activity.id);
-    setGain(null);
-    loadFocuses(true);
-    onLogged();
   }
 
   return (
@@ -357,9 +297,9 @@ export function CategoryCard({
                 </div>
               )}
 
-              {logError && (
+              {quick.error && (
                 <p className="anim-slam mb-3 bg-cuerpo px-2.5 py-1.5 text-[10px] font-bold text-bone">
-                  {logError}
+                  {quick.error}
                 </p>
               )}
 
@@ -377,14 +317,13 @@ export function CategoryCard({
                       accent={accent}
                       isChild={f.parentFocusId !== null}
                       delay={j * 0.05}
-                      expanded={openRow === f.id}
-                      busy={logging}
-                      onExpand={() => {
-                        setLogError(null);
-                        setOpenRow(openRow === f.id ? null : f.id);
-                      }}
-                      onPick={(intensity) => onQuickLog(f.id, intensity)}
-                      gain={gain?.focusId === f.id ? gain.xp : null}
+                      expanded={quick.openFocusId === f.id}
+                      busy={quick.busy}
+                      onExpand={() => quick.toggle(f.id)}
+                      onPick={(intensity) => quick.log(f.id, intensity)}
+                      gain={
+                        quick.gain?.focusId === f.id ? quick.gain.xp : null
+                      }
                     />
                   ))}
                 </ul>
@@ -394,20 +333,20 @@ export function CategoryCard({
         )}
       </div>
 
-      {/* Solo aparece si el registro ha subido un nivel: ver onQuickLog.
+      {/* Solo aparece si el registro ha subido un nivel: ver useQuickLog.
           
           Va por un portal al body, y no aquí dentro, porque la tarjeta lleva
           `transform` y un ancestro transformado convierte `position: fixed` en
           `absolute` relativo a él: el modal salía encajonado dentro de la
           tarjeta, inclinado con ella y con sus propias barras de scroll. */}
-      {result &&
+      {quick.result &&
         createPortal(
           <ResultModal
-            result={result}
+            result={quick.result}
             category={c}
             backTo={null}
-            onClose={() => setResult(null)}
-            onUndo={onUndoQuickLog}
+            onClose={quick.dismissResult}
+            onUndo={quick.undo}
           />,
           document.body,
         )}
@@ -547,34 +486,12 @@ function HomeFocusRow({
       )}
 
       {expanded && !f.frozen && (
-        <div className="anim-row mt-2.5" style={{ "--delay": "0s" } as React.CSSProperties}>
-          <div className="flex gap-2">
-            {INTENSITIES.map((i) => (
-              <button
-                key={i.value}
-                type="button"
-                disabled={busy}
-                onClick={() => onPick(i.value)}
-                className="quick-chip"
-              >
-                <span className="text-[10px] leading-tight">{i.label}</span>
-                <span className="mt-0.5 text-[12px] leading-none">
-                  +{XP_BY_INTENSITY[i.value]}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* Cerrar el foco vive en el menú y no aquí: desde la tarjeta lo que
-              se hace es registrar, y una acción que cambia el estado del foco
-              no debe estar a un dedo de las intensidades. */}
-          <Link
-            to={`/log-activity?category=${categoryId}&focus=${f.id}`}
-            className="mt-2.5 inline-block text-[9px] font-bold tracking-[0.16em] text-bone/55 underline"
-          >
-            IR AL MENÚ
-          </Link>
-        </div>
+        <QuickIntensities
+          categoryId={categoryId}
+          focusId={f.id}
+          busy={busy}
+          onPick={onPick}
+        />
       )}
     </li>
   );
