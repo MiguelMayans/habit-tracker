@@ -115,6 +115,11 @@ export function CategoryDetailPage() {
   // Tapping a frozen focus pins it here as the parent; the form below then
   // creates its child instead of a standalone focus.
   const [parentToSpawn, setParentToSpawn] = useState<Focus | null>(null);
+  // The creation form stays shut until asked for. You open this screen to see
+  // how you are doing; you create a focus every few weeks. A form sitting
+  // permanently open between the focuses and the history was charging rent on
+  // the common case to serve the rare one.
+  const [formOpen, setFormOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -602,7 +607,10 @@ export function CategoryDetailPage() {
                         setDeleteError(null);
                         setFocusToDelete(f);
                       }}
-                      onSpawn={() => setParentToSpawn(f)}
+                      onSpawn={() => {
+                        setParentToSpawn(f);
+                        setFormOpen(true);
+                      }}
                     >
                       <div
                         className="card-clip bg-black"
@@ -696,21 +704,38 @@ export function CategoryDetailPage() {
 
       {/* ---- New focus ---- */}
       <form onSubmit={onCreateFocus} className="mt-11" ref={formRef}>
-        <h2
-          className="anim-row inline-block bg-bone px-3 py-1 font-display text-[13px] text-black uppercase"
-          style={
-            {
-              transform: "skewX(-10deg)",
-              "--delay": "0.3s",
-            } as React.CSSProperties
-          }
-        >
-          <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-            {parentToSpawn ? "Nuevo foco especializado" : "Nuevo foco"}
-          </span>
+        {/* La cabecera es el mando: misma pestaña de siempre, pero ahora abre
+            y cierra. Cerrada lleva un "+", abierta un "×". */}
+        <h2 className="m-0">
+          <button
+            type="button"
+            onClick={() => {
+              const next = !formOpen;
+              setFormOpen(next);
+              if (!next) setParentToSpawn(null);
+              if (next) window.setTimeout(() => nameInputRef.current?.focus(), 60);
+            }}
+            aria-expanded={formOpen}
+            aria-controls="nuevo-foco"
+            className="anim-row inline-block bg-bone px-3 py-1 font-display text-[13px] text-black uppercase"
+            style={
+              {
+                transform: "skewX(-10deg)",
+                "--delay": "0.3s",
+              } as React.CSSProperties
+            }
+          >
+            <span
+              className="inline-flex items-baseline gap-2"
+              style={{ transform: "skewX(10deg)" }}
+            >
+              <b className="text-[15px] leading-none">{formOpen ? "×" : "+"}</b>
+              {parentToSpawn ? "Nuevo foco especializado" : "Nuevo foco"}
+            </span>
+          </button>
         </h2>
 
-        {parentToSpawn && (
+        {formOpen && parentToSpawn && (
           <p className="anim-slam mt-3 flex items-center gap-2 text-[11px] font-semibold text-bone/70">
             <span
               className="bg-yellow px-2 py-0.5 text-[9px] font-bold tracking-[0.14em] text-black"
@@ -729,6 +754,8 @@ export function CategoryDetailPage() {
         )}
 
         <div
+          id="nuevo-foco"
+          hidden={!formOpen}
           className="anim-row mt-4 flex items-stretch gap-3"
           style={{ "--delay": "0.34s" } as React.CSSProperties}
         >
@@ -761,7 +788,7 @@ export function CategoryDetailPage() {
           </button>
         </div>
 
-        {errorForm && (
+        {formOpen && errorForm && (
           <p className="anim-slam mt-4 bg-cuerpo px-3 py-2 text-[11px] font-bold text-bone">
             {errorForm}
           </p>
