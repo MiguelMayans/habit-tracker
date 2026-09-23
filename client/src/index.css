@@ -807,6 +807,52 @@ body {
   animation: level-drop 0.5s cubic-bezier(0.2, 1.2, 0.35, 1) backwards;
 }
 
+/* The bar topping out, in two beats.
+ *
+ * First the wind-up: it goes white and swells a little while nothing else
+ * moves. Then the hit. An impact with no anticipation reads as an accident;
+ * the held beat before it is what makes the landing feel earned.
+ *
+ * Steps, never a smooth curve: this whole app lands on hard cuts.
+ */
+@keyframes bar-charge {
+  from {
+    transform: scaleY(1);
+    background-color: #242424;
+  }
+  to {
+    transform: scaleY(1.7);
+    background-color: var(--color-bone);
+  }
+}
+
+.anim-bar-charge {
+  animation: bar-charge 0.11s steps(2) forwards;
+}
+
+@keyframes bar-hit {
+  0% {
+    transform: scaleY(1.7);
+    background-color: var(--color-bone);
+  }
+  35% {
+    transform: scaleY(3.2);
+    background-color: var(--color-bone);
+  }
+  70% {
+    transform: scaleY(1.6);
+    background-color: var(--color-yellow);
+  }
+  100% {
+    transform: scaleY(1);
+    background-color: #242424;
+  }
+}
+
+.anim-bar-hit {
+  animation: bar-hit 0.46s steps(4) 1;
+}
+
 /* Full-screen flash. Dry cuts, no fading. */
 @keyframes flash {
   0%,

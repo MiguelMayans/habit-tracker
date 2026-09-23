@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import {
   createActivity,
@@ -12,6 +13,7 @@ import {
 import { categoryColorVar } from "../lib/categoryColor";
 import { sinceLastActivity } from "../lib/dates";
 import { XP_BY_INTENSITY } from "../lib/intensity";
+import { useCountUp } from "../lib/useCountUp";
 import { CategoryIcon } from "./CategoryIcon";
 import { ResultModal } from "./ResultModal";
 import { categoryWordmark } from "../lib/categoryWordmark";
@@ -61,19 +63,44 @@ export function CategoryCard({
   const [logging, setLogging] = useState(false);
   const [logError, setLogError] = useState<string | null>(null);
   const [result, setResult] = useState<RegisterActivityResult | null>(null);
+  // La XP recién ganada, para enseñarla sobre la fila que la ha ganado.
+  const [gain, setGain] = useState<{ focusId: number; xp: number } | null>(null);
+
+  // El +XP se retira solo. El temporizador vive en un efecto para que se
+  // cancele si te vas de la pantalla antes de que termine.
+  useEffect(() => {
+    if (!gain) return;
+    const t = window.setTimeout(() => setGain(null), 1800);
+    return () => window.clearTimeout(t);
+  }, [gain]);
+
+  // La XP de la categoría cuenta hacia arriba en vez de cambiar de golpe.
+  const xpMostrada = useCountUp(c.currentXp);
 
   const accent = categoryColorVar(c.slug);
   const last = sinceLastActivity(c.lastActivityAt);
   const wordmark = categoryWordmark(c.slug);
   const panelId = `category-focuses-${c.id}`;
 
-  function loadFocuses() {
-    setLoadingFocuses(true);
+  /**
+   * `silencioso` es lo que hace que la barra se vea subir.
+   *
+   * Al refrescar tras registrar, poner `loadingFocuses` a true saca el
+   * esqueleto en lugar de la lista, y eso DESMONTA las filas: vuelven a nacer
+   * ya con el valor nuevo, así que no hay transición que animar y el premio
+   * aparece de golpe. En una recarga silenciosa las filas siguen montadas y
+   * la anchura viaja del valor viejo al nuevo, que es justo lo que se quiere
+   * ver.
+   */
+  function loadFocuses(silencioso = false) {
+    if (!silencioso) setLoadingFocuses(true);
     setFocusesError(null);
     getFocusesByCategory(c.id)
       .then(setFocuses)
       .catch((e: Error) => setFocusesError(e.message))
-      .finally(() => setLoadingFocuses(false));
+      .finally(() => {
+        if (!silencioso) setLoadingFocuses(false);
+      });
   }
 
   // Focuses are fetched the first time you open, not when the home loads:
@@ -104,13 +131,14 @@ export function CategoryCard({
         intensity,
       });
       setOpenRow(null);
+      setGain({ focusId, xp: res.xpGained });
 
       // The celebration is spent only where it is earned. It used to fire on
       // every single log, including a routine +10 that changes nothing, and a
       // celebration that always happens stops being one.
       if (res.focus?.leveledUp || res.category.leveledUp) setResult(res);
 
-      loadFocuses();
+      loadFocuses(true);
       onLogged();
     } catch (e) {
       setLogError((e as Error).message);
@@ -122,7 +150,8 @@ export function CategoryCard({
   async function onUndoQuickLog() {
     if (!result) return;
     await deleteActivity(result.activity.id);
-    loadFocuses();
+    setGain(null);
+    loadFocuses(true);
     onLogged();
   }
 
@@ -230,7 +259,7 @@ export function CategoryCard({
               </div>
 
               <div className="mt-2.5 flex items-center gap-2 text-[10px] font-semibold tracking-[0.06em] text-bone/75">
-                <span>{c.currentXp} XP</span>
+                <span>{xpMostrada} XP</span>
                 <i className="h-[3px] w-[3px] rotate-45 bg-bone/55" />
                 <span>
                   {c.atMaxLevel ? (
@@ -319,7 +348,7 @@ export function CategoryCard({
                   </p>
                   <button
                     type="button"
-                    onClick={loadFocuses}
+                    onClick={() => loadFocuses()}
                     className="text-[9.5px] font-bold tracking-[0.14em] text-bone/60 underline"
                   >
                     REINTENTAR
@@ -354,6 +383,7 @@ export function CategoryCard({
                         setOpenRow(openRow === f.id ? null : f.id);
                       }}
                       onPick={(intensity) => onQuickLog(f.id, intensity)}
+                      gain={gain?.focusId === f.id ? gain.xp : null}
                     />
                   ))}
                 </ul>
@@ -363,16 +393,23 @@ export function CategoryCard({
         )}
       </div>
 
-      {/* Solo aparece si el registro ha subido un nivel: ver onQuickLog. */}
-      {result && (
-        <ResultModal
-          result={result}
-          category={c}
-          backTo=""
-          onClose={() => setResult(null)}
-          onUndo={onUndoQuickLog}
-        />
-      )}
+      {/* Solo aparece si el registro ha subido un nivel: ver onQuickLog.
+          
+          Va por un portal al body, y no aquí dentro, porque la tarjeta lleva
+          `transform` y un ancestro transformado convierte `position: fixed` en
+          `absolute` relativo a él: el modal salía encajonado dentro de la
+          tarjeta, inclinado con ella y con sus propias barras de scroll. */}
+      {result &&
+        createPortal(
+          <ResultModal
+            result={result}
+            category={c}
+            backTo=""
+            onClose={() => setResult(null)}
+            onUndo={onUndoQuickLog}
+          />,
+          document.body,
+        )}
     </li>
   );
 }
@@ -400,6 +437,7 @@ function HomeFocusRow({
   busy,
   onExpand,
   onPick,
+  gain,
 }: {
   focus: Focus;
   categoryId: number;
@@ -410,6 +448,8 @@ function HomeFocusRow({
   busy: boolean;
   onExpand: () => void;
   onPick: (intensity: Intensity) => void;
+  /** XP just earned on this focus, shown for a moment and then withdrawn. */
+  gain: number | null;
 }) {
   const head = (
     <>
@@ -460,9 +500,11 @@ function HomeFocusRow({
           style={{
             width: `${Math.round(f.progress * 100)}%`,
             background: f.frozen ? accent : "var(--color-yellow)",
-            // The XP arrives without remounting the row, so without this the
-            // reward would simply appear instead of being seen to land.
-            transition: "width 0.5s cubic-bezier(0.2, 0.9, 0.25, 1)",
+            // The XP arrives without remounting the row, so the bar travels
+            // from the old width to the new one instead of simply appearing
+            // there. Slower than the usual transitions in this app on
+            // purpose: this one is meant to be watched, not just registered.
+            transition: "width 0.75s cubic-bezier(0.15, 0.85, 0.25, 1)",
           }}
         />
       </div>
@@ -486,6 +528,21 @@ function HomeFocusRow({
         >
           {head}
         </button>
+      )}
+
+      {/* El premio, encima de la barra que acaba de llenarse. Va posicionado
+          en absoluto para no empujar la fila siguiente: un salto de maquetación
+          justo cuando estás mirando la recompensa se lleva por delante lo que
+          quería conseguir. */}
+      {gain !== null && (
+        <span
+          className="anim-slam pointer-events-none absolute right-0 -bottom-4 z-10 bg-yellow px-1.5 py-0.5 font-display text-[10px] leading-none text-black"
+          style={{ transform: "skewX(-10deg)" }}
+        >
+          <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
+            +{gain} XP
+          </span>
+        </span>
       )}
 
       {expanded && !f.frozen && (

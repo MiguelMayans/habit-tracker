@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import type { Category, RegisterActivityResult, XpOutcome } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { isToday } from "../lib/dates";
+import { useCountUp } from "../lib/useCountUp";
 import { CategoryIcon } from "./CategoryIcon";
 import { ConfirmDialog } from "./ConfirmDialog";
 
 /** Beats of the sequence, in ms from the moment the modal opens. */
 const T_START = 380;
 const T_FILL = 850;
+/** The held beat between topping out and the level landing. */
+const T_HOLD = 110;
 const T_BURST = 420;
 
 /**
@@ -40,6 +44,7 @@ export function ResultModal({
   // lives right here and not only buried in the history. It is offered only
   // for a log from today: the server would refuse any other.
   const canUndo = isToday(result.activity.date);
+  const xpContada = useCountUp(result.xpGained, { from: 0, ms: 900 });
   const [confirming, setConfirming] = useState(false);
   const [undoing, setUndoing] = useState(false);
   const [undoError, setUndoError] = useState<string | null>(null);
@@ -85,11 +90,14 @@ export function ResultModal({
           ACTIVIDAD REGISTRADA
         </p>
 
+        {/* La cifra sube desde cero en lugar de estar ya puesta. Es el número
+            por el que existe esta pantalla: verlo llegar es la recompensa,
+            encontrarlo ya ahí es un dato. */}
         <p
           className="anim-slam text-sign m-0 mt-3 font-display text-[64px] leading-none text-yellow"
           style={{ transform: "skewX(-8deg)" }}
         >
-          +{result.xpGained}
+          +{xpContada}
           <span className="text-[26px]"> XP</span>
         </p>
 
@@ -192,6 +200,8 @@ function XpBlock({
   const [animated, setAnimated] = useState(false);
   const [shownLevel, setShownLevel] = useState(data.levelBefore);
   const [celebrating, setCelebrating] = useState(false);
+  // The wind-up: the bar has topped out and is holding, just before the hit.
+  const [charging, setCharging] = useState(false);
 
   useEffect(() => {
     const timers: number[] = [];
@@ -204,23 +214,29 @@ function XpBlock({
         setWidth(data.progressAfter);
       });
     } else {
-      // 1. Climb all the way to the top.
+      // 1. Climb all the way to the top. It accelerates into the ceiling
+      //    instead of easing out: a bar that slows down as it arrives reads
+      //    as running out of steam, which is the opposite of what is about
+      //    to happen.
       t(T_START, () => {
         setAnimated(true);
         setWidth(1);
       });
-      // 2. Burst: flash, new number and shake.
-      t(T_START + T_FILL, () => {
+      // 2. Wind-up: topped out, white, swollen, and nothing else moving.
+      t(T_START + T_FILL, () => setCharging(true));
+      // 3. The hit: flash, new number, shake, and the bar blowing out.
+      t(T_START + T_FILL + T_HOLD, () => {
         setCelebrating(true);
         setShownLevel(data.levelAfter);
       });
-      // 3. The bar snaps back to zero, with no transition.
-      t(T_START + T_FILL + 120, () => {
+      // 4. The bar snaps back to zero, with no transition.
+      t(T_START + T_FILL + T_HOLD + 120, () => {
         setAnimated(false);
         setWidth(0);
+        setCharging(false);
       });
-      // 4. And the new level starts filling.
-      t(T_START + T_FILL + T_BURST, () => {
+      // 5. And the new level starts filling.
+      t(T_START + T_FILL + T_HOLD + T_BURST, () => {
         setAnimated(true);
         setWidth(data.progressAfter);
       });
@@ -231,12 +247,19 @@ function XpBlock({
 
   return (
     <div className={celebrating ? "anim-shake relative" : "relative"}>
-      {celebrating && (
-        <div
-          className="anim-flash pointer-events-none fixed inset-0 z-20"
-          style={{ background: "var(--color-bone)" }}
-        />
-      )}
+      {/* Por un portal al body: este bloque lleva `anim-shake` justo cuando el
+          fogonazo aparece, y un ancestro con `transform` convierte
+          `position: fixed` en `absolute` relativo a él. El fogonazo "a
+          pantalla completa" llevaba desde siempre encerrado dentro del bloque
+          que vibra. */}
+      {celebrating &&
+        createPortal(
+          <div
+            className="anim-flash pointer-events-none fixed inset-0 z-[60]"
+            style={{ background: "var(--color-bone)" }}
+          />,
+          document.body,
+        )}
 
       <div className="flex items-end gap-2.5">
         {slug && (
@@ -284,13 +307,20 @@ function XpBlock({
         </span>
       </div>
 
-      <div className="xp-bar relative mt-3 h-5 overflow-hidden bg-[#242424]">
+      <div
+        className={`xp-bar relative mt-3 h-5 overflow-hidden bg-[#242424] ${
+          celebrating ? "anim-bar-hit" : charging ? "anim-bar-charge" : ""
+        }`}
+      >
         <div
           className="relative h-full bg-yellow"
           style={{
             width: `${Math.round(width * 100)}%`,
+            // Subiendo a tope acelera; asentándose en el nivel nuevo frena.
             transition: animated
-              ? "width .85s cubic-bezier(.2,.9,.25,1)"
+              ? data.leveledUp && width === 1
+                ? "width .85s cubic-bezier(.4,0,.9,.5)"
+                : "width .85s cubic-bezier(.2,.9,.25,1)"
               : "none",
           }}
         />
