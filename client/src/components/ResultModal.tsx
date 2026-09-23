@@ -140,7 +140,7 @@ export function ResultModal({
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="text-[10px] font-bold tracking-[0.14em] text-bone/40 underline"
+              className="text-[10px] font-bold tracking-[0.14em] text-bone/55 underline"
             >
               Me he equivocado, deshacer
             </button>

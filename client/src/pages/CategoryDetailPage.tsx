@@ -494,7 +494,7 @@ export function CategoryDetailPage() {
 
       {focuses.length > 0 && (
         <p
-          className="anim-row mt-2 text-[9px] font-bold tracking-[0.16em] text-bone/40"
+          className="anim-row mt-2 text-[9px] font-bold tracking-[0.16em] text-bone/55"
           style={{ "--delay": "0.18s" } as React.CSSProperties}
         >
           PULSA PARA REGISTRAR
@@ -582,7 +582,7 @@ export function CategoryDetailPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="absolute top-1.5 right-2 z-30 flex gap-2.5 text-[9px] font-bold tracking-[0.14em] text-bone/45">
+                    <div className="absolute top-1.5 right-2 z-30 flex gap-2.5 text-[9px] font-bold tracking-[0.14em] text-bone/60">
                       <button
                         type="button"
                         onClick={() => {
@@ -672,7 +672,7 @@ export function CategoryDetailPage() {
                         </div>
 
                         {parent && (
-                          <p className="mt-1 text-[9px] font-bold tracking-[0.1em] text-bone/45">
+                          <p className="mt-1 text-[9px] font-bold tracking-[0.1em] text-bone/60">
                             ↳ DE {parent.name}
                           </p>
                         )}
@@ -832,7 +832,7 @@ export function CategoryDetailPage() {
 
       {activities.some((a) => isToday(a.date)) && (
         <p
-          className="anim-row mt-2 text-[9px] font-bold tracking-[0.16em] text-bone/40"
+          className="anim-row mt-2 text-[9px] font-bold tracking-[0.16em] text-bone/55"
           style={{ "--delay": "0.4s" } as React.CSSProperties}
         >
           MANTÉN PULSADA UNA ACTIVIDAD DE HOY PARA DESHACERLA

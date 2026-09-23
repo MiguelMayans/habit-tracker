@@ -41,7 +41,7 @@ export function ActivityRow({
       <div className="flex items-baseline gap-3">
         <p
           className={`m-0 flex-1 text-[12px] leading-snug font-semibold ${
-            activity.description === "" ? "text-bone/40 italic" : "text-bone"
+            activity.description === "" ? "text-bone/50 italic" : "text-bone"
           }`}
         >
           {activity.description === "" ? "Sin descripción" : activity.description}

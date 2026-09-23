@@ -138,7 +138,7 @@ export function CategoryHistoryPage() {
         Historial
       </h1>
       <p
-        className="anim-row mb-8 text-[10px] font-bold tracking-[0.16em] text-bone/40"
+        className="anim-row mb-8 text-[10px] font-bold tracking-[0.16em] text-bone/55"
         style={{ "--delay": "0.08s" } as React.CSSProperties}
       >
         {activities.length} {activities.length === 1 ? "ACTIVIDAD" : "ACTIVIDADES"} EN
