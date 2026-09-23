@@ -13,6 +13,7 @@ import {
   type Focus,
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
+import { orderByLineage } from "../lib/focusLineage";
 import { useLight } from "../lib/useLight";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { categoryWordmark } from "../lib/categoryWordmark";
@@ -513,7 +514,7 @@ export function CategoryDetailPage() {
         </p>
       ) : (
         <ul className="mt-4 grid gap-3.5">
-          {focuses.map((f, i) => {
+          {orderByLineage(focuses).map((f, i) => {
             const parent =
               f.parentFocusId !== null
                 ? focuses.find((p) => p.id === f.parentFocusId)

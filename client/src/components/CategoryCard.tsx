@@ -17,6 +17,7 @@ import { useCountUp } from "../lib/useCountUp";
 import { CategoryIcon } from "./CategoryIcon";
 import { ResultModal } from "./ResultModal";
 import { categoryWordmark } from "../lib/categoryWordmark";
+import { orderByLineage } from "../lib/focusLineage";
 
 /** The three intensities, in the order they cost. */
 const INTENSITIES: { value: Intensity; label: string }[] = [
@@ -96,7 +97,7 @@ export function CategoryCard({
     if (!silencioso) setLoadingFocuses(true);
     setFocusesError(null);
     getFocusesByCategory(c.id)
-      .then(setFocuses)
+      .then((f) => setFocuses(orderByLineage(f)))
       .catch((e: Error) => setFocusesError(e.message))
       .finally(() => {
         if (!silencioso) setLoadingFocuses(false);

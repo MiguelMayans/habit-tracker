@@ -419,9 +419,26 @@ body {
   background: var(--accent, var(--color-bone));
 }
 
+/* Un hijo no cuelga del filete principal: cuelga DE SU PADRE. El `::after` es
+   el tallo corto que baja desde la fila de arriba, y el tirante sale de ese
+   tallo y no del filete.
+   `left` se mide contra el borde del li, que ya empieza 14px a la derecha del
+   filete — por eso el valor anterior, -26px, dibujaba el tirante 12px POR
+   FUERA de la lista, hacia la izquierda. */
 .focus-branch > li[data-child="true"]::before {
-  left: -26px;
-  width: 22px;
+  left: 0;
+  width: 10px;
+  opacity: 0.55;
+}
+
+.focus-branch > li[data-child="true"]::after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: 0;
+  width: 2px;
+  height: 25px;
+  background: var(--accent, var(--color-bone));
   opacity: 0.55;
 }
 
