@@ -565,11 +565,14 @@ function HomeFocusRow({
             ))}
           </div>
 
+          {/* Cerrar el foco vive en el menú y no aquí: desde la tarjeta lo que
+              se hace es registrar, y una acción que cambia el estado del foco
+              no debe estar a un dedo de las intensidades. */}
           <Link
             to={`/log-activity?category=${categoryId}&focus=${f.id}`}
-            className="mt-2 inline-block text-[9px] font-bold tracking-[0.16em] text-bone/55 underline"
+            className="mt-2.5 inline-block text-[9px] font-bold tracking-[0.16em] text-bone/55 underline"
           >
-            CON NOTA U OTRA FECHA
+            IR AL MENÚ
           </Link>
         </div>
       )}

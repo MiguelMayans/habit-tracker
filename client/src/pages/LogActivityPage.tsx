@@ -5,6 +5,7 @@ import {
   deleteActivity,
   getCategories,
   getFocusesByCategory,
+  updateFocus,
   type Category,
   type Focus,
   type Intensity,
@@ -13,6 +14,7 @@ import {
 import { categoryColorVar } from "../lib/categoryColor";
 import { useLight } from "../lib/useLight";
 import { XP_BY_INTENSITY } from "../lib/intensity";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ResultModal } from "../components/ResultModal";
 
 const INTENSITIES: {
@@ -70,6 +72,13 @@ export function LogActivityPage() {
   const [intensity, setIntensity] = useState<Intensity>("chispa");
   const [date, setDate] = useState("");
   const [editingDate, setEditingDate] = useState(false);
+
+  // Dar el foco por terminado. Vive aquí y no en la tarjeta de la home:
+  // desde la tarjeta lo que se hace es registrar, y una acción que cambia el
+  // estado del foco no debe estar a un dedo de las intensidades.
+  const [closingFocus, setClosingFocus] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [closeError, setCloseError] = useState<string | null>(null);
 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -179,7 +188,27 @@ export function LogActivityPage() {
     }
   }
 
+  async function onConfirmCloseFocus() {
+    if (focusId === "") return;
+    setCloseError(null);
+    setClosing(true);
+
+    try {
+      await updateFocus(Number(focusId), { frozen: true });
+      setClosingFocus(false);
+      // Un foco cerrado ya no admite actividad, así que deja de poder estar
+      // elegido: se suelta y se recarga la lista para que salga como tal.
+      setFocusId("");
+      setFocuses(await getFocusesByCategory(Number(categoryId)));
+    } catch (e) {
+      setCloseError((e as Error).message);
+    } finally {
+      setClosing(false);
+    }
+  }
+
   const selected = categories.find((c) => String(c.id) === categoryId);
+  const selectedFocus = focuses.find((f) => String(f.id) === focusId);
   const accent = selected
     ? categoryColorVar(selected.slug)
     : "var(--color-yellow)";
@@ -300,6 +329,22 @@ export function LogActivityPage() {
             </select>
           </div>
         </label>
+
+        {/* Fuera del <label> a propósito: un botón dentro de una etiqueta
+            dispara además el control al que apunta. */}
+        {selectedFocus && !selectedFocus.frozen && (
+          <button
+            type="button"
+            onClick={() => {
+              setCloseError(null);
+              setClosingFocus(true);
+            }}
+            className="anim-row -mt-3 justify-self-start text-[9px] font-bold tracking-[0.16em] text-bone/55 underline"
+            style={{ "--delay": "0.14s" } as React.CSSProperties}
+          >
+            DAR "{selectedFocus.name.toUpperCase()}" POR TERMINADO
+          </button>
+        )}
 
         <label
           className="anim-row grid gap-2"
@@ -425,6 +470,31 @@ export function LogActivityPage() {
         <p className="anim-slam mt-6 bg-cuerpo px-4 py-3 text-[12px] font-bold text-bone">
           {error}
         </p>
+      )}
+
+      {closingFocus && selectedFocus && (
+        <ConfirmDialog
+          bandTitle="¿Darlo por terminado?"
+          titleId="close-focus-title"
+          busy={closing}
+          error={closeError}
+          confirmLabel="Cerrar"
+          busyLabel="Cerrando…"
+          onConfirm={onConfirmCloseFocus}
+          onCancel={() => setClosingFocus(false)}
+        >
+          <p className="m-0 font-display text-[18px] leading-tight text-bone uppercase">
+            {selectedFocus.name}
+          </p>
+          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-bone/60">
+            NIVEL {selectedFocus.level} · {selectedFocus.currentXp} XP
+          </p>
+          <p className="mt-4 text-[11.5px] leading-relaxed text-bone/75">
+            Deja de aceptar actividad y pasa a poder engendrar un foco hijo más
+            especializado. La XP que ganaste no se toca, y puedes reabrirlo
+            desde su categoría.
+          </p>
+        </ConfirmDialog>
       )}
 
       {result && (
