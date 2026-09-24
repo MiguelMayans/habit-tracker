@@ -34,8 +34,6 @@ function App() {
           <div className="tone tone-1" />
           <div className="tone tone-2" />
           <div className="tone tone-3" />
-          <div className="tone tone-4" />
-          <div className="tone tone-floor" />
         </div>
         <div className="scene">
           {STARS.map((st) => (

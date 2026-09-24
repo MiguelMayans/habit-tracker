@@ -42,12 +42,13 @@ body {
  * of whatever is at the top of the screen (the logo on the home, the category's
  * wordmark on its detail), so the header reads as the thing that exploded.
  *
- * Below the burst the stage is black, which is where the cards live. The fall
- * from one to the other is NOT a soft fade: it is a ramp of screentone in hard
- * bands, the way a manga panel darkens — black dots that grow, then holes that
- * shrink, then nothing. Every band shares the same 8px grid, because they are
- * all full-screen layers clipped to their strip rather than strips with their
- * own origin.
+ * The rays reach the bottom of the screen, but they do not stay solid all
+ * the way: down where the cards live they turn into screentone, in hard bands
+ * rather than a soft fade — black dots that grow, then the rays only through
+ * holes. They used to end in solid black at 70% of the screen, which read as
+ * the backdrop being cut off. Every band shares the same 8px grid, because
+ * they are all full-screen layers clipped to their strip rather than strips
+ * with their own origin.
  *
  * The ray colour is `--light`: the category you are looking at paints the sky.
  * The fallback goes in each usage rather than as a declaration of its own, or
@@ -80,8 +81,11 @@ body {
  * A rotated layer would have to be a square as big as the screen's diagonal,
  * which on a phone at 3x is a texture of several thousand pixels a side — far
  * more memory than a background deserves. Animating `--spin` repaints the
- * gradient instead, and `steps()` keeps that to a handful of paints per
- * second: a tick-tock the app already speaks, rather than a smooth spin.
+ * gradient instead, which the GPU does as a single shader fill.
+ *
+ * The spin is smooth and linear, the one exception to the app's hard cuts:
+ * with `steps()` it ticked a few times a second and read as the backdrop
+ * getting stuck rather than as a pulse.
  */
 .scene-burst {
   --ray: color-mix(in srgb, var(--light, var(--color-cuerpo)) 46%, #000);
@@ -124,38 +128,29 @@ body {
   transform-origin: var(--burst-x) var(--burst-y);
   animation:
     burst-in 0.55s steps(4) backwards,
-    ray-spin 150s steps(900) infinite;
+    ray-spin 70s linear infinite;
 }
 
-/* The screentone ramp. Four bands and a floor, all clipped from full-screen
-   layers so their dots line up. First black dots that grow over the rays,
-   then the rays only through holes that shrink, then solid black. */
+/* The screentone ramp. Three bands, all clipped from full-screen layers so
+   their dots line up: black dots over the rays, bigger black dots, and at
+   the bottom the rays only through holes — still there, never cut. */
 .tone {
   position: absolute;
   inset: 0;
   background-size: 8px 8px;
 }
 .tone-1 {
-  clip-path: inset(38% 0 0 0);
+  clip-path: inset(40% 0 0 0);
   background-image: radial-gradient(circle, #000 1.5px, transparent 2px);
 }
 .tone-2 {
-  clip-path: inset(46% 0 0 0);
+  clip-path: inset(58% 0 0 0);
   background-image: radial-gradient(circle, #000 2.6px, transparent 3.1px);
 }
 .tone-3 {
-  clip-path: inset(54% 0 0 0);
+  clip-path: inset(76% 0 0 0);
   background-image: radial-gradient(circle, transparent 2.2px, #000 2.7px);
 }
-.tone-4 {
-  clip-path: inset(62% 0 0 0);
-  background-image: radial-gradient(circle, transparent 1.2px, #000 1.7px);
-}
-.tone-floor {
-  clip-path: inset(70% 0 0 0);
-  background: #000;
-}
-
 /* Stars, the logo's own: yellow, five points, a black edge. They blink in
    with hard cuts, one at a time, never all together. */
 .star {
@@ -247,7 +242,7 @@ body {
   );
   animation:
     burst-in 0.5s steps(4) backwards,
-    ray-spin 40s steps(480) infinite;
+    ray-spin 24s linear infinite;
 }
 
 /* Over the blast, the same screentone ramp as the backdrop but lower: the
@@ -504,52 +499,6 @@ body {
   height: 25px;
   background: var(--accent, var(--color-bone));
   opacity: 0.55;
-}
-
-/* A level in ransom-note scraps (see LevelNumber.tsx).
- *
- * Each scrap is two layers: the edge colour is the scrap itself, and the
- * paper is laid over it 0.05em smaller, so a hairline of the opposite value
- * shows around every cut — the white margin a pair of scissors leaves. It is
- * also what keeps a black scrap visible over a black background.
- *
- * The hard shadow is a drop-shadow on the group, which follows each clipped
- * outline; a box-shadow would be clipped away with the scrap.
- */
-.ransom {
-  display: inline-flex;
-  align-items: center;
-  font-weight: 400;
-  line-height: 1;
-  filter: drop-shadow(0.07em 0.07em 0 var(--color-black));
-}
-
-.ransom-scrap {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  min-width: 0.72em;
-  padding: 0.08em 0.1em 0.04em;
-  background: var(--edge);
-  clip-path: var(--clip);
-  transform: translateY(var(--lift)) rotate(var(--tilt));
-}
-
-.ransom-scrap + .ransom-scrap {
-  margin-left: -0.05em;
-}
-
-.ransom-scrap::before {
-  content: "";
-  position: absolute;
-  inset: 0.05em;
-  background: var(--paper);
-  clip-path: var(--clip);
-}
-
-.ransom-scrap > span {
-  position: relative;
-  line-height: 0.92;
 }
 
 /* The handle on the right edge of a focus tile: the visible way into the
@@ -1045,22 +994,24 @@ body {
   animation: flash 0.9s steps(1) 1;
 }
 
-/* A level-up pastes the new scraps on one at a time: each lands big and
-   tilted over, and snaps flat onto the page. */
-@keyframes scrap-paste {
+/* The new level number enters huge and slams into place. */
+@keyframes level-drop {
   0% {
     opacity: 0;
-    transform: translateY(var(--lift)) rotate(calc(var(--tilt) * -4))
-      scale(2.6);
+    transform: scale(3.2) rotate(-14deg);
   }
-  45% {
+  60% {
     opacity: 1;
-    transform: translateY(var(--lift)) rotate(calc(var(--tilt) * 1.6))
-      scale(0.86);
+    transform: scale(0.88) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-2deg);
   }
 }
-.anim-scrap {
-  animation: scrap-paste 0.34s calc(var(--i) * 0.09s) steps(4) backwards;
+.anim-level-drop {
+  transform: rotate(-2deg);
+  animation: level-drop 0.5s cubic-bezier(0.2, 1.2, 0.35, 1) backwards;
 }
 
 /* A short shake of the panel on impact. */

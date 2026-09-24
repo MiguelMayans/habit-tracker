@@ -331,8 +331,8 @@ function XpBlock({
             NIVEL
           </span>
           <LevelNumber
-            // The key remounts the number on level-up, which is what pastes
-            // the new scraps on one by one.
+            // The key remounts the number on level-up, which is what fires
+            // its slam.
             key={shownLevel}
             value={shownLevel}
             size={36}
