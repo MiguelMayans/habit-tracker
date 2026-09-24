@@ -48,7 +48,7 @@ export function ResultModal({
   // lives right here and not only buried in the history. It is offered only
   // for a log from today: the server would refuse any other.
   const canUndo = isToday(result.activity.date);
-  const xpContada = useCountUp(result.xpGained, { from: 0, ms: 900 });
+  const countedXp = useCountUp(result.xpGained, { from: 0, ms: 900 });
   const [confirming, setConfirming] = useState(false);
   const [undoing, setUndoing] = useState(false);
   const [undoError, setUndoError] = useState<string | null>(null);
@@ -94,14 +94,14 @@ export function ResultModal({
           ACTIVIDAD REGISTRADA
         </p>
 
-        {/* La cifra sube desde cero en lugar de estar ya puesta. Es el número
-            por el que existe esta pantalla: verlo llegar es la recompensa,
-            encontrarlo ya ahí es un dato. */}
+        {/* The figure counts up from zero instead of already being there. It
+            is the number this screen exists for: watching it arrive is the
+            reward, finding it already there is a statistic. */}
         <p
           className="anim-slam text-sign m-0 mt-3 font-display text-[64px] leading-none text-yellow"
           style={{ transform: "skewX(-8deg)" }}
         >
-          +{xpContada}
+          +{countedXp}
           <span className="text-[26px]"> XP</span>
         </p>
 
@@ -122,11 +122,11 @@ export function ResultModal({
           )}
         </div>
 
-        {/* Registrado desde la home no hay viaje que cerrar: la pantalla que
-            quieres ya está detrás. El enlace decía "Ver categorías" y no hacía
-            nada visible —navegaba a "/" estando en "/"— y encima dejaba el
-            modal abierto, porque la tarjeta que lo pinta no se desmonta. Ahí
-            un solo botón, que cierra. */}
+        {/* Logged from the home there is no trip to close: the screen you
+            want is already behind. The link said "Ver categorías" and did
+            nothing visible —it navigated to "/" while on "/"— and left the
+            modal open, because the card rendering it does not unmount. There,
+            a single button that closes. */}
         <div
           className="anim-row mt-10 grid gap-3"
           style={{ "--delay": "0.9s" } as React.CSSProperties}
@@ -262,11 +262,10 @@ function XpBlock({
 
   return (
     <div className={celebrating ? "anim-shake relative" : "relative"}>
-      {/* Por un portal al body: este bloque lleva `anim-shake` justo cuando el
-          fogonazo aparece, y un ancestro con `transform` convierte
-          `position: fixed` en `absolute` relativo a él. El fogonazo "a
-          pantalla completa" llevaba desde siempre encerrado dentro del bloque
-          que vibra. */}
+      {/* Through a portal to the body: this block carries `anim-shake` right
+          when the flash appears, and an ancestor with a `transform` turns
+          `position: fixed` into `absolute` relative to it. The "full-screen"
+          flash had always been trapped inside the shaking block. */}
       {celebrating &&
         createPortal(
           <div
@@ -331,7 +330,7 @@ function XpBlock({
           className="relative h-full bg-yellow"
           style={{
             width: `${Math.round(width * 100)}%`,
-            // Subiendo a tope acelera; asentándose en el nivel nuevo frena.
+            // Climbing to the top it accelerates; settling into the new level it brakes.
             transition: animated
               ? data.leveledUp && width === 1
                 ? "width 1.25s cubic-bezier(.4,0,.9,.5)"

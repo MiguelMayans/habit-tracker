@@ -132,8 +132,8 @@ export function CategoryDetailPage() {
   const formRef = useRef<HTMLFormElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  // Llegar con ?new=focus baja hasta el formulario y pone el cursor dentro.
-  // Se hace una sola vez y solo mueve el DOM: no escribe estado.
+  // Arriving with ?new=focus scrolls down to the form and puts the cursor in
+  // it. It happens once and only moves the DOM: it writes no state.
   useEffect(() => {
     if (deepLinkHandled.current || !wantsNewFocus || !category) return;
     if (!formRef.current) return;
@@ -725,8 +725,8 @@ export function CategoryDetailPage() {
 
       {/* ---- New focus ---- */}
       <form onSubmit={onCreateFocus} className="mt-11" ref={formRef}>
-        {/* La cabecera es el mando: misma pestaña de siempre, pero ahora abre
-            y cierra. Cerrada lleva un "+", abierta un "×". */}
+        {/* The heading is the control: the same tab as always, but now it
+            opens and closes. Closed it carries a "+", open a "×". */}
         <h2 className="m-0">
           <button
             type="button"
@@ -737,7 +737,7 @@ export function CategoryDetailPage() {
               if (next) window.setTimeout(() => nameInputRef.current?.focus(), 60);
             }}
             aria-expanded={formOpen}
-            aria-controls="nuevo-foco"
+            aria-controls="new-focus"
             className="anim-row inline-block bg-bone px-3 py-1 font-display text-[13px] text-black uppercase"
             style={
               {
@@ -775,7 +775,7 @@ export function CategoryDetailPage() {
         )}
 
         <div
-          id="nuevo-foco"
+          id="new-focus"
           hidden={!formOpen}
           className="anim-row mt-4 flex items-stretch gap-3"
           style={{ "--delay": "0.34s" } as React.CSSProperties}

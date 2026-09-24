@@ -73,9 +73,9 @@ export function LogActivityPage() {
   const [date, setDate] = useState("");
   const [editingDate, setEditingDate] = useState(false);
 
-  // Dar el foco por terminado. Vive aquí y no en la tarjeta de la home:
-  // desde la tarjeta lo que se hace es registrar, y una acción que cambia el
-  // estado del foco no debe estar a un dedo de las intensidades.
+  // Calling the focus done. It lives here and not on the home card: from the
+  // card what you do is log, and an action that changes the focus itself
+  // should not sit a finger away from the intensities.
   const [closingFocus, setClosingFocus] = useState(false);
   const [closing, setClosing] = useState(false);
   const [closeError, setCloseError] = useState<string | null>(null);
@@ -196,8 +196,8 @@ export function LogActivityPage() {
     try {
       await updateFocus(Number(focusId), { frozen: true });
       setClosingFocus(false);
-      // Un foco cerrado ya no admite actividad, así que deja de poder estar
-      // elegido: se suelta y se recarga la lista para que salga como tal.
+      // A closed focus takes no activity, so it can no longer be selected: it
+      // is released, and the list reloads so it shows as closed.
       setFocusId("");
       setFocuses(await getFocusesByCategory(Number(categoryId)));
     } catch (e) {
@@ -330,8 +330,8 @@ export function LogActivityPage() {
           </div>
         </label>
 
-        {/* Fuera del <label> a propósito: un botón dentro de una etiqueta
-            dispara además el control al que apunta. */}
+        {/* Outside the <label> on purpose: a button inside a label also
+            fires the control the label points at. */}
         {selectedFocus && !selectedFocus.frozen && (
           <button
             type="button"

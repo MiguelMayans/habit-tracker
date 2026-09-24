@@ -36,7 +36,7 @@ export type FocusRow = {
   parentFocusId: number | null;
   name: string;
   level: number;
-  /** XP acumulada total histórica; para la barra usa `progress`. */
+  /** Total XP accumulated over time; for the bar, use `progress` instead. */
   currentXp: number;
   frozen: boolean;
 };

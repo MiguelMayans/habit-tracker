@@ -49,8 +49,8 @@ export function CategoryCard({
   const [loadingFocuses, setLoadingFocuses] = useState(false);
   const [focusesError, setFocusesError] = useState<string | null>(null);
 
-  // El registro rápido vive en un hook compartido con el detalle de
-  // categoría: el mismo gesto tiene que significar lo mismo en los dos sitios.
+  // Quick logging lives in a hook shared with the category detail: the same
+  // gesture has to mean the same thing in both places.
   const quick = useQuickLog({
     categoryId: c.id,
     onAfterChange: () => {
@@ -62,28 +62,28 @@ export function CategoryCard({
   const accent = categoryColorVar(c.slug);
   const last = sinceLastActivity(c.lastActivityAt);
   const wordmark = categoryWordmark(c.slug);
-  // La XP de la categoría cuenta hacia arriba en vez de cambiar de golpe.
-  const xpMostrada = useCountUp(c.currentXp);
+  // The category XP counts up instead of changing in one jump.
+  const shownXp = useCountUp(c.currentXp);
   const panelId = `category-focuses-${c.id}`;
 
   /**
-   * `silencioso` es lo que hace que la barra se vea subir.
+   * `silent` is what lets you watch the bar climb.
    *
-   * Al refrescar tras registrar, poner `loadingFocuses` a true saca el
-   * esqueleto en lugar de la lista, y eso DESMONTA las filas: vuelven a nacer
-   * ya con el valor nuevo, así que no hay transición que animar y el premio
-   * aparece de golpe. En una recarga silenciosa las filas siguen montadas y
-   * la anchura viaja del valor viejo al nuevo, que es justo lo que se quiere
-   * ver.
+   * Refreshing after a log with `loadingFocuses` set to true swaps the list
+   * for the skeleton, and that UNMOUNTS the rows: they are born again already
+   * holding the new value, so there is no transition to run and the reward
+   * just appears. In a silent reload the rows stay mounted and the width
+   * travels from the old value to the new one, which is exactly what you
+   * want to see.
    */
-  function loadFocuses(silencioso = false) {
-    if (!silencioso) setLoadingFocuses(true);
+  function loadFocuses(silent = false) {
+    if (!silent) setLoadingFocuses(true);
     setFocusesError(null);
     getFocusesByCategory(c.id)
       .then((f) => setFocuses(orderByLineage(f)))
       .catch((e: Error) => setFocusesError(e.message))
       .finally(() => {
-        if (!silencioso) setLoadingFocuses(false);
+        if (!silent) setLoadingFocuses(false);
       });
   }
 
@@ -200,7 +200,7 @@ export function CategoryCard({
               </div>
 
               <div className="mt-2.5 flex items-center gap-2 text-[10px] font-semibold tracking-[0.06em] text-bone/75">
-                <span>{xpMostrada} XP</span>
+                <span>{shownXp} XP</span>
                 <i className="h-[3px] w-[3px] rotate-45 bg-bone/55" />
                 <span>
                   {c.atMaxLevel ? (
@@ -252,8 +252,8 @@ export function CategoryCard({
             onClick={onToggle}
             aria-expanded={isOpen}
             aria-controls={panelId}
-            // Abierto, el hueco de abajo se cierra: el tallo tiene que nacer
-            // pegado a la pestaña o dejan de leerse como una sola pieza.
+            // Open, the gap below closes: the stem has to grow straight out of
+            // the tab or the two stop reading as one piece.
             className={`block px-3.5 pt-2 text-left ${isOpen ? "pb-0" : "pb-4"}`}
           >
             <span className="slam-content inline-block">
@@ -333,12 +333,12 @@ export function CategoryCard({
         )}
       </div>
 
-      {/* Solo aparece si el registro ha subido un nivel: ver useQuickLog.
-          
-          Va por un portal al body, y no aquí dentro, porque la tarjeta lleva
-          `transform` y un ancestro transformado convierte `position: fixed` en
-          `absolute` relativo a él: el modal salía encajonado dentro de la
-          tarjeta, inclinado con ella y con sus propias barras de scroll. */}
+      {/* Only appears when the log raised a level: see useQuickLog.
+
+          It goes through a portal to the body and not in here, because the
+          card carries a `transform`, and a transformed ancestor turns
+          `position: fixed` into `absolute` relative to it: the modal came out
+          boxed inside the card, skewed with it and with its own scrollbars. */}
       {quick.result &&
         createPortal(
           <ResultModal
@@ -470,10 +470,9 @@ function HomeFocusRow({
         </button>
       )}
 
-      {/* El premio, encima de la barra que acaba de llenarse. Va posicionado
-          en absoluto para no empujar la fila siguiente: un salto de maquetación
-          justo cuando estás mirando la recompensa se lleva por delante lo que
-          quería conseguir. */}
+      {/* The reward, over the bar that just filled. Absolutely positioned so
+          it does not push the next row: a layout jump right while you are
+          looking at the reward wipes out what it was trying to do. */}
       {gain !== null && (
         <span
           className="anim-slam pointer-events-none absolute right-0 -bottom-4 z-10 bg-yellow px-1.5 py-0.5 font-display text-[10px] leading-none text-black"

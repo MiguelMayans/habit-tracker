@@ -445,12 +445,12 @@ body {
   background: var(--accent, var(--color-bone));
 }
 
-/* Un hijo no cuelga del filete principal: cuelga DE SU PADRE. El `::after` es
-   el tallo corto que baja desde la fila de arriba, y el tirante sale de ese
-   tallo y no del filete.
-   `left` se mide contra el borde del li, que ya empieza 14px a la derecha del
-   filete — por eso el valor anterior, -26px, dibujaba el tirante 12px POR
-   FUERA de la lista, hacia la izquierda. */
+/* A child does not hang from the main stem: it hangs FROM ITS PARENT. The
+   `::after` is the short stem coming down from the row above, and the tick
+   leaves from that stem rather than from the main one.
+   `left` is measured against the li's edge, which already starts 14px right
+   of the stem — which is why the old -26px drew the tick 12px OUTSIDE the
+   list, off to the left. */
 .focus-branch > li[data-child="true"]::before {
   left: 0;
   width: 10px;
@@ -482,8 +482,8 @@ body {
   overflow: hidden;
   animation: fill 0.95s var(--delay, 0s) cubic-bezier(0.2, 0.9, 0.25, 1)
     backwards;
-  /* Para cuando la XP cambia SIN remontar, que es lo que pasa al registrar
-     desde la propia tarjeta: sin esto el premio aparece de golpe. */
+  /* For when the XP changes WITHOUT a remount, which is what happens when
+     logging from the card itself: without this the reward just appears. */
   transition: width 1s cubic-bezier(0.2, 0.9, 0.25, 1);
 }
 

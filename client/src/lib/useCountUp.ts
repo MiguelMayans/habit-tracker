@@ -36,8 +36,8 @@ export function useCountUp(
     let raf = 0;
 
     if (quieto) {
-      // El salto también pasa por un frame: un setState síncrono dentro de un
-      // efecto encadena renders, y oxlint avisa con razón.
+      // The jump goes through a frame too: a synchronous setState inside an
+      // effect chains renders, and oxlint rightly flags it.
       raf = requestAnimationFrame(() => {
         from.current = value;
         setShown(value);
