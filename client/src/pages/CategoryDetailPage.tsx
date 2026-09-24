@@ -250,8 +250,8 @@ export function CategoryDetailPage() {
 
   useEffect(() => load(), [load]);
 
-  // The scene's beam takes the colour of the category you are looking at:
-  // entering Cuerpo tints the room red. It goes before the early returns for
+  // The backdrop's rays take the colour of the category you are looking at:
+  // entering Mente turns the sky purple. It goes before the early returns for
   // loading and error, because hooks cannot be skipped.
   useLight(category ? categoryColorVar(category.slug) : null);
 

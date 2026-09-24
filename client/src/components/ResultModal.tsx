@@ -83,8 +83,12 @@ export function ResultModal({
       aria-modal="true"
       aria-labelledby="result-title"
     >
-      <div className="texture-diagonals" />
-      <div className="texture-halftone" />
+      {/* The backdrop's burst at full blast, in the category's colour. */}
+      <div
+        className="burst-blast"
+        style={{ "--blast": accent } as React.CSSProperties}
+      />
+      <div className="burst-blast-tone" />
 
       <div className="relative z-10 mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-5 py-10">
         <p
@@ -105,7 +109,18 @@ export function ResultModal({
           <span className="text-[26px]"> XP</span>
         </p>
 
-        <div className="mt-9 grid gap-7">
+        {/* The bars sit on a black panel of their own, like every card in the
+            app: over the burst, bare text would be crossed by rays. */}
+        <div
+          className="anim-row mt-8"
+          style={
+            {
+              "--delay": "0.12s",
+              filter: `drop-shadow(8px 8px 0 ${accent})`,
+            } as React.CSSProperties
+          }
+        >
+          <div className="card-clip grid gap-7 bg-black px-4 pt-5 pb-6">
           <XpBlock
             title={category?.name ?? "Categoría"}
             slug={category?.slug}
@@ -120,6 +135,7 @@ export function ResultModal({
               delay={180}
             />
           )}
+          </div>
         </div>
 
         {/* Logged from the home there is no trip to close: the screen you

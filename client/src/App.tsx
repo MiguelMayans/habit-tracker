@@ -6,67 +6,56 @@ import { LogActivityPage } from "./pages/LogActivityPage";
 import { LogFab } from "./components/LogFab";
 
 /**
- * The dust motes in the beam: positions in pixels, always multiples of 7 —
- * the halftone's step — so each one lands exactly on a grid dot rather than
- * between two.
+ * The logo's stars, loose in the burst. Positions are percentages of the
+ * screen, all inside the top band where the rays are still solid: down in the
+ * screentone they would be read as one more dot.
  *
- * They are spread along the cone as it falls on a phone. On screens where one
- * ends up outside the beam, the clip-path crops it and it simply is not
- * painted: there is nothing to recompute.
- *
- * Cycles and delays share no common multiples, so the pattern never repeats.
- * There are 18: any fewer and they get lost in the noise of the halftone and
- * never read as anything.
+ * Cycles and delays share no common multiples, so two never blink together
+ * for long and the sky does not pulse like a sign.
  */
-const MOTES = [
-  { x: 28, y: 63, cycle: "5.3s", delay: "0s" },
-  { x: 84, y: 119, cycle: "7.1s", delay: "3.4s" },
-  { x: 133, y: 168, cycle: "6.2s", delay: "1.9s" },
-  { x: 21, y: 217, cycle: "8.3s", delay: "5.6s" },
-  { x: 91, y: 266, cycle: "5.9s", delay: "2.7s" },
-  { x: 189, y: 273, cycle: "7.7s", delay: "6.8s" },
-  { x: 56, y: 322, cycle: "6.6s", delay: "0.8s" },
-  { x: 147, y: 371, cycle: "9.1s", delay: "4.3s" },
-  { x: 238, y: 378, cycle: "5.4s", delay: "7.2s" },
-  { x: 105, y: 427, cycle: "7.4s", delay: "1.1s" },
-  { x: 196, y: 476, cycle: "6.9s", delay: "5.1s" },
-  { x: 70, y: 525, cycle: "8.7s", delay: "2.2s" },
-  { x: 273, y: 532, cycle: "5.7s", delay: "6.3s" },
-  { x: 161, y: 574, cycle: "7.9s", delay: "3.8s" },
-  { x: 224, y: 623, cycle: "6.3s", delay: "8.1s" },
-  { x: 119, y: 630, cycle: "8.1s", delay: "0.4s" },
-  { x: 301, y: 665, cycle: "5.6s", delay: "4.9s" },
-  { x: 182, y: 700, cycle: "7.2s", delay: "7.6s" },
+const STARS = [
+  { x: "9%", y: "7%", size: 16, tilt: "-12deg", cycle: "5.3s", delay: "0.9s" },
+  { x: "88%", y: "4%", size: 12, tilt: "20deg", cycle: "6.7s", delay: "2.6s" },
+  { x: "50%", y: "2%", size: 18, tilt: "8deg", cycle: "7.9s", delay: "4.1s" },
+  { x: "4%", y: "22%", size: 11, tilt: "-25deg", cycle: "6.1s", delay: "5.7s" },
+  { x: "92%", y: "19%", size: 14, tilt: "-6deg", cycle: "8.6s", delay: "1.8s" },
 ];
 
 function App() {
   return (
     <BrowserRouter>
-      {/* The scene lives in the layout, not in each screen. Five fixed layers,
-          all behind the content and none of them capturing the pointer: the
-          room, the light beam with its halftone inside, the table, the grain
-          and the vignette. */}
+      {/* The scene lives in the layout, not in each screen. Every layer is
+          fixed, behind the content, and none of them captures the pointer:
+          the rays, the screentone that dissolves them, the stars
+          and the grain. */}
       <div className="relative min-h-screen overflow-hidden bg-black">
-        <div className="scene scene-room" />
-        <div className="scene scene-beam">
-          {MOTES.map((m) => (
+        <div className="scene scene-burst" />
+        <div className="scene">
+          <div className="tone tone-1" />
+          <div className="tone tone-2" />
+          <div className="tone tone-3" />
+          <div className="tone tone-4" />
+          <div className="tone tone-floor" />
+        </div>
+        <div className="scene">
+          {STARS.map((st) => (
             <span
-              key={`${m.x}-${m.y}`}
-              className="mote"
+              key={`${st.x}-${st.y}`}
+              className="star"
               style={
                 {
-                  left: m.x,
-                  top: m.y,
-                  "--cycle": m.cycle,
-                  "--delay": m.delay,
+                  left: st.x,
+                  top: st.y,
+                  "--size": `${st.size}px`,
+                  "--tilt": st.tilt,
+                  "--cycle": st.cycle,
+                  "--delay": st.delay,
                 } as React.CSSProperties
               }
             />
           ))}
         </div>
-        <div className="scene scene-table" />
         <div className="scene scene-grain" />
-        <div className="scene scene-vignette" />
 
         <main className="relative z-10 mx-auto w-full max-w-md">
           <Routes>

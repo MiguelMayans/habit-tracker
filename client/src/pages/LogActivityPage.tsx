@@ -213,8 +213,9 @@ export function LogActivityPage() {
     ? categoryColorVar(selected.slug)
     : "var(--color-yellow)";
 
-  // Choosing a category lights the scene in its colour. While none is chosen
-  // the beam stays bone: it does not pre-empt a decision you have not made.
+  // Choosing a category paints the rays in its colour. While none is chosen
+  // they keep the home's red: they do not pre-empt a decision you have not
+  // made.
   useLight(selected ? categoryColorVar(selected.slug) : null);
 
   return (

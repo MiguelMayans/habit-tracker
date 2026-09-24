@@ -31,195 +31,233 @@ body {
  * cut corners and textures in plain CSS (no images to maintain).
  * ------------------------------------------------------------------ */
 
-/* ---- The scene: the interrogation room ---- */
+/* ---- The scene: the burst ---- */
 
 /*
- * One hard beam of light crossing a black room, with the content underneath.
+ * A starburst of hard rays exploding from behind the header, and dissolving
+ * into screentone on its way down.
  *
- * The backdrop used to be a field of red stripes repeated edge to edge: a
- * uniform pattern flattens the screen and competes with cards that are
- * already at full colour. Here the backdrop composes instead of repeating —
- * there is a lit zone and a dead zone — and the halftone only exists INSIDE
- * the beam, which is where light would reveal it. At the previous 7% it was
- * invisible; at 16% inside the cone it reads, and outside it is not needed.
+ * It is the most Persona image there is — the menu, the All-Out Attack, every
+ * big moment — and it is used as a place, not as decoration: the rays come out
+ * of whatever is at the top of the screen (the logo on the home, the category's
+ * wordmark on its detail), so the header reads as the thing that exploded.
+ *
+ * Below the burst the stage is black, which is where the cards live. The fall
+ * from one to the other is NOT a soft fade: it is a ramp of screentone in hard
+ * bands, the way a manga panel darkens — black dots that grow, then holes that
+ * shrink, then nothing. Every band shares the same 8px grid, because they are
+ * all full-screen layers clipped to their strip rather than strips with their
+ * own origin.
+ *
+ * The ray colour is `--light`: the category you are looking at paints the sky.
+ * The fallback goes in each usage rather than as a declaration of its own, or
+ * it would always beat what :root sets.
  *
  * Every layer is `fixed`: the backdrop is a still stage the content travels
  * across, not a cloth that stretches to 3000px on a long history screen.
  */
+@property --spin {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 .scene {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  /* Where the rays come from, shared by the burst and its entrance. */
+  --burst-x: 74%;
+  --burst-y: 13vh;
 }
 
-/* The room. Black, but not flat: it lightens toward the light source. */
-.scene-room {
-  background: radial-gradient(
-    118% 84% at 14% -12%,
-    #1a191f 0%,
-    #08080a 52%,
-    #000 100%
+/*
+ * The rays. Uneven widths on purpose: a regular fan reads as a sunburst
+ * clip-art, an irregular one reads as an explosion.
+ *
+ * They turn by animating the gradient's own angle, not by rotating the layer.
+ * A rotated layer would have to be a square as big as the screen's diagonal,
+ * which on a phone at 3x is a texture of several thousand pixels a side — far
+ * more memory than a background deserves. Animating `--spin` repaints the
+ * gradient instead, and `steps()` keeps that to a handful of paints per
+ * second: a tick-tock the app already speaks, rather than a smooth spin.
+ */
+.scene-burst {
+  --ray: color-mix(in srgb, var(--light, var(--color-cuerpo)) 46%, #000);
+  --ray-hot: color-mix(in srgb, var(--light, var(--color-cuerpo)) 72%, #000);
+  background: conic-gradient(
+    from var(--spin) at var(--burst-x) var(--burst-y),
+    var(--ray) 0deg 9deg,
+    transparent 9deg 21deg,
+    var(--ray-hot) 21deg 25deg,
+    transparent 25deg 38deg,
+    var(--ray) 38deg 52deg,
+    transparent 52deg 61deg,
+    var(--ray) 61deg 66deg,
+    transparent 66deg 83deg,
+    var(--ray-hot) 83deg 95deg,
+    transparent 95deg 104deg,
+    var(--ray) 104deg 110deg,
+    transparent 110deg 127deg,
+    var(--ray) 127deg 142deg,
+    transparent 142deg 150deg,
+    var(--ray-hot) 150deg 154deg,
+    transparent 154deg 171deg,
+    var(--ray) 171deg 186deg,
+    transparent 186deg 197deg,
+    var(--ray) 197deg 203deg,
+    transparent 203deg 219deg,
+    var(--ray-hot) 219deg 232deg,
+    transparent 232deg 241deg,
+    var(--ray) 241deg 249deg,
+    transparent 249deg 266deg,
+    var(--ray) 266deg 280deg,
+    transparent 280deg 290deg,
+    var(--ray-hot) 290deg 295deg,
+    transparent 295deg 311deg,
+    var(--ray) 311deg 327deg,
+    transparent 327deg 336deg,
+    var(--ray) 336deg 343deg,
+    transparent 343deg 360deg
   );
-}
-
-/* The beam. A trapezoid cut by hand — no soft gradient — entering from the
-   top left and widening as it descends.
-   `--light` can be overridden by whichever screen you are on, to tint the beam
-   with that category's colour; the fallback goes in each usage rather than as
-   a declaration of its own, or it would always beat what :root sets. */
-.scene-beam {
-  clip-path: polygon(-12% -2%, 15% -2%, 134% 102%, 33% 102%);
-  background: linear-gradient(
-    168deg,
-    color-mix(in srgb, var(--light, var(--color-bone)) 10%, transparent) 0%,
-    color-mix(in srgb, var(--light, var(--color-bone)) 4%, transparent) 46%,
-    transparent 88%
-  );
-  /* El foco cuelga, y lo que cuelga se mueve. El pivote está arriba y fuera
-     de la pantalla, donde estaría el gancho, así que gira como un péndulo en
-     vez de como una puerta.
-
-     `stutter` entra con un segundo de retraso a propósito: comparte la
-     propiedad `opacity` con `lamp-on`, y dos animaciones sobre la misma
-     propiedad las resuelve la última declarada. Sin el retraso se comería el
-     arranque del fluorescente. */
-  transform-origin: 12% -30%;
+  transform-origin: var(--burst-x) var(--burst-y);
   animation:
-    lamp-on 0.9s steps(1) backwards,
-    sway 19s ease-in-out infinite,
-    stutter 31s 1s steps(1) infinite;
+    burst-in 0.55s steps(4) backwards,
+    ray-spin 150s steps(900) infinite;
 }
 
-/* The halftone, clipped by the parent's clip-path: outside the beam there is
-   no pattern, because there is no light. It fades downward through a mask,
-   the same way the beam itself would die out. */
-.scene-beam::after {
-  content: "";
+/* The screentone ramp. Four bands and a floor, all clipped from full-screen
+   layers so their dots line up. First black dots that grow over the rays,
+   then the rays only through holes that shrink, then solid black. */
+.tone {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(
-    var(--light, var(--color-bone)) 1.1px,
-    transparent 1.5px
-  );
-  background-size: 7px 7px;
-  opacity: 0.16;
-  -webkit-mask-image: linear-gradient(
-    170deg,
-    #000 0%,
-    #000 38%,
-    transparent 84%
-  );
-  mask-image: linear-gradient(170deg, #000 0%, #000 38%, transparent 84%);
+  background-size: 8px 8px;
+}
+.tone-1 {
+  clip-path: inset(38% 0 0 0);
+  background-image: radial-gradient(circle, #000 1.5px, transparent 2px);
+}
+.tone-2 {
+  clip-path: inset(46% 0 0 0);
+  background-image: radial-gradient(circle, #000 2.6px, transparent 3.1px);
+}
+.tone-3 {
+  clip-path: inset(54% 0 0 0);
+  background-image: radial-gradient(circle, transparent 2.2px, #000 2.7px);
+}
+.tone-4 {
+  clip-path: inset(62% 0 0 0);
+  background-image: radial-gradient(circle, transparent 1.2px, #000 1.7px);
+}
+.tone-floor {
+  clip-path: inset(70% 0 0 0);
+  background: #000;
 }
 
-/* Dust motes in the beam.
- *
- * Each mote is ONE CELL of the halftone, not a dot added on top: 7px square
- * with the same radial-gradient, placed at a multiple of 7 so it lands exactly
- * on the grid. That is why it reads as one of your own dots lighting up rather
- * than a stray spark.
- *
- * They sit inside the beam, so the clip-path crops them for free: the ones
- * falling outside the cone simply are not painted, with nothing to compute.
- *
- * Each has its own cycle and delay, sharing no common multiples, so the set
- * never lines up again. The flare occupies 30% of the cycle and there are 18
- * motes, so on average about five are lit at once: enough to see dust floating
- * in the beam without it blinking like a Christmas tree.
- *
- * A mote is fatter than a halftone dot (1.9px against 1.1px) and carries a
- * hard ring around it. That is what makes it read at a glance: raising the
- * opacity alone just makes it one more white dot among hundreds.
- */
-.mote {
+/* Stars, the logo's own: yellow, five points, a black edge. They blink in
+   with hard cuts, one at a time, never all together. */
+.star {
   position: absolute;
-  width: 7px;
-  height: 7px;
-  background-image: radial-gradient(
-    var(--light, var(--color-bone)) 1.9px,
-    color-mix(in srgb, var(--light, var(--color-bone)) 32%, transparent) 2.3px,
-    transparent 3.2px
+  width: var(--size);
+  height: var(--size);
+  background: var(--color-black);
+  clip-path: polygon(
+    50% 0,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 91%,
+    50% 70%,
+    21% 91%,
+    32% 57%,
+    2% 35%,
+    39% 35%
   );
-  opacity: 0;
-  /* El destello y el salto comparten ciclo y retardo, así que van en fase: la
-     mota se enciende, salta una celda, se apaga. El salto es de 7px exactos
-     —el paso de la trama— y con `steps`, para que nunca esté entre dos puntos
-     de la rejilla. Polvo flotando, no una partícula deslizándose. */
-  animation:
-    mote var(--cycle) var(--delay) ease-in-out infinite,
-    mote-drift var(--cycle) var(--delay) steps(3) infinite;
+  transform: rotate(var(--tilt));
+  animation: twinkle var(--cycle) var(--delay) steps(1) infinite;
 }
-
-/* The table. A lit 4px red edge and the surface falling away to black:
-   enough to close the scene at the bottom without shouting, which is what a
-   solid red band right behind the log button would have done. */
-.scene-table {
-  top: auto;
-  right: -12vw;
-  bottom: -30px;
-  left: -12vw;
-  height: 108px;
-  background: linear-gradient(
-    to bottom,
-    var(--color-cuerpo) 0 4px,
-    #1c0207 4px,
-    #050001 100%
-  );
-  transform: rotate(-2.4deg);
+.star::after {
+  content: "";
+  position: absolute;
+  inset: 22%;
+  background: var(--color-yellow);
+  clip-path: inherit;
 }
 
 /* Grain. It lives in an embedded SVG because real noise is not made from
    gradients: any repeated CSS pattern reads as a grid. Still nothing to
    maintain as a file. */
 .scene-grain {
-  /* Holgura por los cuatro lados: el grano se mueve, y sin margen se vería
-     asomar el borde de la capa al desplazarse. */
+  /* Slack on all four sides: the grain moves, and without a margin the
+     layer's edge would show as it shifts. */
   inset: -170px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='r'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23r)'/%3E%3C/svg%3E");
-  opacity: 0.055;
-  /* El grano de película nunca está quieto: quieto se lee como una textura,
-     arrastrándose se lee como película. Va en `transform` y no en
-     `background-position` porque lo primero lo compone la GPU y lo segundo
-     obliga a repintar la pantalla entera siete veces por segundo. */
+  opacity: 0.06;
+  /* Film grain is never still: still it reads as a texture, crawling it reads
+     as film. It moves with `transform` and not `background-position` because
+     the first is composited by the GPU and the second repaints the whole
+     screen seven times a second. */
   animation: grain 1.1s steps(1) infinite;
-}
-
-/* Vignette: darkens the corners so the eye falls to the centre. */
-.scene-vignette {
-  background: radial-gradient(
-    126% 96% at 50% 38%,
-    transparent 42%,
-    rgb(0 0 0 / 0.72) 100%
-  );
 }
 
 /* ---- Textures for the result modal ---- */
 
-/* Only the result modal uses these: it is a celebration screen you look at
-   for three seconds, and movement earns its place there. On the app backdrop
-   these two layers looped constantly without saying anything. */
-.texture-diagonals {
-  position: absolute;
-  inset: -120px -60px;
-  background-image: repeating-linear-gradient(
-    -52deg,
-    color-mix(in srgb, var(--color-cuerpo) 22%, transparent) 0 3px,
-    transparent 3px 26px
-  );
-  animation: run 6s linear infinite;
-  pointer-events: none;
-}
-
-/* Halftone. It goes BEHIND the content, never on top: a texture laid over
-   the cards acts as a veil and eats their colour. */
-.texture-halftone {
+/* The modal's screen: the same burst at full blast. Where the backdrop keeps
+   the rays dark so the cards can stand on them, a celebration has nothing to
+   protect, so the rays go to full colour. */
+.burst-blast {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(var(--color-bone) 1px, transparent 1.4px);
-  background-size: 7px 7px;
-  opacity: 0.07;
-  pointer-events: none;
+  --ray: color-mix(in srgb, var(--blast, var(--color-cuerpo)) 62%, #000);
+  --ray-hot: var(--blast, var(--color-cuerpo));
+  background: conic-gradient(
+    from var(--spin) at 30% 17%,
+    var(--ray) 0deg 11deg,
+    transparent 11deg 22deg,
+    var(--ray-hot) 22deg 27deg,
+    transparent 27deg 40deg,
+    var(--ray) 40deg 56deg,
+    transparent 56deg 64deg,
+    var(--ray-hot) 64deg 76deg,
+    transparent 76deg 90deg,
+    var(--ray) 90deg 97deg,
+    transparent 97deg 113deg,
+    var(--ray-hot) 113deg 128deg,
+    transparent 128deg 137deg,
+    var(--ray) 137deg 145deg,
+    transparent 145deg 160deg,
+    var(--ray) 160deg 176deg,
+    transparent 176deg 186deg,
+    var(--ray-hot) 186deg 191deg,
+    transparent 191deg 206deg,
+    var(--ray) 206deg 221deg,
+    transparent 221deg 229deg,
+    var(--ray-hot) 229deg 241deg,
+    transparent 241deg 256deg,
+    var(--ray) 256deg 263deg,
+    transparent 263deg 278deg,
+    var(--ray) 278deg 294deg,
+    transparent 294deg 303deg,
+    var(--ray-hot) 303deg 309deg,
+    transparent 309deg 323deg,
+    var(--ray) 323deg 339deg,
+    transparent 339deg 360deg
+  );
+  animation:
+    burst-in 0.5s steps(4) backwards,
+    ray-spin 40s steps(480) infinite;
+}
+
+/* Over the blast, the same screentone ramp as the backdrop but lower: the
+   content sits in the dark half, the rays own the top. */
+.burst-blast-tone {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle, transparent 1.6px, #000 2.1px) 0 0 / 8px 8px;
+  clip-path: inset(40% 0 0 0);
 }
 
 /* ---- Pieces ---- */
@@ -645,55 +683,48 @@ body {
 
 /* ---- Motion ---- */
 
-/* A mote's flare: it rises and falls, no cuts. It is the only thing in the
-   backdrop that loops, and it is a 2px dot. */
-@keyframes mote {
-  0%,
-  55%,
-  100% {
+/* The burst arriving: it punches out from its source in four frames, the
+   single entrance the backdrop makes. */
+@keyframes burst-in {
+  from {
     opacity: 0;
-  }
-  70% {
-    opacity: 1;
-  }
-  85% {
-    opacity: 0;
-  }
-}
-
-/* Un grado de balanceo en 19 segundos: no lo ves moverse si lo miras fijo, lo
-   notas si no lo miras. */
-@keyframes sway {
-  0%,
-  100% {
-    transform: rotate(-0.5deg);
+    transform: scale(0.35);
   }
   50% {
-    transform: rotate(0.5deg);
+    opacity: 1;
+    transform: scale(1.12);
   }
 }
 
-/* Cada medio minuto el tubo tartamudea dos fotogramas. Lo justo para que la
-   sala parezca un sitio y no un fondo. */
-@keyframes stutter {
+/* Named `ray-spin` and not `spin`: Tailwind ships its own `spin` (the one
+   behind `animate-spin`), which rotates the whole element and silently wins. */
+@keyframes ray-spin {
+  to {
+    --spin: 360deg;
+  }
+}
+
+/* A star's life: off most of the cycle, then two frames of a small star and
+   one of a big one. */
+@keyframes twinkle {
   0%,
-  96%,
+  78%,
   100% {
-    opacity: 1;
+    transform: rotate(var(--tilt)) scale(0);
   }
-  96.5% {
-    opacity: 0.3;
+  82% {
+    transform: rotate(var(--tilt)) scale(0.6);
   }
-  97.5% {
-    opacity: 1;
+  86% {
+    transform: rotate(calc(var(--tilt) + 18deg)) scale(1.15);
   }
-  98.2% {
-    opacity: 0.55;
+  92% {
+    transform: rotate(calc(var(--tilt) + 30deg)) scale(0.8);
   }
 }
 
-/* Saltos sin orden aparente, ocho por vuelta. Los valores no son múltiplos
-   entre sí para que no se lea un patrón. */
+/* Jumps with no apparent order, eight per cycle. The values share no common
+   multiples, so no pattern reads. */
 @keyframes grain {
   0% {
     transform: translate(0, 0);
@@ -718,46 +749,6 @@ body {
   }
   87% {
     transform: translate(-37px, 35px);
-  }
-}
-
-/* Una celda hacia arriba por ciclo, en saltos de 7px. */
-@keyframes mote-drift {
-  from {
-    transform: translateY(7px);
-  }
-  to {
-    transform: translateY(-14px);
-  }
-}
-
-/* The fluorescent tube kicking in: two dry flickers and then it holds. It is
-   the backdrop's only movement, and it happens once, when the app opens. */
-@keyframes lamp-on {
-  0% {
-    opacity: 0;
-  }
-  6% {
-    opacity: 1;
-  }
-  11% {
-    opacity: 0.1;
-  }
-  17% {
-    opacity: 0.85;
-  }
-  22% {
-    opacity: 0.2;
-  }
-  30%,
-  100% {
-    opacity: 1;
-  }
-}
-
-@keyframes run {
-  to {
-    background-position: 44px 0;
   }
 }
 
