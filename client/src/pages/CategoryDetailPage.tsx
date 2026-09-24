@@ -191,7 +191,7 @@ function FocusTile({
 
       {/* The level spills over the top edge, like on the home cards. */}
       <span className="slam-content pointer-events-none absolute top-1 right-10 z-20">
-        <LevelNumber value={f.level} size={22} tag={false} />
+        <LevelNumber value={f.level} size={25} tag={false} />
       </span>
 
       {gain !== null && (
@@ -512,7 +512,7 @@ export function CategoryDetailPage() {
 
         <LevelNumber
           value={category.level}
-          size={50}
+          size={56}
           className="anim-ribbon mt-1 mr-1 shrink-0"
         />
       </div>

@@ -1,7 +1,7 @@
 /**
  * A level: the figure in the same lettering as the day on the home's calendar
  * — bone, black outline — but extruded into a solid block, with an "NV" tape
- * pinned to its corner in place of a loose "NIVEL" label.
+ * tucked behind its corner in place of a loose "NIVEL" label.
  *
  * Tried and dropped along the way: ransom-note scraps (read worse than a plain
  * figure) and a spiky burst behind the number (too much).
