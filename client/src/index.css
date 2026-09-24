@@ -506,6 +506,52 @@ body {
   opacity: 0.55;
 }
 
+/* A level in ransom-note scraps (see LevelNumber.tsx).
+ *
+ * Each scrap is two layers: the edge colour is the scrap itself, and the
+ * paper is laid over it 0.05em smaller, so a hairline of the opposite value
+ * shows around every cut — the white margin a pair of scissors leaves. It is
+ * also what keeps a black scrap visible over a black background.
+ *
+ * The hard shadow is a drop-shadow on the group, which follows each clipped
+ * outline; a box-shadow would be clipped away with the scrap.
+ */
+.ransom {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 400;
+  line-height: 1;
+  filter: drop-shadow(0.07em 0.07em 0 var(--color-black));
+}
+
+.ransom-scrap {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  min-width: 0.72em;
+  padding: 0.08em 0.1em 0.04em;
+  background: var(--edge);
+  clip-path: var(--clip);
+  transform: translateY(var(--lift)) rotate(var(--tilt));
+}
+
+.ransom-scrap + .ransom-scrap {
+  margin-left: -0.05em;
+}
+
+.ransom-scrap::before {
+  content: "";
+  position: absolute;
+  inset: 0.05em;
+  background: var(--paper);
+  clip-path: var(--clip);
+}
+
+.ransom-scrap > span {
+  position: relative;
+  line-height: 0.92;
+}
+
 /* The XP bar and its fill. */
 .xp-bar {
   clip-path: polygon(0 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
@@ -891,26 +937,6 @@ body {
   animation: burst 0.7s cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
 }
 
-/* The new level number enters huge and slams into place. */
-@keyframes level-drop {
-  0% {
-    opacity: 0;
-    transform: scale(3.2) rotate(-14deg);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(0.88) rotate(3deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(-2deg);
-  }
-}
-.anim-level-drop {
-  transform: rotate(-2deg);
-  animation: level-drop 0.5s cubic-bezier(0.2, 1.2, 0.35, 1) backwards;
-}
-
 /* The bar topping out, in two beats.
  *
  * First the wind-up: it goes white and swells a little while nothing else
@@ -982,6 +1008,24 @@ body {
 .anim-flash {
   opacity: 0;
   animation: flash 0.9s steps(1) 1;
+}
+
+/* A level-up pastes the new scraps on one at a time: each lands big and
+   tilted over, and snaps flat onto the page. */
+@keyframes scrap-paste {
+  0% {
+    opacity: 0;
+    transform: translateY(var(--lift)) rotate(calc(var(--tilt) * -4))
+      scale(2.6);
+  }
+  45% {
+    opacity: 1;
+    transform: translateY(var(--lift)) rotate(calc(var(--tilt) * 1.6))
+      scale(0.86);
+  }
+}
+.anim-scrap {
+  animation: scrap-paste 0.34s calc(var(--i) * 0.09s) steps(4) backwards;
 }
 
 /* A short shake of the panel on impact. */

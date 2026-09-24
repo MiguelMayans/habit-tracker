@@ -16,6 +16,7 @@ import { categoryColorVar } from "../lib/categoryColor";
 import { orderByLineage } from "../lib/focusLineage";
 import { useLight } from "../lib/useLight";
 import { CategoryIcon } from "../components/CategoryIcon";
+import { LevelNumber } from "../components/LevelNumber";
 import { categoryWordmark } from "../lib/categoryWordmark";
 import { isToday, shortRelativeDate } from "../lib/dates";
 import { XP_BY_INTENSITY } from "../lib/intensity";
@@ -391,12 +392,9 @@ export function CategoryDetailPage() {
           >
             NIVEL
           </span>
-          <b
-            className="text-sign-fine inline-block font-display text-[56px] leading-[0.78] text-yellow"
-            style={{ transform: "skewX(10deg)" }}
-          >
-            {category.level}
-          </b>
+          <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
+            <LevelNumber value={category.level} size={46} />
+          </span>
         </span>
       </div>
 

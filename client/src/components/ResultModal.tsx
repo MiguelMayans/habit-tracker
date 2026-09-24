@@ -7,6 +7,7 @@ import { isToday } from "../lib/dates";
 import { useCountUp } from "../lib/useCountUp";
 import { CategoryIcon } from "./CategoryIcon";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { LevelNumber } from "./LevelNumber";
 
 /** Beats of the sequence, in ms from the moment the modal opens. */
 const T_START = 380;
@@ -324,16 +325,14 @@ function XpBlock({
           <span className="text-[9px] font-bold tracking-[0.24em] text-bone/60">
             NIVEL
           </span>
-          <b
-            // The key remounts the number on level-up, which is what fires its
-            // entrance animation.
+          <LevelNumber
+            // The key remounts the number on level-up, which is what pastes
+            // the new scraps on one by one.
             key={shownLevel}
-            className={`text-sign font-display text-[38px] leading-[0.82] text-yellow ${
-              celebrating ? "anim-level-drop" : ""
-            }`}
-          >
-            {shownLevel}
-          </b>
+            value={shownLevel}
+            size={36}
+            slam={celebrating}
+          />
         </span>
       </div>
 

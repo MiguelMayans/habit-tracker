@@ -12,6 +12,7 @@ import { sinceLastActivity } from "../lib/dates";
 import { useCountUp } from "../lib/useCountUp";
 import { useQuickLog } from "../lib/useQuickLog";
 import { CategoryIcon } from "./CategoryIcon";
+import { LevelNumber } from "./LevelNumber";
 import { QuickIntensities } from "./QuickIntensities";
 import { ResultModal } from "./ResultModal";
 import { categoryWordmark } from "../lib/categoryWordmark";
@@ -115,15 +116,12 @@ export function CategoryCard({
           taps on the slice of band it covers and creating a dead zone. It does
           not become a link the way the wordmark does: it is a fact, and two
           links to the same place inside one card are already plenty. */}
-      <span className="slam-content pointer-events-none absolute -top-4 right-4 z-20 flex items-baseline gap-1.5">
+      <span className="slam-content pointer-events-none absolute -top-6 right-3 z-20 flex items-center gap-1.5">
         <span className="text-outline text-[9px] font-bold tracking-[0.24em] text-bone">
           NIVEL
         </span>
-        {/* The level is the reward, so it takes the system yellow and the
-            wordmark's lettering treatment. */}
-        <b className="text-sign font-display text-[46px] leading-[0.82] text-yellow">
-          {c.level}
-        </b>
+        {/* The level is the reward, so it gets the calling-card lettering. */}
+        <LevelNumber value={c.level} size={44} />
       </span>
 
       {wordmark && (
