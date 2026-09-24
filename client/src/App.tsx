@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { CategoryDetailPage } from "./pages/CategoryDetailPage";
 import { CategoryHistoryPage } from "./pages/CategoryHistoryPage";
@@ -69,7 +69,17 @@ function App() {
             <Route
               path="*"
               element={
-                <p className="px-6 py-10 text-bone/60">Página no encontrada</p>
+                <div className="px-4 pt-10 pb-32">
+                  <h1 className="text-sign m-0 font-display text-[34px] leading-[0.95] text-bone uppercase">
+                    Aquí no hay nada
+                  </h1>
+                  <p className="mt-3 text-[12px] leading-relaxed text-bone/70">
+                    Esta dirección no lleva a ninguna pantalla.
+                  </p>
+                  <Link to="/" className="slam-button mt-6">
+                    <span>Volver a categorías</span>
+                  </Link>
+                </div>
               }
             />
           </Routes>

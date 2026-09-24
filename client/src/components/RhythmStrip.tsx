@@ -83,7 +83,7 @@ export function RhythmStrip({
       className="anim-row mb-9"
       style={{ "--delay": "0.12s" } as React.CSSProperties}
     >
-      <div className="mb-2 flex items-baseline gap-2 px-1">
+      <div className="mb-2 flex items-end gap-2 px-1">
         <span
           aria-live="polite"
           className={`text-[9px] font-bold tracking-[0.2em] ${
@@ -97,8 +97,14 @@ export function RhythmStrip({
           // date. It moved here because it talks about exactly this strip:
           // keeping them apart said the same thing twice, in two visual
           // languages.
-          <span className="ml-auto text-[9px] font-bold tracking-[0.16em] text-yellow">
-            RACHA · {streak} {streak === 1 ? "DÍA" : "DÍAS"}
+          // The count in display type: a run of 52 days is the proudest
+          // figure on the home and it was set as small as a caption.
+          <span className="ml-auto flex items-baseline gap-1.5 text-[9px] font-bold tracking-[0.16em] text-yellow">
+            RACHA
+            <b className="text-sign-fine font-display text-[20px] leading-none tracking-normal">
+              {streak}
+            </b>
+            {streak === 1 ? "DÍA" : "DÍAS"}
           </span>
         )}
       </div>
