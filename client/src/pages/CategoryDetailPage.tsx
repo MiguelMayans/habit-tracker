@@ -11,6 +11,7 @@ import {
   type Activity,
   type Category,
   type Focus,
+  type Intensity,
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { orderByLineage } from "../lib/focusLineage";
@@ -22,6 +23,10 @@ import { isToday, shortRelativeDate } from "../lib/dates";
 import { XP_BY_INTENSITY } from "../lib/intensity";
 import { useLongPress } from "../lib/useLongPress";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { FocusMenu } from "../components/FocusMenu";
+import { QuickIntensities } from "../components/QuickIntensities";
+import { ResultModal } from "../components/ResultModal";
+import { useQuickLog } from "../lib/useQuickLog";
 import { ActivityRow } from "../components/ActivityRow";
 import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
@@ -33,65 +38,173 @@ const VISIBLE_HISTORY = 8;
 const TILTS = ["-0.9deg", "0.7deg", "-0.5deg", "1deg", "-0.7deg"];
 
 /**
- * Tapping a focus leads to logging activity ON that focus, with the category
- * and focus already chosen.
+ * A focus on the category detail.
  *
- * A frozen focus is not linked: it is at the maximum level and the backend
- * would reject the activity. Instead, a short tap spawns its child focus —
- * the same gesture that logs on an active focus leads here to the one action
- * it DOES accept. A long press still deletes in both cases.
+ * Tapping it does the same as on the home: an active focus unfolds its three
+ * intensities and logs in place; a frozen one — mastered or called done, so
+ * the backend would refuse activity — starts its child focus instead, which is
+ * the one thing it does accept. It used to navigate to the full form, so the
+ * same tap meant "log now" on one screen and "take me somewhere" on the other.
+ *
+ * Holding it, or its "···" handle, opens the focus menu: renaming, closing,
+ * deleting. The handle exists because a long press cannot be discovered by
+ * looking, nor reached with a keyboard.
  */
 function FocusTile({
-  frozen,
+  focus: f,
+  parent,
   categoryId,
-  focusId,
-  onHold,
-  onSpawn,
-  children,
+  accent,
+  index,
+  highlighted,
+  expanded,
+  busy,
+  gain,
+  onTap,
+  onMenu,
+  onPick,
 }: {
-  frozen: boolean;
+  focus: Focus;
+  parent: Focus | undefined;
   categoryId: number;
-  focusId: number;
-  onHold: () => void;
-  onSpawn: () => void;
-  children: React.ReactNode;
+  accent: string;
+  index: number;
+  highlighted: boolean;
+  expanded: boolean;
+  busy: boolean;
+  /** XP just earned on this focus, shown for a moment and then withdrawn. */
+  gain: number | null;
+  onTap: () => void;
+  onMenu: () => void;
+  onPick: (intensity: Intensity) => void;
 }) {
-  const press = useLongPress(onHold);
-
-  if (frozen) {
-    return (
-      <div
-        className="long-pressable block"
-        role="button"
-        tabIndex={0}
-        {...press}
-        onClick={(e) => {
-          // The hook already swallows the click when the long press is what
-          // fired (it calls preventDefault): if it got this far, it really was
-          // a short tap.
-          press.onClick(e);
-          if (!e.defaultPrevented) onSpawn();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onSpawn();
-          }
-        }}
-      >
-        {children}
-      </div>
-    );
-  }
+  const press = useLongPress(onMenu);
 
   return (
-    <Link
-      to={`/log-activity?category=${categoryId}&focus=${focusId}`}
-      className="long-pressable block"
-      {...press}
+    <li
+      className={`category-card anim-card relative ${
+        highlighted ? "anim-highlight" : ""
+      } ${parent ? "ml-7" : ""}`}
+      style={
+        {
+          "--rotation": TILTS[index % TILTS.length],
+          "--delay": `${0.22 + index * 0.06}s`,
+        } as React.CSSProperties
+      }
     >
-      {children}
-    </Link>
+      <div style={{ filter: `drop-shadow(6px 6px 0 ${accent})` }}>
+        <div className="card-clip bg-black">
+          <div className="flex">
+            <button
+              type="button"
+              className="long-pressable block min-w-0 flex-1 text-left"
+              aria-expanded={f.frozen ? undefined : expanded}
+              {...press}
+              onClick={(e) => {
+                // The hook swallows the click that ends a long press (it calls
+                // preventDefault): if it got this far, it was a short tap.
+                press.onClick(e);
+                if (!e.defaultPrevented) onTap();
+              }}
+            >
+              <div className="slam-content pt-4 pr-2 pb-3 pl-3.5">
+                <h3 className="m-0 pr-10 font-display text-[16px] leading-tight text-bone uppercase">
+                  {f.name}
+                </h3>
+
+                {parent && (
+                  <p className="mt-1 text-[9.5px] font-bold tracking-[0.1em] text-bone/60">
+                    ↳ DE {parent.name.toUpperCase()}
+                  </p>
+                )}
+
+                <div className="xp-bar relative mt-2.5 h-3 overflow-hidden bg-[#242424]">
+                  <div
+                    className="xp-bar-fill relative h-full"
+                    style={
+                      {
+                        width: `${Math.round(f.progress * 100)}%`,
+                        background: f.frozen ? accent : "var(--color-yellow)",
+                        "--delay": `${0.42 + index * 0.06}s`,
+                      } as React.CSSProperties
+                    }
+                  />
+                </div>
+
+                <div className="mt-2 flex items-center gap-2 text-[9.5px] font-semibold tracking-[0.06em] text-bone/70">
+                  <span>{f.currentXp} XP</span>
+                  <i className="h-[3px] w-[3px] rotate-45 bg-bone/50" />
+                  {f.atMaxLevel ? (
+                    <b className="text-yellow">MAESTRÍA</b>
+                  ) : f.frozen ? (
+                    <b className="text-bone/60">TERMINADO</b>
+                  ) : (
+                    <span>
+                      <b className="text-yellow">{f.xpToNextLevel}</b> AL NV{" "}
+                      {f.level + 1}
+                    </span>
+                  )}
+                </div>
+
+                {/* What a tap does on a frozen focus, said on the focus itself
+                    rather than in a line of instructions above the list. */}
+                {f.frozen && (
+                  <span
+                    className="mt-2.5 inline-block bg-yellow px-2 py-0.5 text-[9px] font-bold tracking-[0.14em] text-black"
+                    style={{ transform: "skewX(-10deg)" }}
+                  >
+                    <span
+                      className="inline-block"
+                      style={{ transform: "skewX(10deg)" }}
+                    >
+                      + ENGENDRAR HIJO
+                    </span>
+                  </span>
+                )}
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={onMenu}
+              aria-label={`Opciones de ${f.name}`}
+              className="focus-handle"
+            >
+              <i />
+              <i />
+              <i />
+            </button>
+          </div>
+
+          {expanded && !f.frozen && (
+            <div className="slam-content px-3.5 pb-4">
+              <QuickIntensities
+                categoryId={categoryId}
+                focusId={f.id}
+                busy={busy}
+                onPick={onPick}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* The level spills over the top edge, like on the home cards. */}
+      <span className="slam-content pointer-events-none absolute -top-3 right-9 z-20">
+        <LevelNumber value={f.level} size={24} />
+      </span>
+
+      {gain !== null && (
+        <span
+          className="anim-slam pointer-events-none absolute right-10 bottom-3 z-20 bg-yellow px-1.5 py-0.5 font-display text-[11px] leading-none text-black"
+          style={{ transform: "skewX(-10deg)" }}
+        >
+          <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
+            +{gain} XP
+          </span>
+        </span>
+      )}
+    </li>
   );
 }
 
@@ -130,6 +243,7 @@ export function CategoryDetailPage() {
   const wantsNewFocus = searchParams.get("new") === "focus";
   const [formOpen, setFormOpen] = useState(wantsNewFocus);
   const deepLinkHandled = useRef(false);
+  const parentLinkHandled = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -194,6 +308,9 @@ export function CategoryDetailPage() {
     }
   }
 
+  // The focus whose menu is open (rename / close / delete).
+  const [menuFocus, setMenuFocus] = useState<Focus | null>(null);
+
   // Closing a focus by hand: calling it done before reaching level 20.
   const [focusToClose, setFocusToClose] = useState<Focus | null>(null);
   const [closing, setClosing] = useState(false);
@@ -206,6 +323,7 @@ export function CategoryDetailPage() {
     try {
       await updateFocus(focus.id, { frozen: closed });
       setFocusToClose(null);
+      setMenuFocus(null);
       await loadFocuses();
     } catch (err) {
       setCloseError((err as Error).message);
@@ -236,6 +354,16 @@ export function CategoryDetailPage() {
         setCategory(cat);
         setFocuses(focs);
         setActivities(acts);
+
+        // A frozen focus on the home links here with ?parent=<id>: the form
+        // opens already set to spawn its child. Once only — this load also
+        // runs after every quick log.
+        const parentId = Number(searchParams.get("parent"));
+        if (!parentLinkHandled.current && parentId) {
+          parentLinkHandled.current = true;
+          const parent = focs.find((x) => x.id === parentId && x.frozen);
+          if (parent) setParentToSpawn(parent);
+        }
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);
@@ -247,9 +375,15 @@ export function CategoryDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [categoryId, validId]);
+  }, [categoryId, validId, searchParams]);
 
   useEffect(() => load(), [load]);
+
+  // Logging in place, the same hook the home cards use. After a log (or its
+  // undo) everything is reloaded WITHOUT the loading state: the tiles stay
+  // mounted, so their bars travel to the new width instead of being reborn
+  // there.
+  const quick = useQuickLog({ categoryId, onAfterChange: () => load() });
 
   // The backdrop's rays take the colour of the category you are looking at:
   // entering Mente turns the sky purple. It goes before the early returns for
@@ -491,15 +625,9 @@ export function CategoryDetailPage() {
         </span>
       </h2>
 
-      {focuses.length > 0 && (
-        <p
-          className="anim-row mt-2 text-[9px] font-bold tracking-[0.16em] text-bone/55"
-          style={{ "--delay": "0.18s" } as React.CSSProperties}
-        >
-          PULSA PARA REGISTRAR
-          {focuses.some((f) => f.frozen) &&
-            " · PULSA UN CERRADO PARA ENGENDRAR HIJO"}{" "}
-          · MANTÉN PULSADO PARA BORRAR
+      {quick.error && (
+        <p className="anim-slam mt-4 bg-cuerpo px-3 py-2 text-[11px] font-bold text-bone">
+          {quick.error}
         </p>
       )}
 
@@ -511,211 +639,100 @@ export function CategoryDetailPage() {
           Esta categoría todavía no tiene focos.
         </p>
       ) : (
-        <ul className="mt-4 grid gap-3.5">
+        <ul className="mt-6 grid gap-5">
           {orderByLineage(focuses).map((f, i) => {
             const parent =
               f.parentFocusId !== null
                 ? focuses.find((p) => p.id === f.parentFocusId)
                 : undefined;
 
-            return (
-              <li
-                key={f.id}
-                className={`category-card anim-card relative ${
-                  f.id === newFocusId ? "anim-highlight" : ""
-                } ${parent ? "ml-7" : ""}`}
-                style={
-                  {
-                    "--rotation": TILTS[i % TILTS.length],
-                    "--delay": `${0.22 + i * 0.06}s`,
-                  } as React.CSSProperties
-                }
-              >
-                {focusBeingEdited?.id === f.id ? (
-                  // The edit panel REPLACES the whole FocusTile rather than
-                  // sitting inside it: wrapped in its container (a Link or the
-                  // long press), any tap on the input would also start the
-                  // long-press timer.
-                  <div
-                    className="card-clip bg-black"
-                    style={{ filter: `drop-shadow(6px 6px 0 ${accent})` }}
-                  >
-                    <div className="slam-content px-3.5 py-3.5">
-                      <div className="field-frame">
-                        <input
-                          value={editedName}
-                          onChange={(e) => setEditedName(e.target.value)}
-                          autoFocus
-                          className="field"
-                        />
-                      </div>
-                      {renameError && (
-                        <p className="mt-2 text-[10px] font-bold text-cuerpo">
-                          {renameError}
-                        </p>
-                      )}
-                      <div className="mt-3 flex gap-2">
-                        <button
-                          type="button"
-                          onClick={onSaveRename}
-                          disabled={renaming || editedName.trim() === ""}
-                          className="slam-button flex-1"
-                        >
-                          <span>{renaming ? "Guardando…" : "Guardar"}</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setFocusBeingEdited(null)}
-                          className="slam-button flex-1"
-                          style={{
-                            background: "transparent",
-                            color: "var(--color-bone)",
-                            boxShadow: "none",
-                            border: "2px solid var(--color-bone)",
-                          }}
-                        >
-                          <span>Cancelar</span>
-                        </button>
+            if (focusBeingEdited?.id === f.id)
+              return (
+                // The edit panel REPLACES the tile rather than sitting inside
+                // it: inside the tile's button, every tap on the input would
+                // also start the long-press timer.
+                <li
+                  key={f.id}
+                  className={`category-card relative ${parent ? "ml-7" : ""}`}
+                  style={
+                    {
+                      "--rotation": TILTS[i % TILTS.length],
+                    } as React.CSSProperties
+                  }
+                >
+                  <div style={{ filter: `drop-shadow(6px 6px 0 ${accent})` }}>
+                    <div className="card-clip bg-black">
+                      <div className="slam-content px-3.5 py-3.5">
+                        <div className="field-frame">
+                          <input
+                            value={editedName}
+                            onChange={(e) => setEditedName(e.target.value)}
+                            autoFocus
+                            aria-label="Nuevo nombre del foco"
+                            className="field"
+                          />
+                        </div>
+                        {renameError && (
+                          <p className="mt-2 text-[10px] font-bold text-cuerpo">
+                            {renameError}
+                          </p>
+                        )}
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={onSaveRename}
+                            disabled={renaming || editedName.trim() === ""}
+                            className="slam-button flex-1"
+                          >
+                            <span>{renaming ? "Guardando…" : "Guardar"}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFocusBeingEdited(null)}
+                            className="slam-button flex-1"
+                            style={{
+                              background: "transparent",
+                              color: "var(--color-bone)",
+                              boxShadow: "none",
+                              border: "2px solid var(--color-bone)",
+                            }}
+                          >
+                            <span>Cancelar</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                ) : (
-                  <>
-                    <div className="absolute top-1.5 right-2 z-30 flex gap-2.5 text-[9px] font-bold tracking-[0.14em] text-bone/60">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFocusBeingEdited(f);
-                          setEditedName(f.name);
-                          setRenameError(null);
-                        }}
-                        className="underline"
-                      >
-                        editar
-                      </button>
-                      {/* Mastery does not reopen: it was earned. A manual
-                          close does, because it is a decision, and decisions
-                          change. */}
-                      {f.atMaxLevel ? null : f.frozen ? (
-                        <button
-                          type="button"
-                          onClick={() => onToggleClosed(f, false)}
-                          disabled={closing}
-                          className="text-yellow underline"
-                        >
-                          reabrir
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCloseError(null);
-                            setFocusToClose(f);
-                          }}
-                          className="underline"
-                        >
-                          cerrar
-                        </button>
-                      )}
-                    </div>
-                    <FocusTile
-                      frozen={f.frozen}
-                      categoryId={categoryId}
-                      focusId={f.id}
-                      onHold={() => {
-                        setDeleteError(null);
-                        setFocusToDelete(f);
-                      }}
-                      onSpawn={() => {
-                        setParentToSpawn(f);
-                        setFormOpen(true);
-                      }}
-                    >
-                      <div
-                        className="card-clip bg-black"
-                        style={{ filter: `drop-shadow(6px 6px 0 ${accent})` }}
-                      >
-                        <div className="slam-content px-3.5 pt-3 pb-3.5">
-                        <div className="flex items-center gap-2.5">
-                          <h3 className="m-0 font-display text-[17px] leading-none text-bone uppercase">
-                            {f.name}
-                          </h3>
-                          {f.frozen && (
-                            // Frozen at the maximum level is mastery; below
-                            // it, the only way in is a manual close. There is
-                            // no need to store which of the two it was.
-                            <span
-                              className="px-2 py-0.5 text-[8px] font-bold tracking-[0.18em]"
-                              style={{
-                                transform: "skewX(-10deg)",
-                                background: f.atMaxLevel
-                                  ? "var(--color-yellow)"
-                                  : "transparent",
-                                color: f.atMaxLevel
-                                  ? "var(--color-black)"
-                                  : "var(--color-bone)",
-                                boxShadow: f.atMaxLevel
-                                  ? undefined
-                                  : "inset 0 0 0 1.5px rgb(245 245 240 / 0.45)",
-                              }}
-                            >
-                              {f.atMaxLevel ? "MAESTRÍA" : "CERRADO"}
-                            </span>
-                          )}
-                          <span className="ml-auto flex items-baseline gap-1 text-[9px] font-bold tracking-[0.16em] text-bone/70">
-                            NV{" "}
-                            <b className="font-display text-[16px] tracking-normal text-bone">
-                              {f.level}
-                            </b>
-                          </span>
-                        </div>
+                </li>
+              );
 
-                        {parent && (
-                          <p className="mt-1 text-[9px] font-bold tracking-[0.1em] text-bone/60">
-                            ↳ DE {parent.name}
-                          </p>
-                        )}
-
-                        <div className="xp-bar relative mt-2.5 h-3 overflow-hidden bg-[#242424]">
-                          <div
-                            className="xp-bar-fill relative h-full"
-                            style={
-                              {
-                                width: `${Math.round(f.progress * 100)}%`,
-                                background: f.frozen ? accent : "var(--color-yellow)",
-                                "--delay": `${0.42 + i * 0.06}s`,
-                              } as React.CSSProperties
-                            }
-                          />
-                        </div>
-
-                        <div className="mt-2 flex items-center gap-2 text-[9.5px] font-semibold tracking-[0.06em] text-bone/70">
-                          <span>{f.currentXp} XP</span>
-                          <i className="h-[3px] w-[3px] rotate-45 bg-bone/50" />
-                          <span>
-                            {f.atMaxLevel ? (
-                              <b className="text-yellow">MAESTRÍA · NV 20</b>
-                            ) : f.frozen ? (
-                              <b className="text-bone/60">DADO POR TERMINADO</b>
-                            ) : (
-                              <>
-                                <b className="text-yellow">{f.xpToNextLevel}</b> AL NV{" "}
-                                {f.level + 1}
-                              </>
-                            )}
-                          </span>
-                          {f.frozen && (
-                            <span className="ml-auto text-[9px] font-bold tracking-[0.1em] text-yellow">
-                              TOCA PARA ENGENDRAR ↴
-                            </span>
-                          )}
-                          </div>
-                        </div>
-                      </div>
-                    </FocusTile>
-                  </>
-                )}
-              </li>
+            return (
+              <FocusTile
+                key={f.id}
+                focus={f}
+                parent={parent}
+                categoryId={categoryId}
+                accent={accent}
+                index={i}
+                highlighted={f.id === newFocusId}
+                expanded={quick.openFocusId === f.id}
+                busy={quick.busy}
+                gain={quick.gain?.focusId === f.id ? quick.gain.xp : null}
+                onTap={() => {
+                  if (f.frozen) {
+                    setParentToSpawn(f);
+                    setFormOpen(true);
+                  } else {
+                    quick.toggle(f.id);
+                  }
+                }}
+                onMenu={() => {
+                  quick.close();
+                  setCloseError(null);
+                  setMenuFocus(f);
+                }}
+                onPick={(intensity) => quick.log(f.id, intensity)}
+              />
             );
           })}
         </ul>
@@ -765,9 +782,9 @@ export function CategoryDetailPage() {
             <button
               type="button"
               onClick={() => setParentToSpawn(null)}
-              className="text-bone/50 underline"
+              className="text-[9.5px] font-bold tracking-[0.16em] text-bone/60 underline"
             >
-              cancelar
+              CANCELAR
             </button>
           </p>
         )}
@@ -877,6 +894,46 @@ export function CategoryDetailPage() {
             </Link>
           )}
         </>
+      )}
+
+      {menuFocus && (
+        <FocusMenu
+          focus={menuFocus}
+          accent={accent}
+          busy={closing}
+          error={closeError}
+          onRename={() => {
+            setFocusBeingEdited(menuFocus);
+            setEditedName(menuFocus.name);
+            setRenameError(null);
+            setMenuFocus(null);
+          }}
+          onClose={() => {
+            setCloseError(null);
+            setFocusToClose(menuFocus);
+            setMenuFocus(null);
+          }}
+          onReopen={() => onToggleClosed(menuFocus, false)}
+          onDelete={() => {
+            setDeleteError(null);
+            setFocusToDelete(menuFocus);
+            setMenuFocus(null);
+          }}
+          onCancel={() => setMenuFocus(null)}
+        />
+      )}
+
+      {/* Only when a quick log raised a level: see useQuickLog. Rendered at
+          page level and not inside the tile, whose drop-shadow filter would
+          turn the modal's `position: fixed` into `absolute`. */}
+      {quick.result && (
+        <ResultModal
+          result={quick.result}
+          category={category}
+          backTo={null}
+          onClose={quick.dismissResult}
+          onUndo={quick.undo}
+        />
       )}
 
       {focusToClose && (

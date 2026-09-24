@@ -363,7 +363,8 @@ export function CategoryCard({
  * write something down or log it with a different date.
  *
  * A frozen focus does not unfold: it is at the maximum level or you called it
- * done, and the backend would reject the activity either way.
+ * done, and the backend would reject the activity either way. It links to
+ * spawning its child instead, as it does on the category detail.
  */
 function HomeFocusRow({
   focus: f,
@@ -406,6 +407,7 @@ function HomeFocusRow({
             }`}
           >
             {f.atMaxLevel ? "MAESTRÍA" : "CERRADO"}
+            <span className="ml-2 text-yellow">+ HIJO</span>
           </span>
         ) : (
           // The figure in display type and in the category colour: it is the
@@ -456,7 +458,16 @@ function HomeFocusRow({
       style={{ "--delay": `${delay}s` } as React.CSSProperties}
     >
       {f.frozen ? (
-        <div>{head}</div>
+        // A frozen focus takes no activity, but it can have a child: the row
+        // leads to the category's form, already set to spawn it. It used to
+        // be a dead row, the one thing in the panel a tap did nothing to.
+        <Link
+          to={`/categories/${categoryId}?new=focus&parent=${f.id}`}
+          className="block"
+          aria-label={`${f.name}: engendrar un foco hijo`}
+        >
+          {head}
+        </Link>
       ) : (
         <button
           type="button"

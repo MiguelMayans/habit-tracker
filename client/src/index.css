@@ -552,6 +552,33 @@ body {
   line-height: 0.92;
 }
 
+/* The handle on the right edge of a focus tile: the visible way into the
+   focus menu, for anyone who does not know to hold. Three diamonds rather
+   than "···", which the system font would set round and soft. */
+.focus-handle {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 36px;
+  border-left: 2px solid rgb(245 245 240 / 0.14);
+}
+
+.focus-handle > i {
+  width: 5px;
+  height: 5px;
+  background: rgb(245 245 240 / 0.6);
+  transform: rotate(45deg);
+  transition: background-color 0.1s steps(2);
+}
+
+.focus-handle:hover > i,
+.focus-handle:focus-visible > i {
+  background: var(--color-yellow);
+}
+
 /* The XP bar and its fill. */
 .xp-bar {
   clip-path: polygon(0 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
