@@ -332,7 +332,7 @@ function XpBlock({
             // its slam.
             key={shownLevel}
             value={shownLevel}
-            size={30}
+            size={38}
             slam={celebrating}
           />
         </span>
