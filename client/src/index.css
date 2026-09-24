@@ -509,7 +509,8 @@ body {
    serves the small level of a focus tile and the big one of a card. */
 .level-badge {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: flex-start;
   line-height: 1;
 }
 
@@ -536,13 +537,16 @@ body {
   transform: rotate(-6deg) translate(-0.04em, -0.03em);
 }
 
-/* The "NV" tape, tucked BEHIND the figure's top-left corner: the digits
-   overlap it, so it reads as a label the number was pasted over. */
+/* The "NV" tape, to the left of the figure at the height of its top. The
+   figure overlaps it only by a sliver: tucked fully behind, a narrow digit
+   like a 9 covered it and it stopped reading. */
 .level-tag {
-  position: absolute;
+  position: relative;
   z-index: 0;
-  top: 0.02em;
-  left: -0.42em;
+  flex: none;
+  order: -1;
+  margin-top: 0.12em;
+  margin-right: -0.1em;
   padding: 0.05em 0.22em 0.04em;
   background: var(--color-black);
   color: var(--color-bone);
