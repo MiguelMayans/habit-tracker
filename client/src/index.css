@@ -369,6 +369,9 @@ body {
   display: inline-flex;
   align-items: baseline;
   padding: 3px 11px 4px;
+  /* Black and not transparent: on the logging screen the tabs sit on the
+     burst, and the rays showed through them. */
+  background: var(--color-black);
   border: 2px solid var(--accent, var(--color-bone));
   color: var(--accent, var(--color-bone));
   transform: skewX(-10deg);
@@ -761,6 +764,48 @@ body {
   color: var(--color-black);
   box-shadow: 5px 5px 0 var(--color-cuerpo);
   transform: rotate(var(--rotation, 0deg)) skewX(-7deg) translate(-2px, -3px);
+}
+
+/* A category tile on the logging screen (CategoryPick). Dim until picked,
+   then filled with its colour and lifted onto a hard bone shadow — the same
+   pressed idiom as the intensity chips, in the category's colour instead of
+   the system yellow. */
+.category-pick {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 66px;
+  padding: 4px 10px;
+  background: #111;
+  border: 2px solid var(--accent);
+  transform: skewX(-7deg);
+  transition:
+    transform 0.1s steps(2),
+    box-shadow 0.1s steps(2),
+    background-color 0.1s steps(2);
+}
+
+.category-pick > * {
+  transform: skewX(7deg);
+}
+
+.category-pick-mark {
+  width: auto;
+  max-width: 100%;
+  height: 54px;
+  object-fit: contain;
+  opacity: 0.82;
+}
+
+.category-pick[data-selected="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 5px 5px 0 var(--color-bone);
+  transform: skewX(-7deg) translate(-2px, -3px);
+}
+
+.category-pick[data-selected="true"] .category-pick-mark {
+  opacity: 1;
 }
 
 /* An element that responds to press-and-hold. Without this, holding a finger

@@ -12,6 +12,8 @@ import {
   type RegisterActivityResult,
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
+import { categoryWordmark } from "../lib/categoryWordmark";
+import { orderByLineage } from "../lib/focusLineage";
 import { useLight } from "../lib/useLight";
 import { INTENSITY_LABEL, XP_BY_INTENSITY } from "../lib/intensity";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -39,6 +41,53 @@ function localNow(): string {
 function intParam(params: URLSearchParams, name: string): string {
   const value = params.get(name);
   return value !== null && /^\d+$/.test(value) ? value : "";
+}
+
+/**
+ * One category, as a tile with its drawn wordmark. Picked, it lights up in
+ * its colour, the way the category's own screen does.
+ */
+function CategoryPick({
+  category: c,
+  selected,
+  onPick,
+  className = "",
+}: {
+  category: Category;
+  selected: boolean;
+  onPick: () => void;
+  className?: string;
+}) {
+  const wordmark = categoryWordmark(c.slug);
+
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      aria-label={`${c.name}, nivel ${c.level}`}
+      onClick={onPick}
+      className={`category-pick ${className}`}
+      data-selected={selected}
+      style={
+        { "--accent": categoryColorVar(c.slug) } as React.CSSProperties
+      }
+    >
+      {wordmark ? (
+        <img
+          src={wordmark.src}
+          alt=""
+          width={wordmark.width}
+          height={wordmark.height}
+          className="category-pick-mark"
+        />
+      ) : (
+        <span className="text-sign-fine font-display text-[17px] text-bone uppercase">
+          {c.name}
+        </span>
+      )}
+    </button>
+  );
 }
 
 export function LogActivityPage() {
@@ -245,8 +294,14 @@ export function LogActivityPage() {
       </header>
 
       <form onSubmit={onSubmit} className="grid gap-6">
-        <label
-          className="anim-row grid gap-2"
+        {/* Category and focus are picked by tapping, not from native
+            selects: a system dropdown is the one piece of the screen the app
+            cannot style, and it looked like it. The categories are the same
+            drawn wordmarks as on the home, and the focuses the same tabs as
+            the home card's disclosure — so this screen speaks the home's
+            language instead of a form's. */}
+        <div
+          className="anim-row grid gap-2.5"
           style={{ "--delay": "0.06s" } as React.CSSProperties}
         >
           <span className="field-label justify-self-start">
@@ -256,75 +311,104 @@ export function LogActivityPage() {
           </span>
           {categoryLocked && selected ? (
             // Locked because you came from one of its focuses: changing it
-            // would orphan that focus. Shown, not editable, releasable by hand.
-            <div
-              className="field-frame flex items-center"
-              style={{ borderColor: accent }}
-            >
-              <span
-                className="field flex items-center gap-2.5"
-                style={{ width: "auto", flex: 1 }}
-              >
-                <i
-                  className="h-3 w-3 shrink-0"
-                  style={{ background: accent, transform: "skewX(-10deg)" }}
-                />
-                {selected.name}
-              </span>
+            // would orphan that focus. Shown alone, releasable by hand.
+            <div className="flex items-center gap-4">
+              <CategoryPick
+                category={selected}
+                selected
+                onPick={() => {}}
+                className="flex-1"
+              />
               <button
                 type="button"
                 onClick={unlockCategory}
-                className="mr-3 shrink-0 text-[9px] font-bold tracking-[0.16em] text-yellow underline"
-                style={{ transform: "skewX(7deg)" }}
+                className="shrink-0 text-[9.5px] font-bold tracking-[0.16em] text-yellow underline"
               >
                 CAMBIAR
               </button>
             </div>
           ) : (
-            <div className="field-frame">
-              <select
-                value={categoryId}
-                onChange={(e) => onChangeCategory(e.target.value)}
-                required
-                className="field"
-              >
-                <option value="">— Elige una —</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} · NV {c.level}
-                  </option>
-                ))}
-              </select>
+            <div
+              className="grid grid-cols-2 gap-x-3 gap-y-3.5"
+              role="radiogroup"
+              aria-label="Categoría"
+            >
+              {categories.map((c, i) => (
+                <CategoryPick
+                  key={c.id}
+                  category={c}
+                  selected={String(c.id) === categoryId}
+                  onPick={() => onChangeCategory(String(c.id))}
+                  // An odd one out takes the whole last row, centred, rather
+                  // than leaving a hole beside it.
+                  className={
+                    i === categories.length - 1 && categories.length % 2 === 1
+                      ? "col-span-2 w-1/2 justify-self-center"
+                      : ""
+                  }
+                />
+              ))}
             </div>
           )}
-        </label>
+        </div>
 
-        <label
-          className="anim-row grid gap-2"
-          style={{ "--delay": "0.12s" } as React.CSSProperties}
-        >
-          <span className="field-label justify-self-start">
-            <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-              FOCO · OPCIONAL
+        {/* No category yet, no focus section: a disabled control is only a
+            promise of something you cannot use. */}
+        {categoryId !== "" && (
+          <div
+            className="anim-row grid gap-2.5"
+            style={{ "--delay": "0.04s" } as React.CSSProperties}
+          >
+            <span className="field-label justify-self-start">
+              <span
+                className="inline-block"
+                style={{ transform: "skewX(10deg)" }}
+              >
+                FOCO · OPCIONAL
+              </span>
             </span>
-          </span>
-          <div className="field-frame">
-            <select
-              value={focusId}
-              onChange={(e) => setFocusId(e.target.value)}
-              disabled={categoryId === ""}
-              className="field"
+            <div
+              className="flex flex-wrap gap-x-2.5 gap-y-3"
+              role="radiogroup"
+              aria-label="Foco"
+              style={{ "--accent": accent } as React.CSSProperties}
             >
-              <option value="">— Sin foco —</option>
-              {focuses.map((f) => (
-                <option key={f.id} value={f.id} disabled={f.frozen}>
-                  {f.name} · NV {f.level}
-                  {f.frozen ? " (congelado)" : ""}
-                </option>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={focusId === ""}
+                onClick={() => setFocusId("")}
+                className="focus-tab"
+                data-open={focusId === ""}
+              >
+                <span className="text-[10px] font-bold tracking-[0.16em]">
+                  SIN FOCO
+                </span>
+              </button>
+              {/* Frozen focuses are left out: they take no activity. */}
+              {orderByLineage(focuses.filter((f) => !f.frozen)).map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={String(f.id) === focusId}
+                  onClick={() => setFocusId(String(f.id))}
+                  className="focus-tab"
+                  data-open={String(f.id) === focusId}
+                >
+                  <span>
+                    <b className="font-display text-[12px] leading-none font-normal uppercase">
+                      {f.name}
+                    </b>
+                    <span className="text-[9px] font-bold tracking-[0.12em] opacity-75">
+                      NV {f.level}
+                    </span>
+                  </span>
+                </button>
               ))}
-            </select>
+            </div>
           </div>
-        </label>
+        )}
 
         {/* Outside the <label> on purpose: a button inside a label also
             fires the control the label points at. */}
@@ -335,7 +419,7 @@ export function LogActivityPage() {
               setCloseError(null);
               setClosingFocus(true);
             }}
-            className="anim-row -mt-3 justify-self-start text-[9px] font-bold tracking-[0.16em] text-bone/55 underline"
+            className="anim-row -mt-3 justify-self-start bg-black px-1.5 py-0.5 text-[9px] font-bold tracking-[0.16em] text-bone/70 underline"
             style={{ "--delay": "0.14s" } as React.CSSProperties}
           >
             DAR "{selectedFocus.name.toUpperCase()}" POR TERMINADO

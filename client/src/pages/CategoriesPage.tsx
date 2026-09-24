@@ -69,7 +69,7 @@ export function CategoriesPage() {
 
   return (
     <div className="px-4 pt-8 pb-32">
-      <header className="relative mb-10 px-1">
+      <header className="relative mb-6 px-1">
         {/* The wordmark replaces a typographic title. Fluid width with a cap,
             so on a phone it takes the space available and does not overgrow on
             large screens. width/height prevent the layout jump while loading.
