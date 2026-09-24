@@ -50,10 +50,7 @@ export function FocusMenu({
       onCancel={onCancel}
     >
       <div className="mb-5 flex items-center gap-3">
-        <span className="text-[10px] font-bold tracking-[0.2em] text-bone/60">
-          NIVEL
-        </span>
-        <LevelNumber value={f.level} size={28} />
+        <LevelNumber value={f.level} size={26} />
         <span className="ml-auto text-[10px] font-bold tracking-[0.14em] text-bone/60">
           {f.currentXp} XP
         </span>

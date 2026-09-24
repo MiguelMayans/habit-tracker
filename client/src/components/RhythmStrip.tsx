@@ -80,14 +80,16 @@ export function RhythmStrip({
 
   return (
     <div
-      className="anim-row mb-9"
+      className="anim-row mb-10"
       style={{ "--delay": "0.12s" } as React.CSSProperties}
     >
       <div className="mb-2 flex items-end gap-2 px-1">
+        {/* On a black strip of its own for the same reason as the streak:
+            grey text straight on the rays did not read. */}
         <span
           aria-live="polite"
-          className={`text-[9px] font-bold tracking-[0.2em] ${
-            open ? "text-bone" : "text-bone/50"
+          className={`bg-black px-1.5 py-0.5 text-[9px] font-bold tracking-[0.2em] ${
+            open ? "text-bone" : "text-bone/70"
           }`}
         >
           {headline}
@@ -97,14 +99,26 @@ export function RhythmStrip({
           // date. It moved here because it talks about exactly this strip:
           // keeping them apart said the same thing twice, in two visual
           // languages.
-          // The count in display type: a run of 52 days is the proudest
-          // figure on the home and it was set as small as a caption.
-          <span className="ml-auto flex items-baseline gap-1.5 text-[9px] font-bold tracking-[0.16em] text-yellow">
-            RACHA
-            <b className="text-sign-fine font-display text-[20px] leading-none tracking-normal">
-              {streak}
-            </b>
-            {streak === 1 ? "DÍA" : "DÍAS"}
+          // A black plaque with a yellow hard shadow: a run of 52 days is the
+          // proudest figure on the home, and loose over the burst's rays it
+          // got lost among them.
+          <span
+            className="ml-auto inline-block bg-black px-2.5 py-1"
+            style={{
+              transform: "rotate(-2deg) skewX(-10deg)",
+              boxShadow: "4px 4px 0 var(--color-yellow)",
+            }}
+          >
+            <span
+              className="flex items-baseline gap-1.5 text-[9px] font-bold tracking-[0.16em] text-bone"
+              style={{ transform: "skewX(10deg)" }}
+            >
+              RACHA
+              <b className="font-figure text-[20px] leading-none tracking-normal text-yellow">
+                {streak}
+              </b>
+              {streak === 1 ? "DÍA" : "DÍAS"}
+            </span>
           </span>
         )}
       </div>

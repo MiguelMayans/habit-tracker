@@ -101,7 +101,7 @@ export function CategoriesPage() {
               lowercase text in the app, and set like a form field. The year
               went: nobody needs telling which one it is. */}
           <p className="anim-ribbon m-0 flex items-center gap-2.5">
-            <b className="text-sign font-display text-[46px] leading-[0.8] text-bone">
+            <b className="text-sign font-figure text-[46px] leading-[0.8] text-bone">
               {today.day}
             </b>
             <span className="grid justify-items-start gap-1">

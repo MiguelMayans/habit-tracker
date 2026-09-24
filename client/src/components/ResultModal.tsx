@@ -327,15 +327,12 @@ function XpBlock({
               }}
             />
           )}
-          <span className="text-[9px] font-bold tracking-[0.24em] text-bone/60">
-            NIVEL
-          </span>
           <LevelNumber
             // The key remounts the number on level-up, which is what fires
             // its slam.
             key={shownLevel}
             value={shownLevel}
-            size={36}
+            size={30}
             slam={celebrating}
           />
         </span>

@@ -116,12 +116,9 @@ export function CategoryCard({
           taps on the slice of band it covers and creating a dead zone. It does
           not become a link the way the wordmark does: it is a fact, and two
           links to the same place inside one card are already plenty. */}
-      <span className="slam-content pointer-events-none absolute -top-6 right-3 z-20 flex items-center gap-1.5">
-        <span className="text-outline text-[9px] font-bold tracking-[0.24em] text-bone">
-          NIVEL
-        </span>
-        {/* The level is the reward, so it gets the calling-card lettering. */}
-        <LevelNumber value={c.level} size={44} />
+      <span className="slam-content pointer-events-none absolute -top-6 right-5 z-20">
+        {/* The level is the reward, so it gets the rank badge. */}
+        <LevelNumber value={c.level} size={34} />
       </span>
 
       {wordmark && (

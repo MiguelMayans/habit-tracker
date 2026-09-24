@@ -18,6 +18,10 @@
   --font-display: "Dela Gothic One", system-ui, sans-serif;
   /* Data face: Dela Gothic is far too heavy below 14px */
   --font-data: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  /* Big figures. Same weight and width as Dela Gothic, but with open
+     apertures: in Dela, under a thick outline, a 5 reads as a 6 and a 3 as
+     an 8. Only its digits are loaded, so anything else falls back to Dela. */
+  --font-figure: "Archivo Black", "Dela Gothic One", system-ui, sans-serif;
 }
 
 body {
@@ -499,6 +503,99 @@ body {
   height: 25px;
   background: var(--accent, var(--color-bone));
   opacity: 0.55;
+}
+
+/* The rank badge (see LevelNumber.tsx). Everything is in em, so one set of
+ * rules serves the 24px level of a focus tile and the 44px one of a card.
+ *
+ * The burst is two layers with the same polygon: black, and yellow scaled
+ * down inside it, so the edge is a scissor cut and not a stroke (clip-path
+ * cannot be stroked). The drop-shadow on the pair follows the spikes. */
+.level-badge {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 2.2em;
+  height: 2.2em;
+  line-height: 1;
+}
+
+/* Two digits need a wider burst, or the figure pokes out of the sides. */
+.level-badge-wide {
+  width: 2.75em;
+}
+
+/* The burst sways, smooth and slow, so a screen of badges feels alive
+   without anything jumping. Each badge starts at a different point of the
+   cycle (a negative delay set per level), so five on the home never rock in
+   unison. A level-up's spin-in replaces this animation while it runs. */
+.level-burst {
+  position: absolute;
+  inset: 0;
+  filter: drop-shadow(0.07em 0.07em 0 var(--color-black));
+  animation: level-sway 3.6s var(--sway-delay, 0s) ease-in-out infinite
+    alternate;
+}
+
+@keyframes level-sway {
+  from {
+    transform: rotate(-7deg) scale(0.97);
+  }
+  to {
+    transform: rotate(7deg) scale(1.03);
+  }
+}
+
+.level-burst > i {
+  position: absolute;
+  inset: 0;
+  background: var(--color-black);
+}
+
+.level-burst > i + i {
+  background: var(--color-yellow);
+  transform: scale(0.86);
+}
+
+/* The figure: the calendar day's lettering, extruded. Instead of one shadow,
+   a stack of them one step apart builds a solid block behind the letters —
+   comic lettering, not a drop shadow. */
+.level-figure {
+  position: relative;
+  color: var(--color-bone);
+  font-family: var(--font-figure);
+  /* Thinner than the date's outline used to be: a thick stroke is what was
+     closing the digits' counters. */
+  -webkit-text-stroke: 0.06em var(--color-black);
+  paint-order: stroke fill;
+  text-shadow:
+    0.025em 0.025em 0 var(--color-black),
+    0.05em 0.05em 0 var(--color-black),
+    0.075em 0.075em 0 var(--color-black),
+    0.1em 0.1em 0 var(--color-black),
+    0.125em 0.125em 0 var(--color-black),
+    0.15em 0.15em 0 var(--color-black);
+  transform: rotate(-6deg) translate(-0.04em, -0.03em);
+}
+
+/* The "NV" tape, pinned across the top-left spike. */
+.level-tag {
+  position: absolute;
+  top: 0.3em;
+  left: 0.14em;
+  padding: 0.05em 0.22em 0.04em;
+  background: var(--color-black);
+  color: var(--color-bone);
+  font-size: 0.3em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  transform: rotate(-14deg) skewX(-10deg);
+  box-shadow: 0.12em 0.12em 0 var(--color-cuerpo);
+}
+
+.level-tag > span {
+  display: inline-block;
+  transform: skewX(10deg);
 }
 
 /* The handle on the right edge of a focus tile: the visible way into the
@@ -994,6 +1091,23 @@ body {
   animation: flash 0.9s steps(1) 1;
 }
 
+/* A level-up: the old burst is gone and the new one — with its extra
+   spike, if it earned one — spins in from nothing and overshoots. */
+@keyframes burst-spin-in {
+  0% {
+    transform: rotate(-220deg) scale(0);
+  }
+  65% {
+    transform: rotate(12deg) scale(1.25);
+  }
+  100% {
+    transform: rotate(0) scale(1);
+  }
+}
+.anim-burst-in {
+  animation: burst-spin-in 0.55s cubic-bezier(0.2, 1.1, 0.35, 1) backwards;
+}
+
 /* The new level number enters huge and slams into place. */
 @keyframes level-drop {
   0% {
@@ -1006,11 +1120,10 @@ body {
   }
   100% {
     opacity: 1;
-    transform: scale(1) rotate(-2deg);
+    transform: scale(1) rotate(-6deg);
   }
 }
 .anim-level-drop {
-  transform: rotate(-2deg);
   animation: level-drop 0.5s cubic-bezier(0.2, 1.2, 0.35, 1) backwards;
 }
 

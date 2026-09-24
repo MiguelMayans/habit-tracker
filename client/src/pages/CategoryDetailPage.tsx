@@ -190,8 +190,8 @@ function FocusTile({
       </div>
 
       {/* The level spills over the top edge, like on the home cards. */}
-      <span className="slam-content pointer-events-none absolute -top-3 right-9 z-20">
-        <LevelNumber value={f.level} size={24} />
+      <span className="slam-content pointer-events-none absolute -top-1 right-11 z-20">
+        <LevelNumber value={f.level} size={19} tag={false} />
       </span>
 
       {gain !== null && (
@@ -497,11 +497,8 @@ export function CategoryDetailPage() {
           to all four edges, so placing it over the header — where it would ask
           to be — would land it on top of the artwork.
 
-          The plaque is black so the bone figure — the same lettering as the
-          day on the home — has something dark to stand on; over the burst's
-          rays it would compete with them. The hard shadow takes the category
-          colour, because a black one on a black background would be
-          invisible. */}
+          No plaque: the rank badge is its own backing, and at this size it is
+          the loudest thing at the top of the screen, as it should be. */}
       <div className="flex items-start justify-between gap-4">
         <Link
           to="/"
@@ -513,23 +510,11 @@ export function CategoryDetailPage() {
           </span>
         </Link>
 
-        <span
-          className="anim-ribbon flex shrink-0 items-center gap-2.5 bg-black py-2 pr-4 pl-3.5"
-          style={{
-            transform: "skewX(-10deg)",
-            boxShadow: `7px 7px 0 ${accent}`,
-          }}
-        >
-          <span
-            className="inline-block text-[10px] font-bold tracking-[0.2em] text-bone/70"
-            style={{ transform: "skewX(10deg)" }}
-          >
-            NIVEL
-          </span>
-          <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-            <LevelNumber value={category.level} size={46} />
-          </span>
-        </span>
+        <LevelNumber
+          value={category.level}
+          size={40}
+          className="anim-ribbon -mt-5 -mr-2 shrink-0"
+        />
       </div>
 
       {/* Header: the same bleed band as the home, but in the category's
