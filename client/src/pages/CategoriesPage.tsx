@@ -5,7 +5,7 @@ import {
   type Category,
   type RecentActivity,
 } from "../api/client";
-import { calculateStreak, isToday, longDate } from "../lib/dates";
+import { calculateStreak, calendarParts, isToday } from "../lib/dates";
 import { XP_BY_INTENSITY } from "../lib/intensity";
 import { CategoryCard } from "../components/CategoryCard";
 import { RhythmStrip } from "../components/RhythmStrip";
@@ -46,6 +46,7 @@ export function CategoriesPage() {
     load();
   }
 
+  const today = calendarParts(new Date());
   const streak = calculateStreak(recent.map((a) => a.date));
   const fromToday = recent.filter((a) => isToday(a.date));
   const todayXp = fromToday.reduce(
@@ -94,28 +95,46 @@ export function CategoriesPage() {
             yellow block. `flex-wrap` puts them back on two lines if they do
             not fit. */}
         <div className="relative z-10 mt-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5">
-          <p
-            className="anim-ribbon m-0 inline-block bg-yellow px-4 py-1.5 text-[12px] font-bold tracking-[0.18em] text-black"
-            style={{
-              transform: "rotate(-2.5deg) skewX(-10deg)",
-              boxShadow: "4px 4px 0 var(--color-black)",
-            }}
-          >
-            <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-              {longDate(new Date())}
+          {/* The date the way Persona shows it: the day huge, and the
+              weekday and month stacked beside it. It used to be one
+              sentence-case line — "24 de Septiembre de 2026" — the only
+              lowercase text in the app, and set like a form field. The year
+              went: nobody needs telling which one it is. */}
+          <p className="anim-ribbon m-0 flex items-center gap-2.5">
+            <b className="text-sign font-display text-[46px] leading-[0.8] text-bone">
+              {today.day}
+            </b>
+            <span className="grid justify-items-start gap-1">
+              <span
+                className="bg-yellow px-2 py-0.5 font-display text-[12px] leading-tight text-black"
+                style={{ transform: "rotate(-3deg) skewX(-10deg)" }}
+              >
+                <span
+                  className="inline-block"
+                  style={{ transform: "skewX(10deg)" }}
+                >
+                  {today.weekday}
+                </span>
+              </span>
+              <span className="text-outline text-[10px] font-bold tracking-[0.22em] text-bone">
+                {today.month}
+              </span>
             </span>
           </p>
 
           {fromToday.length > 0 && (
             <span
-              className="anim-ribbon inline-block bg-yellow px-3 py-1 text-[10px] font-bold tracking-[0.14em] text-black"
+              className="anim-ribbon inline-block bg-yellow px-3 py-1 font-display text-[13px] text-black"
               style={{
                 transform: "rotate(-1.5deg) skewX(-10deg)",
-                boxShadow: "3px 3px 0 var(--color-black)",
+                boxShadow: "4px 4px 0 var(--color-black)",
               }}
             >
+              {/* What today is worth, not how many rows it took: "HOY · 3"
+                  read as a count of nothing in particular, and the strip
+                  below already answers it when you tap today. */}
               <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-                HOY · {fromToday.length} · +{todayXp} XP
+                +{todayXp} XP HOY
               </span>
             </span>
           )}

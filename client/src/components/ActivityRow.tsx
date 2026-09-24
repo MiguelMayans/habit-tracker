@@ -1,6 +1,6 @@
 import type { Activity } from "../api/client";
 import { isToday, shortRelativeDate } from "../lib/dates";
-import { XP_BY_INTENSITY } from "../lib/intensity";
+import { INTENSITY_LABEL, XP_BY_INTENSITY } from "../lib/intensity";
 import { useLongPress } from "../lib/useLongPress";
 
 /**
@@ -15,6 +15,7 @@ export function ActivityRow({
   accent,
   focusName,
   delay,
+  showDate = true,
   onHold,
 }: {
   activity: Activity;
@@ -22,6 +23,8 @@ export function ActivityRow({
   /** The focus name, or `null` when the activity had none. */
   focusName: string | null;
   delay: number;
+  /** Off where the rows are already grouped under a day heading. */
+  showDate?: boolean;
   onHold: () => void;
 }) {
   const canUndo = isToday(activity.date);
@@ -39,16 +42,25 @@ export function ActivityRow({
       {...(canUndo ? press : undefined)}
     >
       <div className="flex items-baseline gap-3">
-        <p
-          className={`m-0 flex-1 text-[12px] leading-snug font-semibold ${
-            activity.description === "" ? "text-bone/50 italic" : "text-bone"
-          }`}
-        >
-          {activity.description === "" ? "Sin descripción" : activity.description}
-        </p>
-        <span className="shrink-0 text-[9px] font-bold tracking-[0.14em] text-bone/50">
-          {shortRelativeDate(activity.date)}
-        </span>
+        {/* The description is optional, and most logs have none: a list of
+            "Sin descripción" repeated eight times says nothing eight times.
+            With no text the row leads with the next most specific thing it
+            knows — the focus, set like a focus everywhere else, or failing
+            that the intensity. */}
+        {activity.description !== "" ? (
+          <p className="m-0 flex-1 text-[12px] leading-snug font-semibold text-bone">
+            {activity.description}
+          </p>
+        ) : (
+          <p className="m-0 flex-1 truncate font-display text-[12px] leading-snug text-bone uppercase">
+            {focusName ?? INTENSITY_LABEL[activity.intensity]}
+          </p>
+        )}
+        {showDate && (
+          <span className="shrink-0 text-[9px] font-bold tracking-[0.14em] text-bone/50">
+            {shortRelativeDate(activity.date)}
+          </span>
+        )}
       </div>
 
       <div className="mt-1.5 flex items-center gap-2">
@@ -58,7 +70,9 @@ export function ActivityRow({
         >
           +{XP_BY_INTENSITY[activity.intensity]} XP
         </span>
-        {focusName !== null && (
+        {/* The focus only needs a second line when the description took the
+            first one. */}
+        {activity.description !== "" && focusName !== null && (
           <span className="text-[9.5px] font-semibold tracking-[0.06em] text-bone/55">
             ↳ {focusName}
           </span>

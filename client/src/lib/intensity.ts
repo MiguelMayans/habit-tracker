@@ -11,3 +11,10 @@ export const XP_BY_INTENSITY: Record<Intensity, number> = {
   impulso: 20,
   all_out: 35,
 };
+
+/** How each intensity is named on screen. */
+export const INTENSITY_LABEL: Record<Intensity, string> = {
+  chispa: "Chispa",
+  impulso: "Impulso",
+  all_out: "All-Out",
+};

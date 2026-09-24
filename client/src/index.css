@@ -335,14 +335,14 @@ body {
 /* Wordmark-style lettering. The key is `paint-order: stroke fill`: without it
    the stroke paints OVER the fill and eats the letter from the inside; with
    it, the stroke sits behind and thickens the silhouette, which is what makes
-   a logo. On top of that, a double hard shadow (dark yellow + black) for
-   relief. */
+   a logo. On top of that, one hard black shadow for relief.
+   It used to be a dark-yellow shadow and then a black one: over a coloured
+   band or the burst, the mustard read as dirt on the letters rather than as
+   depth. */
 @utility text-sign {
   -webkit-text-stroke: 5px var(--color-black);
   paint-order: stroke fill;
-  text-shadow:
-    5px 5px 0 #a87400,
-    9px 9px 0 var(--color-black);
+  text-shadow: 6px 6px 0 var(--color-black);
 }
 
 /* The same construction at a smaller scale, for medium-sized text. */
@@ -628,6 +628,12 @@ body {
 
 /* Select options are painted by the system: an explicit dark background, or
    some browsers render them white on white. */
+/* Same reason as the disabled button: the frame stays opaque, only what is
+   inside fades. */
+.field:disabled {
+  opacity: 0.4;
+}
+
 .field option {
   background: #111;
   color: var(--color-bone);
@@ -684,8 +690,10 @@ body {
   box-shadow: 1px 1px 0 var(--color-black);
 }
 
+/* Disabled goes dark and stays opaque. It used to fade to 35%, which over
+   the burst let the rays show through and turned the yellow into olive. */
 .slam-button:disabled {
-  opacity: 0.35;
+  filter: grayscale(1) brightness(0.42);
   box-shadow: 3px 3px 0 var(--color-black);
 }
 

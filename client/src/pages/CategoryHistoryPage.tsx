@@ -181,6 +181,7 @@ export function CategoryHistoryPage() {
                       : null
                   }
                   delay={0.12 + gi * 0.03 + i * 0.02}
+                  showDate={false}
                   onHold={() => {
                     setUndoError(null);
                     setActivityToUndo(a);

@@ -13,19 +13,14 @@ import {
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { useLight } from "../lib/useLight";
-import { XP_BY_INTENSITY } from "../lib/intensity";
+import { INTENSITY_LABEL, XP_BY_INTENSITY } from "../lib/intensity";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ResultModal } from "../components/ResultModal";
 
-const INTENSITIES: {
-  value: Intensity;
-  label: string;
-  xp: number;
-  tilt: string;
-}[] = [
-  { value: "chispa", label: "Chispa", xp: XP_BY_INTENSITY.chispa, tilt: "-1.4deg" },
-  { value: "impulso", label: "Impulso", xp: XP_BY_INTENSITY.impulso, tilt: "0.9deg" },
-  { value: "all_out", label: "All-Out", xp: XP_BY_INTENSITY.all_out, tilt: "-1deg" },
+const INTENSITIES: { value: Intensity; tilt: string }[] = [
+  { value: "chispa", tilt: "-1.4deg" },
+  { value: "impulso", tilt: "0.9deg" },
+  { value: "all_out", tilt: "-1deg" },
 ];
 
 /**
@@ -313,7 +308,7 @@ export function LogActivityPage() {
               FOCO · OPCIONAL
             </span>
           </span>
-          <div className={`field-frame ${categoryId === "" ? "opacity-40" : ""}`}>
+          <div className="field-frame">
             <select
               value={focusId}
               onChange={(e) => setFocusId(e.target.value)}
@@ -390,10 +385,10 @@ export function LogActivityPage() {
               >
                 <span className="block">
                   <span className="block text-[13px] leading-tight">
-                    {i.label}
+                    {INTENSITY_LABEL[i.value]}
                   </span>
                   <span className="mt-1 block font-display text-[17px] leading-none">
-                    {i.xp}
+                    {XP_BY_INTENSITY[i.value]}
                     <span className="text-[9px]"> XP</span>
                   </span>
                 </span>

@@ -70,8 +70,21 @@ const MONTHS = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
-export function longDate(d: Date): string {
-  return `${d.getDate()} de ${MONTHS[d.getMonth()]} de ${d.getFullYear()}`;
+const WEEKDAYS = [
+  "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado",
+];
+
+/** The pieces of a date as the home's calendar shows them. */
+export function calendarParts(d: Date): {
+  day: number;
+  weekday: string;
+  month: string;
+} {
+  return {
+    day: d.getDate(),
+    weekday: WEEKDAYS[d.getDay()].toUpperCase(),
+    month: MONTHS[d.getMonth()].toUpperCase(),
+  };
 }
 
 /**

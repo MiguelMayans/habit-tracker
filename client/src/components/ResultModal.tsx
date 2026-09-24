@@ -92,11 +92,16 @@ export function ResultModal({
       <div className="burst-blast-tone" />
 
       <div className="relative z-10 mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-5 py-10">
+        {/* A bone tape, like every other label that has to sit over the
+            burst: grey text on the rays was crossed out by them. */}
         <p
           id="result-title"
-          className="anim-row text-[10px] font-bold tracking-[0.24em] text-bone/50"
+          className="anim-row m-0 self-start bg-bone px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-black"
+          style={{ transform: "skewX(-10deg)" }}
         >
-          ACTIVIDAD REGISTRADA
+          <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
+            ACTIVIDAD REGISTRADA
+          </span>
         </p>
 
         {/* The figure counts up from zero instead of already being there. It
@@ -180,9 +185,9 @@ export function ResultModal({
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="text-[10px] font-bold tracking-[0.14em] text-bone/55 underline"
+              className="mt-1 text-[10px] font-bold tracking-[0.16em] text-bone/60 underline"
             >
-              Me he equivocado, deshacer
+              ME HE EQUIVOCADO · DESHACER
             </button>
           )}
         </div>

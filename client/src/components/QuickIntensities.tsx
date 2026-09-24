@@ -1,13 +1,9 @@
 import { Link } from "react-router-dom";
 import type { Intensity } from "../api/client";
-import { XP_BY_INTENSITY } from "../lib/intensity";
+import { INTENSITY_LABEL, XP_BY_INTENSITY } from "../lib/intensity";
 
 /** The three intensities, in the order they cost. */
-const INTENSITIES: { value: Intensity; label: string }[] = [
-  { value: "chispa", label: "Chispa" },
-  { value: "impulso", label: "Impulso" },
-  { value: "all_out", label: "All-Out" },
-];
+const INTENSITIES: Intensity[] = ["chispa", "impulso", "all_out"];
 
 /**
  * What unfolds under a focus when you tap it: the three intensities, and the
@@ -35,15 +31,17 @@ export function QuickIntensities({
       <div className="flex gap-2">
         {INTENSITIES.map((i) => (
           <button
-            key={i.value}
+            key={i}
             type="button"
             disabled={busy}
-            onClick={() => onPick(i.value)}
+            onClick={() => onPick(i)}
             className="quick-chip"
           >
-            <span className="text-[10px] leading-tight">{i.label}</span>
+            <span className="text-[10px] leading-tight">
+              {INTENSITY_LABEL[i]}
+            </span>
             <span className="mt-0.5 text-[12px] leading-none">
-              +{XP_BY_INTENSITY[i.value]}
+              +{XP_BY_INTENSITY[i]}
             </span>
           </button>
         ))}
