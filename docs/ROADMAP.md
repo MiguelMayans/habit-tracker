@@ -9,9 +9,9 @@
 - [x] **5. Backend Express con ruta `/health`** — confirmar cadena Express → Drizzle → Turso
 - [x] **6. Endpoints CRUD core** — seeds de categorías fijas, crear/listar Foco, spawn de Foco hijo, crear/listar actividad, lógica de cascada de XP
 - [x] **7. Cliente consumiendo la API** — pantallas mínimas, sin pulir, funcional end-to-end
-- [ ] **8. Deploy a producción** — **todo en Netlify**: el cliente como sitio estático y el servidor como función (`netlify/functions/api.mjs`, Express envuelto con `serverless-http`). Se descartó Render porque en el plan gratuito el servicio se duerme a los 15 minutos y tarda ~50 s en despertar, que en una app que abres treinta segundos para registrar algo es inservible. Al compartir dominio desaparece el CORS en producción, y `VITE_API_URL` es `/api`, ya declarado en `netlify.toml`. Solo quedan por poner a mano las credenciales de Turso en el panel
-- [ ] **9. PWA** — `vite-plugin-pwa`, manifest, iconos, instalable en Android
-- [ ] **10. Ajuste fino de UX/UI** — la base visual Persona ya está aplicada en la home (paso 7): paleta intensa, tipografías, texturas, animaciones de entrada, barra de XP e indicador de inactividad. Queda afinar sobre eso: llevar el mismo lenguaje al detalle de categoría y al registro de actividad, y el "chute" de level-up
+- [x] **8. Deploy a producción** — **todo en Netlify**: el cliente como sitio estático y el servidor como función (`netlify/functions/api.mjs`, Express envuelto con `serverless-http`). Se descartó Render porque en el plan gratuito el servicio se duerme a los 15 minutos y tarda ~50 s en despertar, que en una app que abres treinta segundos para registrar algo es inservible. Al compartir dominio desaparece el CORS en producción, y `VITE_API_URL` es `/api`, ya declarado en `netlify.toml`. En el panel de Netlify van las credenciales de Turso y `API_KEY`: la API exige esa clave en la cabecera `X-Api-Key` en todas las rutas salvo `/health`, y sin la variable se cierra entera (falla cerrada)
+- [x] **9. PWA** — `vite-plugin-pwa`, instalable en Android. Manifiesto e iconos sacados del emblema de las cinco categorías (incluido uno enmascarable); service worker que guarda el esqueleto de la app para abrir al instante y sin conexión, y que **nunca cachea la API**; versiones nuevas con aviso ("NUEVA VERSIÓN · ACTUALIZAR"), comprobando al volver a primer plano. Detalle en `client/vite.config.ts` y `client/src/lib/pwa.ts`
+- [x] **10. Ajuste fino de UX/UI** — lenguaje Persona en todas las pantallas, fondo de rayos a tres tintas, sistema de movimiento (transición de pantalla, impacto de XP, rótulo de subida de nivel) y registro rápido desde la home y el detalle. Detalle en `docs/DESIGN.md`
 - [ ] **11. Migración a self-hosted** — una vez estable en Turso/Render
 - [ ] **12. Integración física con Arduino Nano 4 WiFi** — una vez estable el paso 11
 
@@ -44,7 +44,13 @@
 - Balanceo numérico de curvas de XP: valores concretos de base/exponente para Focos y categorías, simulando XP diaria realista con Chispa/Impulso/All-Out para estimar tiempo real hasta nivel 30/60/99
 - Definición de intervalos de hitos de categoría
 
-## Decisiones UX/UI pendientes (paso 10)
+## 1.0 cerrada (1 oct 2026)
 
-- Implementación del indicador visual de inactividad
-- Pase de pulido visual completo
+Pasos 1–10 hechos. La base se reseteó a cero para estrenarla.
+
+## Para la 1.1
+
+- Indicador de inactividad en los Focos (en categorías ya existe)
+- Los 3 hitos narrativos camino del nivel 20, y los hitos de categoría
+- Sesión de balanceo de las curvas de XP (ver arriba)
+- Registrar sin conexión: guardar en el dispositivo y sincronizar al volver

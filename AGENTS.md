@@ -16,7 +16,7 @@ Reglas obligatorias para cualquier agente (OpenCode, Claude Code, etc.) que trab
 ## Stack técnico (decidido y cerrado)
 
 - **Frontend:** React + Vite + Tailwind → deploy en Netlify
-- **Backend:** Node + Express → deploy en Render (free tier, cold starts aceptados)
+- **Backend:** Node + Express → deploy en Netlify como función (`netlify/functions/api.mjs`, con `serverless-http`), en el mismo dominio que el cliente. Render se descartó por los ~50 s de arranque en frío del plan gratuito
 - **Base de datos:** Drizzle ORM + Turso/libSQL
 - **Mobile:** PWA vía `vite-plugin-pwa` (target: Android)
 - **Agente de código:** en pruebas entre dos opciones
@@ -38,11 +38,11 @@ mikes-life/
     └── ROADMAP.md
 ```
 
-El monorepo es solo dónde vive el código. Cada proveedor (Netlify, Render, Turso) apunta a su subdirectorio de forma independiente — monorepo ≠ monodeploy.
+El monorepo es solo dónde vive el código. Cada proveedor (Netlify, Turso) apunta a su subdirectorio de forma independiente — monorepo ≠ monodeploy.
 
 ## Costes
 
-Todo el hosting actual (Netlify, Render, Turso) debe mantenerse en **tier gratuito**. Es un requisito duro mientras estemos en la fase cloud (pasos 1–10 del roadmap).
+Todo el hosting actual (Netlify, Turso) debe mantenerse en **tier gratuito**. Es un requisito duro mientras estemos en la fase cloud (pasos 1–10 del roadmap).
 
 ## Filosofía de diseño (resumen — ver docs/DESIGN.md para detalle)
 
