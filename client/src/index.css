@@ -1274,6 +1274,115 @@ main {
   animation: bar-hit 0.46s steps(4) 1;
 }
 
+/* The level-up banner (LevelUpBanner in ResultModal.tsx). A yellow band
+   wider than the screen, tilted, with black rails top and bottom and speed
+   stripes running through it. In from the left fast, a slow drift while it
+   holds, out to the right fast. */
+.levelup {
+  position: fixed;
+  inset: 0;
+  z-index: 62;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Wider than the screen by a quarter on each side, so its tilted ends never
+   show, and centred on it so the words land in the middle. */
+.levelup-band {
+  position: absolute;
+  top: 38%;
+  left: -25vw;
+  right: -25vw;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 16px 0 20px;
+  background:
+    repeating-linear-gradient(
+        -60deg,
+        transparent 0 22px,
+        rgb(0 0 0 / 0.07) 22px 34px
+      )
+      0 0 / 200% 100%,
+    var(--color-yellow);
+  border-block: 7px solid var(--color-black);
+  box-shadow: 0 12px 0 var(--color-cuerpo);
+  animation:
+    levelup-band 1.3s cubic-bezier(0.3, 0, 0.2, 1) both,
+    levelup-stripes 0.6s linear infinite;
+}
+
+.levelup-title {
+  display: inline-block;
+  padding: 3px 12px;
+  background: var(--color-black);
+  color: var(--color-bone);
+  font-family: var(--font-display);
+  font-size: 14px;
+  text-transform: uppercase;
+  transform: skewX(-10deg);
+}
+
+.levelup-title > span {
+  display: inline-block;
+  transform: skewX(10deg);
+}
+
+.levelup-text {
+  color: var(--color-black);
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 400;
+  line-height: 1;
+  transform: skewX(-8deg);
+  animation: levelup-text 1.3s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+.levelup-text .level-figure {
+  font-size: 1.25em;
+}
+
+@keyframes levelup-band {
+  0% {
+    transform: rotate(-8deg) translateX(-110%);
+  }
+  12% {
+    transform: rotate(-8deg) translateX(0);
+  }
+  84% {
+    transform: rotate(-8deg) translateX(4%);
+  }
+  100% {
+    transform: rotate(-8deg) translateX(110%);
+  }
+}
+
+@keyframes levelup-stripes {
+  to {
+    background-position:
+      -68px 0,
+      0 0;
+  }
+}
+
+/* The words land a beat after the band, big, and settle. */
+@keyframes levelup-text {
+  0%,
+  10% {
+    transform: skewX(-8deg) scale(2.2);
+    opacity: 0;
+  }
+  22% {
+    transform: skewX(-8deg) scale(0.92);
+    opacity: 1;
+  }
+  30%,
+  100% {
+    transform: skewX(-8deg) scale(1);
+    opacity: 1;
+  }
+}
+
 /* Full-screen flash. Dry cuts, no fading. */
 @keyframes flash {
   0%,

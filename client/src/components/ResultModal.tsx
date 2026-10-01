@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import type { Category, RegisterActivityResult, XpOutcome } from "../api/client";
@@ -51,6 +51,19 @@ export function ResultModal({
   const canUndo = isToday(result.activity.date);
   const countedXp = useCountUp(result.xpGained, { from: 0, ms: 900 });
   const [confirming, setConfirming] = useState(false);
+  // The level-up banner, for whichever block hits first. Only once: when the
+  // category and the focus both level up, two banners 180ms apart would
+  // trip over each other.
+  const [banner, setBanner] = useState<{ title: string; level: number } | null>(
+    null,
+  );
+  const bannerShown = useRef(false);
+  const onHit = useCallback((title: string, level: number) => {
+    if (bannerShown.current) return;
+    bannerShown.current = true;
+    setBanner({ title, level });
+  }, []);
+  const hideBanner = useCallback(() => setBanner(null), []);
   const [undoing, setUndoing] = useState(false);
   const [undoError, setUndoError] = useState<string | null>(null);
 
@@ -132,6 +145,7 @@ export function ResultModal({
             slug={category?.slug}
             accent={accent}
             data={result.category}
+            onHit={onHit}
           />
           {result.focus && (
             <XpBlock
@@ -139,6 +153,7 @@ export function ResultModal({
               accent={accent}
               data={result.focus}
               delay={180}
+              onHit={onHit}
             />
           )}
           </div>
@@ -193,6 +208,14 @@ export function ResultModal({
         </div>
       </div>
 
+      {banner && (
+        <LevelUpBanner
+          title={banner.title}
+          level={banner.level}
+          onDone={hideBanner}
+        />
+      )}
+
       {confirming && (
         <ConfirmDialog
           bandTitle="¿Deshacer registro?"
@@ -223,13 +246,23 @@ function XpBlock({
   accent,
   data,
   delay = 0,
+  onHit,
 }: {
   title: string;
   slug?: string;
   accent: string;
   data: XpOutcome;
   delay?: number;
+  /** Fired at the moment of the hit, for the level-up banner. */
+  onHit: (title: string, level: number) => void;
 }) {
+  // Read through a ref so the timeline below does not restart if the
+  // callback's identity changes.
+  const hitRef = useRef(onHit);
+  useEffect(() => {
+    hitRef.current = onHit;
+  }, [onHit]);
+
   // Current bar width, and whether it should animate: when restarting after a
   // level-up it has to snap to zero with no transition, or you would watch it
   // travel backwards.
@@ -265,6 +298,7 @@ function XpBlock({
       t(T_START + T_FILL + T_HOLD, () => {
         setCelebrating(true);
         setShownLevel(data.levelAfter);
+        hitRef.current(title, data.levelAfter);
       });
       // 4. The bar snaps back to zero, with no transition.
       t(T_START + T_FILL + T_HOLD + 120, () => {
@@ -280,7 +314,7 @@ function XpBlock({
     }
 
     return () => timers.forEach(window.clearTimeout);
-  }, [data, delay]);
+  }, [data, delay, title]);
 
   return (
     <div className={celebrating ? "anim-shake relative" : "relative"}>
@@ -382,5 +416,42 @@ function XpBlock({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * The big moment's headline: a yellow band slashes across the whole screen
+ * at the instant of the hit, with the new level on it, holds for a beat and
+ * carries on out the other side — the "RANK UP" of a Persona Confidant.
+ *
+ * Through a portal, above the white flash: the modal's own blocks carry
+ * transforms at that moment, which would trap anything fixed inside them.
+ */
+function LevelUpBanner({
+  title,
+  level,
+  onDone,
+}: {
+  title: string;
+  level: number;
+  onDone: () => void;
+}) {
+  useEffect(() => {
+    const t = window.setTimeout(onDone, 1300);
+    return () => window.clearTimeout(t);
+  }, [onDone]);
+
+  return createPortal(
+    <div className="levelup" aria-hidden="true">
+      <div className="levelup-band">
+        <span className="levelup-title">
+          <span>{title}</span>
+        </span>
+        <b className="levelup-text">
+          ¡NIVEL <span className="level-figure">{level}</span>!
+        </b>
+      </div>
+    </div>,
+    document.body,
   );
 }
