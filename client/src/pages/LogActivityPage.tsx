@@ -13,6 +13,7 @@ import {
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { categoryWordmark } from "../lib/categoryWordmark";
+import { useScreenReady } from "../lib/screenReady";
 import { orderByLineage } from "../lib/focusLineage";
 import { useLight } from "../lib/useLight";
 import { INTENSITY_LABEL, XP_BY_INTENSITY } from "../lib/intensity";
@@ -126,6 +127,8 @@ export function LogActivityPage() {
 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The screen wipe holds until the category tiles have something to show.
+  useScreenReady(categories.length > 0 || error !== null);
   const [result, setResult] = useState<RegisterActivityResult | null>(null);
 
   useEffect(() => {
