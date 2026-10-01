@@ -325,7 +325,7 @@ export function LogActivityPage() {
               <button
                 type="button"
                 onClick={unlockCategory}
-                className="shrink-0 text-[9.5px] font-bold tracking-[0.16em] text-yellow underline"
+                className="on-scene shrink-0 text-[9.5px] font-bold tracking-[0.16em] text-yellow underline"
               >
                 CAMBIAR
               </button>

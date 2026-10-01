@@ -119,7 +119,7 @@ export function CategoriesPage() {
                   {today.weekday}
                 </span>
               </span>
-              <span className="text-outline text-[10px] font-bold tracking-[0.22em] text-bone">
+              <span className="on-scene text-[10px] font-bold tracking-[0.22em] text-bone">
                 {today.month}
               </span>
             </span>

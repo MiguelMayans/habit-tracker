@@ -583,7 +583,7 @@ export function CategoryDetailPage() {
             }
           />
         </div>
-        <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold tracking-[0.06em] text-bone/75">
+        <div className="on-scene mt-2.5 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold tracking-[0.06em] text-bone/75">
           <span>{category.currentXp} XP</span>
           <i className="h-[3px] w-[3px] rotate-45 bg-bone/55" />
           <span>
@@ -622,7 +622,7 @@ export function CategoryDetailPage() {
 
       {focuses.length === 0 ? (
         <p
-          className="anim-row mt-4 text-sm text-bone/60"
+          className="anim-row on-scene mt-4 w-fit text-sm text-bone/70"
           style={{ "--delay": "0.2s" } as React.CSSProperties}
         >
           Esta categoría todavía no tiene focos.
@@ -771,7 +771,7 @@ export function CategoryDetailPage() {
             <button
               type="button"
               onClick={() => setParentToSpawn(null)}
-              className="text-[9.5px] font-bold tracking-[0.16em] text-bone/60 underline"
+              className="on-scene text-[9.5px] font-bold tracking-[0.16em] text-bone/70 underline"
             >
               CANCELAR
             </button>
@@ -846,7 +846,7 @@ export function CategoryDetailPage() {
 
       {activities.length === 0 ? (
         <p
-          className="anim-row mt-4 text-sm text-bone/60"
+          className="anim-row on-scene mt-4 w-fit text-sm text-bone/70"
           style={{ "--delay": "0.42s" } as React.CSSProperties}
         >
           Todavía no has registrado nada en esta categoría.
@@ -877,7 +877,7 @@ export function CategoryDetailPage() {
           {activities.length > VISIBLE_HISTORY && (
             <Link
               to={`/categories/${categoryId}/history`}
-              className="mt-3 inline-block text-[10px] font-bold tracking-[0.16em] text-yellow underline"
+              className="on-scene mt-3 inline-block text-[10px] font-bold tracking-[0.16em] text-yellow underline"
             >
               VER HISTORIAL COMPLETO · Y {activities.length - VISIBLE_HISTORY} MÁS
             </Link>

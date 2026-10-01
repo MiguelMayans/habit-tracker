@@ -141,7 +141,7 @@ export function CategoryHistoryPage() {
         Historial
       </h1>
       <p
-        className="anim-row mb-8 text-[10px] font-bold tracking-[0.16em] text-bone/55"
+        className="anim-row on-scene mb-8 w-fit text-[10px] font-bold tracking-[0.16em] text-bone/70"
         style={{ "--delay": "0.08s" } as React.CSSProperties}
       >
         {activities.length} {activities.length === 1 ? "ACTIVIDAD" : "ACTIVIDADES"} EN
@@ -149,7 +149,7 @@ export function CategoryHistoryPage() {
       </p>
 
       {activities.length === 0 ? (
-        <p className="text-sm text-bone/60">
+        <p className="on-scene w-fit text-sm text-bone/70">
           Todavía no has registrado nada en esta categoría.
         </p>
       ) : (

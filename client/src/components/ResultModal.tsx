@@ -200,7 +200,7 @@ export function ResultModal({
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="mt-1 text-[10px] font-bold tracking-[0.16em] text-bone/60 underline"
+              className="on-scene mt-1 justify-self-center text-[10px] font-bold tracking-[0.16em] text-bone/75 underline"
             >
               ME HE EQUIVOCADO · DESHACER
             </button>

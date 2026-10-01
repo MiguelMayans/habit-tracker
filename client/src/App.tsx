@@ -97,7 +97,7 @@ function App() {
                       <h1 className="text-sign m-0 font-display text-[34px] leading-[0.95] text-bone uppercase">
                         Aquí no hay nada
                       </h1>
-                      <p className="mt-3 text-[12px] leading-relaxed text-bone/70">
+                      <p className="on-scene mt-3 w-fit text-[12px] leading-relaxed text-bone/75">
                         Esta dirección no lleva a ninguna pantalla.
                       </p>
                       <Link to="/" className="slam-button mt-6">

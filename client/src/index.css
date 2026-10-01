@@ -54,9 +54,15 @@ body {
  * they are all full-screen layers clipped to their strip rather than strips
  * with their own origin.
  *
- * The ray colour is `--light`: the category you are looking at paints the sky.
- * The fallback goes in each usage rather than as a declaration of its own, or
- * it would always beat what :root sets.
+ * Three flat inks, the way Persona prints: black, the colour of the category
+ * you are looking at (`--light`) at FULL strength, and bone white. The rays
+ * used to be the category colour mixed with black, which turned red into
+ * maroon and purple into aubergine — a muddy sky. Now one ray in three or so
+ * is white, and down in the screentone the white rays break into white dots:
+ * a manga panel, not a dark room.
+ *
+ * The fallback for `--light` goes in each usage rather than as a declaration
+ * of its own, or it would always beat what :root sets.
  *
  * Every layer is `fixed`: the backdrop is a still stage the content travels
  * across, not a cloth that stretches to 3000px on a long history screen.
@@ -92,37 +98,37 @@ body {
  * getting stuck rather than as a pulse.
  */
 .scene-burst {
-  --ray: color-mix(in srgb, var(--light, var(--color-cuerpo)) 46%, #000);
-  --ray-hot: color-mix(in srgb, var(--light, var(--color-cuerpo)) 72%, #000);
+  --ray: var(--light, var(--color-cuerpo));
+  --ray-light: var(--color-bone);
   background: conic-gradient(
     from var(--spin) at var(--burst-x) var(--burst-y),
     var(--ray) 0deg 9deg,
     transparent 9deg 21deg,
-    var(--ray-hot) 21deg 25deg,
+    var(--ray-light) 21deg 25deg,
     transparent 25deg 38deg,
     var(--ray) 38deg 52deg,
     transparent 52deg 61deg,
     var(--ray) 61deg 66deg,
     transparent 66deg 83deg,
-    var(--ray-hot) 83deg 95deg,
+    var(--ray-light) 83deg 95deg,
     transparent 95deg 104deg,
     var(--ray) 104deg 110deg,
     transparent 110deg 127deg,
     var(--ray) 127deg 142deg,
     transparent 142deg 150deg,
-    var(--ray-hot) 150deg 154deg,
+    var(--ray-light) 150deg 154deg,
     transparent 154deg 171deg,
     var(--ray) 171deg 186deg,
     transparent 186deg 197deg,
     var(--ray) 197deg 203deg,
     transparent 203deg 219deg,
-    var(--ray-hot) 219deg 232deg,
+    var(--ray-light) 219deg 232deg,
     transparent 232deg 241deg,
     var(--ray) 241deg 249deg,
     transparent 249deg 266deg,
     var(--ray) 266deg 280deg,
     transparent 280deg 290deg,
-    var(--ray-hot) 290deg 295deg,
+    var(--ray-light) 290deg 295deg,
     transparent 295deg 311deg,
     var(--ray) 311deg 327deg,
     transparent 327deg 336deg,
@@ -404,37 +410,37 @@ main {
 .burst-blast {
   position: absolute;
   inset: 0;
-  --ray: color-mix(in srgb, var(--blast, var(--color-cuerpo)) 62%, #000);
-  --ray-hot: var(--blast, var(--color-cuerpo));
+  --ray: var(--blast, var(--color-cuerpo));
+  --ray-light: var(--color-bone);
   background: conic-gradient(
     from var(--spin) at 30% 17%,
     var(--ray) 0deg 11deg,
     transparent 11deg 22deg,
-    var(--ray-hot) 22deg 27deg,
+    var(--ray-light) 22deg 27deg,
     transparent 27deg 40deg,
     var(--ray) 40deg 56deg,
     transparent 56deg 64deg,
-    var(--ray-hot) 64deg 76deg,
+    var(--ray-light) 64deg 76deg,
     transparent 76deg 90deg,
     var(--ray) 90deg 97deg,
     transparent 97deg 113deg,
-    var(--ray-hot) 113deg 128deg,
+    var(--ray-light) 113deg 128deg,
     transparent 128deg 137deg,
     var(--ray) 137deg 145deg,
     transparent 145deg 160deg,
     var(--ray) 160deg 176deg,
     transparent 176deg 186deg,
-    var(--ray-hot) 186deg 191deg,
+    var(--ray-light) 186deg 191deg,
     transparent 191deg 206deg,
     var(--ray) 206deg 221deg,
     transparent 221deg 229deg,
-    var(--ray-hot) 229deg 241deg,
+    var(--ray-light) 229deg 241deg,
     transparent 241deg 256deg,
     var(--ray) 256deg 263deg,
     transparent 263deg 278deg,
     var(--ray) 278deg 294deg,
     transparent 294deg 303deg,
-    var(--ray-hot) 303deg 309deg,
+    var(--ray-light) 303deg 309deg,
     transparent 309deg 323deg,
     var(--ray) 323deg 339deg,
     transparent 339deg 360deg
@@ -1055,6 +1061,17 @@ main {
   from {
     transform: scaleY(0);
   }
+}
+
+/* Loose text over the backdrop gets a black strip behind it. With white
+   rays in the sky, bare bone or grey text crossed one and vanished; this is
+   the same strip "ÚLTIMOS 30 DÍAS" and the streak already wore. `clone` keeps
+   the strip whole on every line if the text wraps. */
+.on-scene {
+  background: var(--color-black);
+  padding: 2px 6px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 /* An element that responds to press-and-hold. Without this, holding a finger

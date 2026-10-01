@@ -126,7 +126,9 @@ export function RhythmStrip({
         )}
       </div>
 
-      <ul className="flex gap-[3px]">
+      {/* On a black film strip: over the white rays, the empty days (a
+          faint bone) disappeared. */}
+      <ul className="flex gap-[3px] bg-black p-[3px]">
         {days.map((d, i) => {
           const label = `${shortRelativeDate(d.date.toISOString())} · ${d.xp} XP`;
           return (
