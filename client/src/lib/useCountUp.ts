@@ -20,11 +20,11 @@ import { useEffect, useRef, useState } from "react";
  */
 export function useCountUp(
   value: number,
-  { ms = 700, from: desdeInicial }: { ms?: number; from?: number } = {},
+  { ms = 700, from: initial }: { ms?: number; from?: number } = {},
 ): number {
-  const arranque = desdeInicial ?? value;
-  const [shown, setShown] = useState(arranque);
-  const from = useRef(arranque);
+  const start = initial ?? value;
+  const [shown, setShown] = useState(start);
+  const from = useRef(start);
 
   useEffect(() => {
     if (value === from.current) return;

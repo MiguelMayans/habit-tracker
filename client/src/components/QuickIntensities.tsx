@@ -30,9 +30,10 @@ export function QuickIntensities({
       style={{ "--delay": "0s" } as React.CSSProperties}
     >
       <div className="flex gap-2">
-        {INTENSITIES.map((i) => (
+        {INTENSITIES.map((i, n) => (
           <button
             key={i}
+            style={{ "--i": n } as React.CSSProperties}
             type="button"
             disabled={busy}
             onClick={(e) => onPick(i, e.currentTarget)}

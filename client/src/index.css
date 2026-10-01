@@ -1003,6 +1003,60 @@ main {
   opacity: 1;
 }
 
+/* ---- Small motions ---- */
+
+/* A card sinks when you press it, onto the shadow it casts: the same idiom
+   as the buttons, so a tap is felt before the screen changes. Only when the
+   press is on the card's own target (its link on the home, its tap area on
+   a focus tile): pressing an intensity chip inside it must not move the chip
+   under your finger. Declared after :hover so it wins while both apply. */
+.category-card:has(> .card-clip > a:active),
+.category-card:has(.long-pressable:active) {
+  transform: rotate(var(--rotation, 0deg)) skewX(-7deg) translate(3px, 3px);
+}
+
+/* The intensity chips pop in one after another when a focus unfolds. */
+.quick-chip {
+  animation: chip-in 0.26s calc(var(--i, 0) * 0.05s)
+    cubic-bezier(0.2, 1.5, 0.4, 1) backwards;
+}
+
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    transform: skewX(-10deg) translateY(12px) scale(0.5);
+  }
+}
+
+/* The focus bracket draws itself: the stem grows down from the tab and the
+   rows appear as it reaches them. Clipped top to bottom, so the stem and
+   the rows it carries arrive together. */
+.focus-branch {
+  animation: stem-draw 0.32s cubic-bezier(0.3, 0.7, 0.3, 1) backwards;
+}
+
+@keyframes stem-draw {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* The 30-day strip fills in on arrival, a day at a time. */
+.day-in {
+  animation: day-in 0.22s
+    calc(0.25s + var(--enter-offset, 0s) + var(--i, 0) * 0.018s)
+    cubic-bezier(0.2, 1.4, 0.4, 1) backwards;
+}
+
+@keyframes day-in {
+  from {
+    transform: scaleY(0);
+  }
+}
+
 /* An element that responds to press-and-hold. Without this, holding a finger
    selects the text and pops the system magnifier over it. Scrolling is kept:
    `touch-action` stays automatic on purpose. */

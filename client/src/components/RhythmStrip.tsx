@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { RecentActivity } from "../api/client";
 import { dayKey, shortRelativeDate } from "../lib/dates";
 import { XP_BY_INTENSITY } from "../lib/intensity";
+import { useCountUp } from "../lib/useCountUp";
 
 const DAYS = 30;
 
@@ -42,6 +43,8 @@ export function RhythmStrip({
   streak: number;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
+  // The streak counts up from zero on arrival, like the XP does.
+  const shownStreak = useCountUp(streak, { from: 0, ms: 900 });
 
   const xpByDay = new Map<string, number>();
   const countByDay = new Map<string, number>();
@@ -115,7 +118,7 @@ export function RhythmStrip({
             >
               RACHA
               <b className="font-figure text-[20px] leading-none tracking-normal text-yellow">
-                {streak}
+                {shownStreak}
               </b>
               {streak === 1 ? "DÍA" : "DÍAS"}
             </span>
@@ -124,10 +127,16 @@ export function RhythmStrip({
       </div>
 
       <ul className="flex gap-[3px]">
-        {days.map((d) => {
+        {days.map((d, i) => {
           const label = `${shortRelativeDate(d.date.toISOString())} · ${d.xp} XP`;
           return (
-            <li key={d.key} className="flex-1">
+            // The month fills in left to right on arrival, one day after
+            // another, ending on today.
+            <li
+              key={d.key}
+              className="day-in flex-1"
+              style={{ "--i": i } as React.CSSProperties}
+            >
               <button
                 type="button"
                 title={label}
