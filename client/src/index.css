@@ -331,6 +331,71 @@ main {
   }
 }
 
+/* ---- The hit of earning XP (see lib/impact.ts) ---- */
+
+/* A zero-size anchor at the tap; everything is drawn around it. Fixed, so
+   it lives in screen coordinates and survives the chip that caused it. */
+.impact {
+  position: fixed;
+  z-index: 45;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* The shockwave: a diamond, because this app has no circles. It grows and
+   its border thins to nothing, instead of fading. */
+.impact-ring {
+  position: absolute;
+  left: -46px;
+  top: -46px;
+  width: 92px;
+  height: 92px;
+  border: 7px solid var(--color-yellow);
+  outline: 3px solid var(--impact);
+  outline-offset: 3px;
+  animation: impact-ring 0.42s cubic-bezier(0.1, 0.75, 0.3, 1) forwards;
+}
+
+@keyframes impact-ring {
+  from {
+    transform: rotate(45deg) scale(0.15);
+  }
+  to {
+    transform: rotate(45deg) scale(1.5);
+    border-width: 0;
+    outline-width: 0;
+  }
+}
+
+/* The spikes: thin hard triangles shooting out and shrinking to a point,
+   alternating the system yellow with the category's colour. */
+.impact-spike {
+  position: absolute;
+  left: -3px;
+  top: -14px;
+  width: 6px;
+  height: 28px;
+  background: var(--color-yellow);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  transform-origin: 50% 100%;
+  animation: impact-spike 0.5s cubic-bezier(0.05, 0.7, 0.3, 1) forwards;
+}
+
+.impact-spike:nth-child(odd) {
+  background: var(--impact);
+}
+
+@keyframes impact-spike {
+  from {
+    transform: rotate(var(--angle)) translateY(-8px) scaleY(1.6);
+  }
+  to {
+    transform: rotate(var(--angle)) translateY(calc(var(--reach) * -1))
+      scaleY(0);
+  }
+}
+
 /* ---- Textures for the result modal ---- */
 
 /* The modal's screen: the same burst at full blast. Where the backdrop keeps

@@ -315,7 +315,9 @@ export function CategoryCard({
                       expanded={quick.openFocusId === f.id}
                       busy={quick.busy}
                       onExpand={() => quick.toggle(f.id)}
-                      onPick={(intensity) => quick.log(f.id, intensity)}
+                      onPick={(intensity, chip) =>
+                        quick.log(f.id, intensity, chip)
+                      }
                       gain={
                         quick.gain?.focusId === f.id ? quick.gain.xp : null
                       }
@@ -383,7 +385,7 @@ function HomeFocusRow({
   expanded: boolean;
   busy: boolean;
   onExpand: () => void;
-  onPick: (intensity: Intensity) => void;
+  onPick: (intensity: Intensity, chip: HTMLElement) => void;
   /** XP just earned on this focus, shown for a moment and then withdrawn. */
   gain: number | null;
 }) {

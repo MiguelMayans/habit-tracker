@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { CategoryDetailPage } from "./pages/CategoryDetailPage";
@@ -23,6 +24,28 @@ const STARS = [
 ];
 
 function App() {
+  const burst = useRef<HTMLDivElement>(null);
+
+  // The world answers when you earn XP (see lib/impact.ts): the rays flare
+  // and swell for an instant. `scale` and `filter` as their own animation, so
+  // they compose with the spin and the entrance already running on the layer.
+  useEffect(() => {
+    function flare() {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+        return;
+      burst.current?.animate(
+        [
+          { filter: "brightness(1)", scale: "1" },
+          { filter: "brightness(2.4)", scale: "1.07", offset: 0.15 },
+          { filter: "brightness(1)", scale: "1" },
+        ],
+        { duration: 700, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)" },
+      );
+    }
+    window.addEventListener("xp-impact", flare);
+    return () => window.removeEventListener("xp-impact", flare);
+  }, []);
+
   return (
     <BrowserRouter>
       {/* The scene lives in the layout, not in each screen. Every layer is
@@ -30,7 +53,7 @@ function App() {
           the rays, the screentone that dissolves them, the stars
           and the grain. */}
       <div className="relative min-h-screen overflow-hidden bg-black">
-        <div className="scene scene-burst" />
+        <div ref={burst} className="scene scene-burst" />
         <div className="scene">
           <div className="tone tone-1" />
           <div className="tone tone-2" />

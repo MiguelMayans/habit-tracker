@@ -77,7 +77,7 @@ function FocusTile({
   gain: number | null;
   onTap: () => void;
   onMenu: () => void;
-  onPick: (intensity: Intensity) => void;
+  onPick: (intensity: Intensity, chip: HTMLElement) => void;
 }) {
   const press = useLongPress(onMenu);
 
@@ -90,6 +90,7 @@ function FocusTile({
         {
           "--rotation": TILTS[index % TILTS.length],
           "--delay": `${0.22 + index * 0.06}s`,
+          "--accent": accent,
         } as React.CSSProperties
       }
     >
@@ -719,7 +720,7 @@ export function CategoryDetailPage() {
                   setCloseError(null);
                   setMenuFocus(f);
                 }}
-                onPick={(intensity) => quick.log(f.id, intensity)}
+                onPick={(intensity, chip) => quick.log(f.id, intensity, chip)}
               />
             );
           })}

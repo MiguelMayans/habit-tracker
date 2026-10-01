@@ -21,7 +21,8 @@ export function QuickIntensities({
   categoryId: number;
   focusId: number;
   busy: boolean;
-  onPick: (intensity: Intensity) => void;
+  /** The chip itself goes along, so the hit can be drawn where it was. */
+  onPick: (intensity: Intensity, chip: HTMLElement) => void;
 }) {
   return (
     <div
@@ -34,7 +35,7 @@ export function QuickIntensities({
             key={i}
             type="button"
             disabled={busy}
-            onClick={() => onPick(i)}
+            onClick={(e) => onPick(i, e.currentTarget)}
             className="quick-chip"
           >
             <span className="text-[10px] leading-tight">
