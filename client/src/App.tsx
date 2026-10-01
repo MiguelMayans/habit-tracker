@@ -46,52 +46,6 @@ function App() {
     return () => window.removeEventListener("xp-impact", flare);
   }, []);
 
-  // The rays also answer your scroll: scrolling down winds them forward,
-  // scrolling up spins them back, and letting go they coast back to their
-  // own pace. It drives the playback rate of the CSS spin rather than
-  // setting angles, so the rotation stays continuous and costs nothing extra.
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const spin = burst.current
-      ?.getAnimations()
-      .find((a) => (a as CSSAnimation).animationName === "ray-spin");
-    if (!spin) return;
-
-    let lastY = window.scrollY;
-    let lastT = performance.now();
-    let boost = 0;
-    let frame = 0;
-
-    function coast() {
-      boost *= 0.93;
-      if (Math.abs(boost) < 0.05) {
-        boost = 0;
-        spin!.playbackRate = 1;
-        frame = 0;
-        return;
-      }
-      spin!.playbackRate = 1 + boost;
-      frame = requestAnimationFrame(coast);
-    }
-
-    function onScroll() {
-      const now = performance.now();
-      const dt = Math.max(now - lastT, 8);
-      const velocity = (window.scrollY - lastY) / dt; // px per ms, signed
-      lastY = window.scrollY;
-      lastT = now;
-      boost = Math.max(-20, Math.min(20, boost + velocity * 9));
-      if (!frame) frame = requestAnimationFrame(coast);
-    }
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(frame);
-      spin.playbackRate = 1;
-    };
-  }, []);
-
   return (
     <BrowserRouter>
       {/* The scene lives in the layout, not in each screen. Every layer is
