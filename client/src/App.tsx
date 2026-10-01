@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { CategoryDetailPage } from "./pages/CategoryDetailPage";
@@ -6,6 +6,8 @@ import { CategoryHistoryPage } from "./pages/CategoryHistoryPage";
 import { LogActivityPage } from "./pages/LogActivityPage";
 import { LogFab } from "./components/LogFab";
 import { ScreenTransition } from "./components/ScreenTransition";
+import { UnlockScreen } from "./components/UnlockScreen";
+import { LOCKED_EVENT } from "./lib/apiKey";
 
 /**
  * The logo's stars, loose in the burst. Positions are percentages of the
@@ -25,6 +27,14 @@ const STARS = [
 
 function App() {
   const burst = useRef<HTMLDivElement>(null);
+
+  // The server rejected the key (see lib/apiKey.ts): ask for it.
+  const [locked, setLocked] = useState(false);
+  useEffect(() => {
+    const lock = () => setLocked(true);
+    window.addEventListener(LOCKED_EVENT, lock);
+    return () => window.removeEventListener(LOCKED_EVENT, lock);
+  }, []);
 
   // The world answers when you earn XP (see lib/impact.ts): the rays flare
   // and swell for an instant. `scale` and `filter` as their own animation, so
@@ -112,6 +122,7 @@ function App() {
         </main>
 
         <LogFab />
+        {locked && <UnlockScreen />}
       </div>
     </BrowserRouter>
   );

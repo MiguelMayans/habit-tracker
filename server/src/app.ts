@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { pinoHttp } from "pino-http";
 import { logger } from "./lib/logger.js";
+import { requireApiKey } from "./middleware/requireApiKey.js";
 import { healthRouter } from "./routes/health.js";
 import { categoriesRouter } from "./routes/categories.js";
 import { focusesRouter } from "./routes/focuses.js";
@@ -24,7 +25,10 @@ app.use(pinoHttp({ logger }));
 app.use(cors({ origin: process.env.CORS_ORIGIN?.split(",") ?? true }));
 
 app.use(express.json());
+// /health stays open: it is how you check a deploy, and it reveals nothing
+// beyond whether the database answers.
 app.use(healthRouter);
+app.use(requireApiKey);
 app.use(categoriesRouter);
 app.use(focusesRouter);
 app.use(activitiesRouter);

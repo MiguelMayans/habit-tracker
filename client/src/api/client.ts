@@ -3,6 +3,8 @@
  * the pages use useState/useEffect by hand.
  */
 
+import { getApiKey, LOCKED_EVENT } from "../lib/apiKey";
+
 /**
  * In production Vite injects this at build time (`VITE_API_URL`), where the
  * API is served under the same domain as the client. The local value is the
@@ -115,15 +117,23 @@ export type UndoActivityResult = {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
 
+  const headers: Record<string, string> = {};
+  if (init?.body) headers["Content-Type"] = "application/json";
+  const key = getApiKey();
+  if (key) headers["X-Api-Key"] = key;
+
   try {
-    response = await fetch(`${API_URL}${path}`, {
-      headers: init?.body ? { "Content-Type": "application/json" } : undefined,
-      ...init,
-    });
+    response = await fetch(`${API_URL}${path}`, { ...init, headers });
   } catch {
     throw new Error(
       `No se puede conectar con el servidor en ${API_URL}. ¿Está arrancado?`,
     );
+  }
+
+  // No key, or the wrong one: the app asks for it instead of showing every
+  // screen as a list of errors.
+  if (response.status === 401) {
+    window.dispatchEvent(new Event(LOCKED_EVENT));
   }
 
   if (!response.ok) {
