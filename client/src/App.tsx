@@ -7,6 +7,7 @@ import { LogActivityPage } from "./pages/LogActivityPage";
 import { LogFab } from "./components/LogFab";
 import { ScreenTransition } from "./components/ScreenTransition";
 import { UnlockScreen } from "./components/UnlockScreen";
+import { UpdateBanner } from "./components/UpdateBanner";
 import { LOCKED_EVENT } from "./lib/apiKey";
 
 /**
@@ -123,6 +124,7 @@ function App() {
 
         <LogFab />
         {locked && <UnlockScreen />}
+        <UpdateBanner />
       </div>
     </BrowserRouter>
   );

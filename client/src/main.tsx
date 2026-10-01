@@ -2,12 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import { registerSW } from 'virtual:pwa-register'
+import { startServiceWorker } from './lib/pwa'
 
-// Installs the service worker (see vite.config.ts for what it caches). In
-// `pnpm dev` this does nothing: the service worker only exists in the
-// production build, so it never caches code you are still changing.
-registerSW({ immediate: true })
+// The service worker, and how new versions arrive: see lib/pwa.ts.
+startServiceWorker()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

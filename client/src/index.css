@@ -1074,6 +1074,28 @@ main {
   box-decoration-break: clone;
 }
 
+/* The "new version" tape (UpdateBanner). Skewed like every tape in the app,
+   with a hard black shadow, and it slams in from the left. */
+.update-banner-tape {
+  transform: skewX(-10deg);
+  box-shadow: 5px 5px 0 var(--color-black);
+}
+
+.update-banner-content {
+  transform: skewX(10deg);
+}
+
+.update-banner {
+  animation: update-in 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) backwards;
+}
+
+@keyframes update-in {
+  from {
+    opacity: 0;
+    transform: translateX(-60px) skewX(-14deg);
+  }
+}
+
 /* An element that responds to press-and-hold. Without this, holding a finger
    selects the text and pops the system magnifier over it. Scrolling is kept:
    `touch-action` stays automatic on purpose. */

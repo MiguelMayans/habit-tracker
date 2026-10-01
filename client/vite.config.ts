@@ -14,6 +14,11 @@ export default defineConfig({
       // injects: step 3, deciding how updates arrive, needs that code.
       injectRegister: false,
 
+      // A new version downloads in the background and waits for you to tap
+      // "ACTUALIZAR" (see lib/pwa.ts), instead of reloading the app on its
+      // own in the middle of whatever you were doing.
+      registerType: "prompt",
+
       // What the service worker does with each request. Anything matching no
       // rule here goes to the network untouched — which is exactly what the
       // API needs (see the note on /api below).
