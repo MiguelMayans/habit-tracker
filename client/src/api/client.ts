@@ -125,8 +125,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     response = await fetch(`${API_URL}${path}`, { ...init, headers });
   } catch {
+    // With the service worker the app opens offline, so this is now the
+    // normal way to find out there is no connection: say that, plainly.
+    // "Is the server running?" only makes sense to whoever is developing.
+    if (!navigator.onLine) {
+      throw new Error("Sin conexión. Cuando vuelva, dale a reintentar.");
+    }
     throw new Error(
-      `No se puede conectar con el servidor en ${API_URL}. ¿Está arrancado?`,
+      import.meta.env.DEV
+        ? `No se puede conectar con el servidor en ${API_URL}. ¿Está arrancado?`
+        : "No se puede conectar con el servidor. Prueba otra vez en un momento.",
     );
   }
 

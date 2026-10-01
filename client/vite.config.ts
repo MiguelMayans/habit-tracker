@@ -9,10 +9,53 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      // PWA step 1 of 4: only the manifest. The plugin also builds a service
-      // worker, but nothing registers it yet — that is step 2. Until then it
-      // is a file in dist/ that no browser loads.
+      // The service worker is registered by hand in main.tsx (through the
+      // plugin's `virtual:pwa-register` module), not by a script the plugin
+      // injects: step 3, deciding how updates arrive, needs that code.
       injectRegister: false,
+
+      // What the service worker does with each request. Anything matching no
+      // rule here goes to the network untouched — which is exactly what the
+      // API needs (see the note on /api below).
+      workbox: {
+        // The precache: the whole app shell, saved on install so the app
+        // opens instantly and offline. Images included (the wordmarks, the
+        // logo, the icons): without them an offline start shows holes.
+        globPatterns: ["**/*.{js,css,html,png,svg,webmanifest}"],
+        // The plugin already adds the manifest and the icons it lists; left
+        // in the glob as well they went into the precache twice.
+        globIgnores: ["manifest.webmanifest", "icons/icon-*.png"],
+
+        // Any in-app address opened offline (/categories/3, /log-activity…)
+        // gets index.html, and the router takes it from there. The API is
+        // excluded so a failed API call never comes back as a web page.
+        navigateFallback: "index.html",
+        navigateFallbackDenylist: [/^\/api\//],
+
+        // /api has NO rule, on purpose: no cache at all. A cached
+        // /api/categories would open the app showing yesterday's XP as if it
+        // were today's. Offline, API calls fail, and the screens say so.
+        runtimeCaching: [
+          {
+            // The Google Fonts stylesheets: served from cache at once, and
+            // refreshed in the background for next time.
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\//,
+            handler: "StaleWhileRevalidate",
+            options: { cacheName: "google-fonts-css" },
+          },
+          {
+            // The font files themselves never change for a given URL, so
+            // once saved they are used straight from the cache for a year.
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\//,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-files",
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
 
       // The web app manifest: what Android reads to offer "Install" and to
       // draw the app once installed. The plugin writes it to
