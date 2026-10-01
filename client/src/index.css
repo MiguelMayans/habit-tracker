@@ -201,6 +201,136 @@ body {
   animation: grain 1.1s steps(1) infinite;
 }
 
+/* ---- The screen wipe (see ScreenTransition.tsx) ---- */
+
+/* Every entrance waits this long on top of its own delay: a new screen is
+   mounted while the slab still covers it, and without the offset the first
+   rows would play their entrance where nobody can see it. Constant, not set
+   per transition: changing an animation's delay after it has run would
+   restart it. */
+main {
+  --enter-offset: 0.16s;
+}
+
+/* Two slabs, wider than the screen and skewed, so their edges cross it on a
+   diagonal: the red edge leads, the black slab follows 40ms behind it and is
+   what actually covers. On the way out the black leaves first and the red
+   trails across the new screen — the colour flash Persona's menus make.
+   Coming back, the whole thing is mirrored. */
+.wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  overflow: hidden;
+}
+
+.wipe[data-direction="-1"] {
+  transform: scaleX(-1);
+}
+
+.wipe > i {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: -40%;
+  right: -40%;
+  transform: skewX(-16deg) translateX(-160%);
+}
+
+.wipe-edge {
+  background: var(--color-cuerpo);
+}
+
+.wipe-slab {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle, rgb(245 245 240 / 0.12) 1.2px, transparent 1.7px)
+      0 0 / 8px 8px,
+    var(--color-black);
+  /* A bone hairline along the slab's leading edge. */
+  box-shadow: inset 6px 0 0 var(--color-bone);
+}
+
+/* The logo's star, riding the slab. Counter-skewed so it stays a star. */
+.wipe-star {
+  width: 70px;
+  height: 70px;
+  background: var(--color-yellow);
+  clip-path: polygon(
+    50% 0,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 91%,
+    50% 70%,
+    21% 91%,
+    32% 57%,
+    2% 35%,
+    39% 35%
+  );
+  transform: skewX(16deg) rotate(-12deg);
+}
+
+.wipe-cover > i {
+  animation: wipe-cover 0.19s cubic-bezier(0.55, 0, 0.85, 0.4) both;
+}
+.wipe-cover > .wipe-slab {
+  animation-delay: 0.04s;
+}
+
+/* Waiting for the new screen's data: the slabs stay flush and the star
+   spins, Persona's loading screen. */
+.wipe-hold > i {
+  transform: skewX(-16deg) translateX(0);
+}
+.wipe-hold .wipe-star {
+  animation: wipe-star-loading 0.7s linear infinite;
+}
+
+@keyframes wipe-star-loading {
+  from {
+    transform: skewX(16deg) rotate(-12deg);
+  }
+  to {
+    transform: skewX(16deg) rotate(348deg);
+  }
+}
+
+.wipe-reveal > i {
+  animation: wipe-reveal 0.24s cubic-bezier(0.15, 0.6, 0.4, 1) both;
+}
+.wipe-reveal > .wipe-edge {
+  animation-delay: 0.06s;
+}
+.wipe-reveal .wipe-star {
+  animation: wipe-star-spin 0.24s ease-in both;
+}
+
+@keyframes wipe-cover {
+  from {
+    transform: skewX(-16deg) translateX(-160%);
+  }
+  to {
+    transform: skewX(-16deg) translateX(0);
+  }
+}
+
+@keyframes wipe-reveal {
+  from {
+    transform: skewX(-16deg) translateX(0);
+  }
+  to {
+    transform: skewX(-16deg) translateX(160%);
+  }
+}
+
+@keyframes wipe-star-spin {
+  to {
+    transform: skewX(16deg) rotate(160deg) scale(0.4);
+  }
+}
+
 /* ---- Textures for the result modal ---- */
 
 /* The modal's screen: the same burst at full blast. Where the backdrop keeps
@@ -604,8 +734,8 @@ body {
    part of the bar, past where progress actually reaches. */
 .xp-bar-fill {
   overflow: hidden;
-  animation: fill 0.95s var(--delay, 0s) cubic-bezier(0.2, 0.9, 0.25, 1)
-    backwards;
+  animation: fill 0.95s calc(var(--delay, 0s) + var(--enter-offset, 0s))
+    cubic-bezier(0.2, 0.9, 0.25, 1) backwards;
   /* For when the XP changes WITHOUT a remount, which is what happens when
      logging from the card itself: without this the reward just appears. */
   transition: width 1s cubic-bezier(0.2, 0.9, 0.25, 1);
@@ -950,13 +1080,15 @@ body {
 }
 
 .anim-logo {
-  animation: enter-logo 0.5s 0.06s cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
+  animation: enter-logo 0.5s calc(0.06s + var(--enter-offset, 0s))
+    cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
 }
 .anim-ribbon {
-  animation: enter-ribbon 0.4s 0.16s cubic-bezier(0.2, 1.35, 0.4, 1) backwards;
+  animation: enter-ribbon 0.4s calc(0.16s + var(--enter-offset, 0s))
+    cubic-bezier(0.2, 1.35, 0.4, 1) backwards;
 }
 .anim-card {
-  animation: enter-card 0.5s var(--delay, 0s)
+  animation: enter-card 0.5s calc(var(--delay, 0s) + var(--enter-offset, 0s))
     cubic-bezier(0.2, 1.35, 0.35, 1) backwards;
 }
 .anim-fab {
@@ -974,8 +1106,8 @@ body {
   }
 }
 .anim-row {
-  animation: enter-row 0.4s var(--delay, 0s) cubic-bezier(0.2, 1.3, 0.4, 1)
-    backwards;
+  animation: enter-row 0.4s calc(var(--delay, 0s) + var(--enter-offset, 0s))
+    cubic-bezier(0.2, 1.3, 0.4, 1) backwards;
 }
 
 /* Loading block: it pulses instead of showing a dead grey. It never claims
@@ -989,8 +1121,12 @@ body {
     opacity: 0.7;
   }
 }
+/* Black with an edge, like a card about to arrive: the old flat #1c1c1c
+   vanished against the rays, and a screen revealed by the wipe looked empty
+   until its data landed. */
 .skeleton {
-  background: #1c1c1c;
+  background: var(--color-black);
+  box-shadow: inset 0 0 0 2px rgb(245 245 240 / 0.16);
   animation: loading-pulse 1.1s ease-in-out infinite alternate;
 }
 

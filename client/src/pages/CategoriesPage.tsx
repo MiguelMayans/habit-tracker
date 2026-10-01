@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useScreenReady } from "../lib/screenReady";
 import {
   getCategories,
   getRecentActivities,
@@ -21,6 +22,8 @@ export function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [recent, setRecent] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  // The screen wipe holds until this screen has its data.
+  useScreenReady(!loading);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {

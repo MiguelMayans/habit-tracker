@@ -4,6 +4,7 @@ import { CategoryDetailPage } from "./pages/CategoryDetailPage";
 import { CategoryHistoryPage } from "./pages/CategoryHistoryPage";
 import { LogActivityPage } from "./pages/LogActivityPage";
 import { LogFab } from "./components/LogFab";
+import { ScreenTransition } from "./components/ScreenTransition";
 
 /**
  * The logo's stars, loose in the burst. Positions are percentages of the
@@ -56,31 +57,35 @@ function App() {
         <div className="scene scene-grain" />
 
         <main className="relative z-10 mx-auto w-full max-w-md">
-          <Routes>
-            <Route path="/" element={<CategoriesPage />} />
-            <Route path="/categories/:id" element={<CategoryDetailPage />} />
-            <Route
-              path="/categories/:id/history"
-              element={<CategoryHistoryPage />}
-            />
-            <Route path="/log-activity" element={<LogActivityPage />} />
-            <Route
-              path="*"
-              element={
-                <div className="px-4 pt-10 pb-32">
-                  <h1 className="text-sign m-0 font-display text-[34px] leading-[0.95] text-bone uppercase">
-                    Aquí no hay nada
-                  </h1>
-                  <p className="mt-3 text-[12px] leading-relaxed text-bone/70">
-                    Esta dirección no lleva a ninguna pantalla.
-                  </p>
-                  <Link to="/" className="slam-button mt-6">
-                    <span>Volver a categorías</span>
-                  </Link>
-                </div>
-              }
-            />
-          </Routes>
+          <ScreenTransition>
+            {(location) => (
+              <Routes location={location}>
+                <Route path="/" element={<CategoriesPage />} />
+                <Route path="/categories/:id" element={<CategoryDetailPage />} />
+                <Route
+                  path="/categories/:id/history"
+                  element={<CategoryHistoryPage />}
+                />
+                <Route path="/log-activity" element={<LogActivityPage />} />
+                <Route
+                  path="*"
+                  element={
+                    <div className="px-4 pt-10 pb-32">
+                      <h1 className="text-sign m-0 font-display text-[34px] leading-[0.95] text-bone uppercase">
+                        Aquí no hay nada
+                      </h1>
+                      <p className="mt-3 text-[12px] leading-relaxed text-bone/70">
+                        Esta dirección no lleva a ninguna pantalla.
+                      </p>
+                      <Link to="/" className="slam-button mt-6">
+                        <span>Volver a categorías</span>
+                      </Link>
+                    </div>
+                  }
+                />
+              </Routes>
+            )}
+          </ScreenTransition>
         </main>
 
         <LogFab />

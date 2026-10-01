@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useScreenReady } from "../lib/screenReady";
 import {
   createFocus,
   deleteActivity,
@@ -215,6 +216,8 @@ export function CategoryDetailPage() {
   const [category, setCategory] = useState<Category | null>(null);
   const [focuses, setFocuses] = useState<Focus[]>([]);
   const [loading, setLoading] = useState(true);
+  // The screen wipe holds until this screen has its data.
+  useScreenReady(!loading);
   const [error, setError] = useState<string | null>(null);
 
   // From the creation form, kept apart from the loading error so a failure to

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useScreenReady } from "../lib/screenReady";
 import {
   deleteActivity,
   getActivitiesByCategory,
@@ -31,6 +32,8 @@ export function CategoryHistoryPage() {
   const [focuses, setFocuses] = useState<Focus[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  // The screen wipe holds until this screen has its data.
+  useScreenReady(!loading);
   const [error, setError] = useState<string | null>(null);
 
   // Undo by long press, the same as in the category detail.
