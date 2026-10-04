@@ -12,6 +12,7 @@ import { CategoryCard } from "../components/CategoryCard";
 import { RhythmStrip } from "../components/RhythmStrip";
 import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
+import { MissionsButton } from "../components/MissionsButton";
 import logo from "../assets/logo.png";
 
 // Enough for a streak of months: a streak breaks the moment a day is missing,
@@ -80,6 +81,10 @@ export function CategoriesPage() {
             The band sits loose in the header, not inside the h1: it has to
             overflow the container's width to reach both edges. */}
         <div className="bleed-band anim-logo top-[-16px] z-0 h-[128px]" />
+
+        {/* Top right, over the logo's spare corner: errands are a glance
+            away from the home without taking a row of it. */}
+        <MissionsButton />
 
         <h1 className="relative z-10 m-0 w-full max-w-[340px]">
           <img

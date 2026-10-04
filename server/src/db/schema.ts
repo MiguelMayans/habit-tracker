@@ -43,3 +43,29 @@ export const activities = sqliteTable("activities", {
     .notNull()
     .default(sql`(unixepoch())`),
 });
+
+/**
+ * The missions: errands and calls to get done ("call the plumber", "book the
+ * ITV"), apart from the activities, which are logged after the fact.
+ *
+ * - `dueDate` is a local calendar day, "YYYY-MM-DD", and not a timestamp:
+ *   "due today" has to mean the user's today, and only the browser knows their
+ *   time zone. Stored as a day, it means the same thing everywhere.
+ * - With a `categoryId`, completing it logs a Chispa in that category
+ *   (docs/DESIGN.md). Without one it is just a list item and earns nothing.
+ * - `activityId` is the activity that completion logged, so reopening can undo
+ *   it. Deliberately NOT a foreign key: Turso enforces them, and the activity
+ *   can still be undone from the category's history — a constraint would block
+ *   that undo for as long as the mission existed.
+ */
+export const missions = sqliteTable("missions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  dueDate: text("due_date"),
+  categoryId: integer("category_id").references(() => categories.id),
+  activityId: integer("activity_id"),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});

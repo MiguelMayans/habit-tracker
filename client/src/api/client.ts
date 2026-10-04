@@ -240,3 +240,72 @@ export function getRecentActivities(params: {
 
   return request<RecentActivity[]>(`/activities${qs === "" ? "" : `?${qs}`}`);
 }
+
+/**
+ * An errand or call to get done. `dueDate` is a local calendar day,
+ * "YYYY-MM-DD" — see lib/missions.ts.
+ */
+export type Mission = {
+  id: number;
+  title: string;
+  dueDate: string | null;
+  /** With a category, completing it logs a Chispa there. */
+  categoryId: number | null;
+  /** The activity its completion logged, if any. */
+  activityId: number | null;
+  completedAt: string | null;
+  createdAt: string;
+};
+
+export type MissionFields = {
+  title?: string;
+  dueDate?: string | null;
+  categoryId?: number | null;
+};
+
+/** Pending missions plus the ones completed in the last week. */
+export function getMissions(): Promise<Mission[]> {
+  return request<Mission[]>("/missions");
+}
+
+export function createMission(
+  data: MissionFields & { title: string },
+): Promise<Mission> {
+  return request<Mission>("/missions", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateMission(
+  id: number,
+  changes: MissionFields,
+): Promise<Mission> {
+  return request<Mission>(`/missions/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(changes),
+  });
+}
+
+export function completeMission(id: number): Promise<{
+  mission: Mission;
+  /** The Chispa it logged, or null for a mission with no category. */
+  activity: RegisterActivityResult | null;
+}> {
+  return request(`/missions/${id}/complete`, { method: "POST" });
+}
+
+/**
+ * Unticks it, undoing its Chispa if it logged one. Same window as undoing any
+ * log: a mission completed on another day keeps its XP and stays ticked.
+ */
+export function reopenMission(id: number): Promise<{
+  mission: Mission;
+  undo: UndoActivityResult | null;
+}> {
+  return request(`/missions/${id}/reopen`, { method: "POST" });
+}
+
+export function deleteMission(id: number): Promise<{ id: number }> {
+  return request(`/missions/${id}`, { method: "DELETE" });
+}

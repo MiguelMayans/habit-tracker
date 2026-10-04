@@ -4,6 +4,7 @@ import { CategoriesPage } from "./pages/CategoriesPage";
 import { CategoryDetailPage } from "./pages/CategoryDetailPage";
 import { CategoryHistoryPage } from "./pages/CategoryHistoryPage";
 import { LogActivityPage } from "./pages/LogActivityPage";
+import { MissionsPage } from "./pages/MissionsPage";
 import { LogFab } from "./components/LogFab";
 import { ScreenTransition } from "./components/ScreenTransition";
 import { UnlockScreen } from "./components/UnlockScreen";
@@ -101,6 +102,7 @@ function App() {
                   element={<CategoryHistoryPage />}
                 />
                 <Route path="/log-activity" element={<LogActivityPage />} />
+                <Route path="/missions" element={<MissionsPage />} />
                 <Route
                   path="*"
                   element={

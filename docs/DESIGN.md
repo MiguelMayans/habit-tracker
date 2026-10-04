@@ -68,9 +68,18 @@ Diseño v1 cerrado. Cualquier cambio aquí debe discutirse explícitamente, no i
 - Si hay Foco seleccionado → la misma XP va al Foco **y** a la categoría padre simultáneamente
 - Si no hay Foco → la XP va solo a la categoría
 
-## Diferido a v1.1 / v2.0
+## Misiones (lista de pendientes)
 
-- Sistema de To-Do vinculado a categoría/Foco que se auto-convierte en Actividad al completarse (mismo modelo de XP)
+Llamadas, gestiones, recados: cosas que hay que hacer, no actividades que ya pasaron. Viven aparte del registro, pero conectadas a él. Es el To-Do que estaba diferido a la 1.1, en versión sencilla.
+
+- **Apuntar cuesta dos segundos**: solo el título es obligatorio. Cuándo (HOY / MAÑANA / una fecha) y categoría son opcionales y solo aparecen cuando ya has escrito algo
+- **XP opcional**: sin categoría, una misión no da nada, es solo una lista. Con categoría, cumplirla registra una **Chispa** (10 XP) en esa categoría, en la misma transacción que la marca. Es la intensidad más baja a propósito: presencia sobre productividad, un recado no vale lo que un entrenamiento. Sin foco: se valoró y se dejó fuera por sencillez
+- **Desmarcar**: una misión sin XP se desmarca siempre. Una que dio XP solo el mismo día, y al desmarcarla se deshace su actividad: es la misma excepción de "deshacer un registro de hoy", no otra
+- **Borrar** una misión cumplida no toca su XP: la actividad ocurrió y se queda, como al borrar un foco
+- La fecha límite se guarda como **día local** (`AAAA-MM-DD`), no como instante: "vence hoy" tiene que significar el hoy del usuario, y solo el navegador conoce su zona horaria
+- `activityId` no es clave foránea a propósito: Turso las aplica, y la actividad se puede seguir deshaciendo desde el historial de su categoría. Si ya no existe, desmarcar simplemente reabre
+- Las cumplidas se ven una semana (plegadas al fondo); después dejan de listarse
+- **Interfaz** (`MissionsPage`, `/missions`): se entra por la placa negra de arriba a la derecha de la home, con un rombo amarillo que cuenta lo que vence hoy o ya ha vencido. Grupos por urgencia: VENCIDAS (cinta roja), HOY (amarilla), PRÓXIMAS, SIN FECHA y HECHAS. El rombo de la izquierda cumple; el resto de la fila abre la hoja de edición. Al cumplir, un tachón rojo cruza el título, cae un sello «¡HECHA!» (con el impacto de XP si la hay) y la fila sale despedida a la derecha. Si el título empieza por «Llamar…», «Pagar…», «Comprar…», lleva un icono de teléfono, papeleo o bolsa: se lee del texto, no hay que clasificar nada
 
 ## Dirección visual (referencia definitiva: mockup HTML v3 de sesión previa)
 

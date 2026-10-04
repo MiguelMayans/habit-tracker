@@ -50,6 +50,7 @@ Pasos 1–10 hechos. La base se reseteó a cero para estrenarla.
 
 ## Para la 1.1
 
+- [x] Misiones: lista de llamadas y gestiones, con Chispa opcional al cumplirlas (ver docs/DESIGN.md)
 - Indicador de inactividad en los Focos (en categorías ya existe)
 - Los 3 hitos narrativos camino del nivel 20, y los hitos de categoría
 - Sesión de balanceo de las curvas de XP (ver arriba)

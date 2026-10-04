@@ -7,6 +7,7 @@ import { healthRouter } from "./routes/health.js";
 import { categoriesRouter } from "./routes/categories.js";
 import { focusesRouter } from "./routes/focuses.js";
 import { activitiesRouter } from "./routes/activities.js";
+import { missionsRouter } from "./routes/missions.js";
 
 /**
  * The Express app, not listening on any port.
@@ -32,3 +33,4 @@ app.use(requireApiKey);
 app.use(categoriesRouter);
 app.use(focusesRouter);
 app.use(activitiesRouter);
+app.use(missionsRouter);

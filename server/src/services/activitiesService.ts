@@ -1,4 +1,4 @@
-import { db } from "../db/index.js";
+import { db, type DbOrTx } from "../db/index.js";
 import {
   createActivity,
   deleteActivity as deleteActivityRow,
@@ -172,89 +172,99 @@ function summariseXp(
 export async function registerActivity(
   data: RegisterActivityData,
 ): Promise<RegisterActivityResult> {
-  return db.transaction(async (tx) => {
-    const category = await getCategoryById(data.categoryId, tx);
-    if (!category) {
+  return db.transaction((tx) => registerActivityIn(tx, data));
+}
+
+/**
+ * The body of `registerActivity`, inside a transaction someone else opened:
+ * completing a mission logs its activity in the same transaction that marks it
+ * done, so there is never a completed mission without its XP or the reverse.
+ */
+export async function registerActivityIn(
+  tx: DbOrTx,
+  data: RegisterActivityData,
+): Promise<RegisterActivityResult> {
+  const category = await getCategoryById(data.categoryId, tx);
+  if (!category) {
+    throw new ActivityValidationError(
+      `La categoría ${data.categoryId} no existe`,
+    );
+  }
+
+  let focus = null;
+  if (data.focusId !== undefined) {
+    focus = await getFocusById(data.focusId, tx);
+
+    if (!focus) {
       throw new ActivityValidationError(
-        `La categoría ${data.categoryId} no existe`,
+        `El foco ${data.focusId} no existe`,
       );
     }
 
-    let focus = null;
-    if (data.focusId !== undefined) {
-      focus = await getFocusById(data.focusId, tx);
-
-      if (!focus) {
-        throw new ActivityValidationError(
-          `El foco ${data.focusId} no existe`,
-        );
-      }
-
-      if (focus.categoryId !== data.categoryId) {
-        throw new ActivityValidationError(
-          `El foco debe pertenecer a la categoría indicada: el foco ${focus.id} ` +
-            `está en la categoría ${focus.categoryId}, pero se ha enviado la ` +
-            `categoría ${data.categoryId}`,
-        );
-      }
-
-      if (focus.frozen) {
-        // Frozen at the maximum level is mastery; below it, the only way in
-        // is a manual close. Telling a level-3 focus you called done that it
-        // "reached mastery" would be a lie.
-        const reason =
-          focus.level >= FOCUS_CURVE.maxLevel
-            ? "ha alcanzado la maestría y está congelado"
-            : "está cerrado";
-
-        throw new ActivityValidationError(
-          `El foco "${focus.name}" ${reason}: ya no admite más XP. Tócalo ` +
-            `para engendrar un foco hijo especializado y registra la ` +
-            `actividad ahí, o reábrelo desde su categoría.`,
-        );
-      }
+    if (focus.categoryId !== data.categoryId) {
+      throw new ActivityValidationError(
+        `El foco debe pertenecer a la categoría indicada: el foco ${focus.id} ` +
+          `está en la categoría ${focus.categoryId}, pero se ha enviado la ` +
+          `categoría ${data.categoryId}`,
+      );
     }
 
-    const xpGained = XP_BY_INTENSITY[data.intensity];
+    if (focus.frozen) {
+      // Frozen at the maximum level is mastery; below it, the only way in
+      // is a manual close. Telling a level-3 focus you called done that it
+      // "reached mastery" would be a lie.
+      const reason =
+        focus.level >= FOCUS_CURVE.maxLevel
+          ? "ha alcanzado la maestría y está congelado"
+          : "está cerrado";
 
-    const activity = await createActivity(
-      {
-        categoryId: data.categoryId,
-        focusId: data.focusId,
-        description: data.description,
-        intensity: data.intensity,
-        date: data.date,
-      },
-      tx,
-    );
-
-    let focusOutcome: XpOutcome | null = null;
-    if (focus) {
-      const next = applyXp(focus, xpGained, FOCUS_CURVE);
-      // Reaching the maximum level freezes it: this fires here, in the same XP
-      // hit that reaches it, not in a separate pass someone has to remember to
-      // run.
-      const frozen = next.level >= FOCUS_CURVE.maxLevel;
-      await updateFocusXp(focus.id, { ...next, frozen }, tx);
-
-      focusOutcome = summariseXp(focus.id, focus, next, FOCUS_CURVE, frozen);
+      throw new ActivityValidationError(
+        `El foco "${focus.name}" ${reason}: ya no admite más XP. Tócalo ` +
+          `para engendrar un foco hijo especializado y registra la ` +
+          `actividad ahí, o reábrelo desde su categoría.`,
+      );
     }
+  }
 
-    const nextCategory = applyXp(category, xpGained, CATEGORY_CURVE);
-    await updateCategoryXp(category.id, nextCategory, tx);
+  const xpGained = XP_BY_INTENSITY[data.intensity];
 
-    return {
-      activity,
-      xpGained,
-      focus: focusOutcome,
-      category: summariseXp(
-        category.id,
-        category,
-        nextCategory,
-        CATEGORY_CURVE,
-      ),
-    };
-  });
+  const activity = await createActivity(
+    {
+      categoryId: data.categoryId,
+      focusId: data.focusId,
+      description: data.description,
+      intensity: data.intensity,
+      date: data.date,
+    },
+    tx,
+  );
+
+  let focusOutcome: XpOutcome | null = null;
+  if (focus) {
+    const next = applyXp(focus, xpGained, FOCUS_CURVE);
+    // Reaching the maximum level freezes it: this fires here, in the same XP
+    // hit that reaches it, not in a separate pass someone has to remember to
+    // run.
+    const frozen = next.level >= FOCUS_CURVE.maxLevel;
+    await updateFocusXp(focus.id, { ...next, frozen }, tx);
+
+    focusOutcome = summariseXp(focus.id, focus, next, FOCUS_CURVE, frozen);
+  }
+
+  const nextCategory = applyXp(category, xpGained, CATEGORY_CURVE);
+  await updateCategoryXp(category.id, nextCategory, tx);
+
+  return {
+    activity,
+    xpGained,
+    focus: focusOutcome,
+    category: summariseXp(
+      category.id,
+      category,
+      nextCategory,
+      CATEGORY_CURVE,
+    ),
+  };
 }
 
 /**
@@ -264,64 +274,70 @@ export async function registerActivity(
  * does not become a way to revisit a whole day in hindsight.
  */
 export async function deleteActivity(id: number): Promise<UndoActivityResult> {
-  return db.transaction(async (tx) => {
-    const activity = await getActivityById(id, tx);
-    if (!activity) {
-      throw new ActivityValidationError(`La actividad ${id} no existe`);
-    }
+  return db.transaction((tx) => deleteActivityIn(tx, id));
+}
 
-    if (!isToday(activity.date)) {
-      throw new ActivityValidationError(
-        "Solo se puede deshacer una actividad registrada hoy",
+/** The body of `deleteActivity`, inside a transaction someone else opened. */
+export async function deleteActivityIn(
+  tx: DbOrTx,
+  id: number,
+): Promise<UndoActivityResult> {
+  const activity = await getActivityById(id, tx);
+  if (!activity) {
+    throw new ActivityValidationError(`La actividad ${id} no existe`);
+  }
+
+  if (!isToday(activity.date)) {
+    throw new ActivityValidationError(
+      "Solo se puede deshacer una actividad registrada hoy",
+    );
+  }
+
+  const category = await getCategoryById(activity.categoryId, tx);
+  if (!category) {
+    throw new ActivityValidationError(
+      `La categoría ${activity.categoryId} no existe`,
+    );
+  }
+
+  const xpGained = XP_BY_INTENSITY[activity.intensity];
+
+  let focusOutcome: XpOutcome | null = null;
+  if (activity.focusId !== null) {
+    const focus = await getFocusById(activity.focusId, tx);
+    // The focus may have been deleted after the activity was logged (it is
+    // detached, not deleted): then only the category needs reverting.
+    if (focus) {
+      const reverted = revertXp(focus, xpGained, FOCUS_CURVE);
+      // If it was frozen and the level falls below the maximum, it thaws:
+      // it is no longer true that it sits at level 20.
+      const frozen = reverted.level >= FOCUS_CURVE.maxLevel;
+      await updateFocusXp(focus.id, { ...reverted, frozen }, tx);
+
+      focusOutcome = summariseXp(
+        focus.id,
+        focus,
+        reverted,
+        FOCUS_CURVE,
+        frozen,
       );
     }
+  }
 
-    const category = await getCategoryById(activity.categoryId, tx);
-    if (!category) {
-      throw new ActivityValidationError(
-        `La categoría ${activity.categoryId} no existe`,
-      );
-    }
+  const revertedCategory = revertXp(category, xpGained, CATEGORY_CURVE);
+  await updateCategoryXp(category.id, revertedCategory, tx);
 
-    const xpGained = XP_BY_INTENSITY[activity.intensity];
+  await deleteActivityRow(activity.id, tx);
 
-    let focusOutcome: XpOutcome | null = null;
-    if (activity.focusId !== null) {
-      const focus = await getFocusById(activity.focusId, tx);
-      // The focus may have been deleted after the activity was logged (it is
-      // detached, not deleted): then only the category needs reverting.
-      if (focus) {
-        const reverted = revertXp(focus, xpGained, FOCUS_CURVE);
-        // If it was frozen and the level falls below the maximum, it thaws:
-        // it is no longer true that it sits at level 20.
-        const frozen = reverted.level >= FOCUS_CURVE.maxLevel;
-        await updateFocusXp(focus.id, { ...reverted, frozen }, tx);
-
-        focusOutcome = summariseXp(
-          focus.id,
-          focus,
-          reverted,
-          FOCUS_CURVE,
-          frozen,
-        );
-      }
-    }
-
-    const revertedCategory = revertXp(category, xpGained, CATEGORY_CURVE);
-    await updateCategoryXp(category.id, revertedCategory, tx);
-
-    await deleteActivityRow(activity.id, tx);
-
-    return {
-      activityId: activity.id,
-      xpLost: xpGained,
-      focus: focusOutcome,
-      category: summariseXp(
-        category.id,
-        category,
-        revertedCategory,
-        CATEGORY_CURVE,
-      ),
-    };
-  });
+  return {
+    activityId: activity.id,
+    xpLost: xpGained,
+    focus: focusOutcome,
+    category: summariseXp(
+      category.id,
+      category,
+      revertedCategory,
+      CATEGORY_CURVE,
+    ),
+  };
 }
