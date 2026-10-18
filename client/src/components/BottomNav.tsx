@@ -61,13 +61,10 @@ export function BottomNav() {
         className="nav-log"
         aria-current={current("/log-activity")}
       >
-        {/* The clip lives on this layer and not on the link, because
-            `clip-path` also clips the `box-shadow` — and that is what beats. */}
-        <span className="pill-cut absolute inset-0 bg-yellow" />
-        <span className="relative flex items-baseline gap-1.5 font-display text-[14px] leading-none text-black uppercase">
-          <b className="text-[18px] leading-none">+</b>
-          Registrar
+        <span className="nav-log-mark" aria-hidden="true">
+          <b>+</b>
         </span>
+        <span className="nav-tab-label">Registrar</span>
       </Link>
 
       <Link to="/lair" className="nav-tab" aria-current={current("/lair")}>

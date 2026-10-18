@@ -828,10 +828,6 @@ main {
 }
 
 /* Side cut for pills and buttons. */
-.pill-cut {
-  clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
-}
-
 /* ---- Form controls ---- */
 
 /* The frame is what skews; the control inside is counter-skewed. Skewing the
@@ -1041,11 +1037,14 @@ body:has([role="dialog"]) .bottom-nav {
   display: none;
 }
 
-/* The bar starts below the top of the row: the logging button is taller and
-   sticks up out of it. */
+/* The slab is a fixed height along the bottom of the row: the logging
+   diamond is taller and breaks out of its top edge. */
 .bottom-nav-bar {
   position: absolute;
-  inset: 16px 0 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 58px;
   background: var(--color-black);
   border: 2px solid var(--color-bone);
   transform: skewX(-10deg);
@@ -1086,32 +1085,71 @@ body:has([role="dialog"]) .bottom-nav {
   transform: skewX(-10deg);
 }
 
+/* Logging: the same anatomy as the tabs either side — mark above, label
+   below — on a yellow cell of the same skewed slab, a notch taller than the
+   rest. It used to be a separate pill sitting on top of the bar, and read as
+   stuck on. Still the main action, so it is the one that beats. */
 .nav-log {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 56px;
-  margin: 0 4px 10px;
-  padding: 0 22px;
+  isolation: isolate;
+  display: grid;
+  align-self: end;
+  align-content: center;
+  justify-items: center;
+  gap: 3px;
+  height: 58px;
+  margin: 0 2px;
+  padding: 0 20px;
+  color: var(--color-black);
+}
+
+.nav-log::before {
+  content: "";
+  position: absolute;
+  inset: -8px 0 0;
+  z-index: -1;
+  background: var(--color-yellow);
   transform: skewX(-10deg);
-  animation: beat 2.8s 1.5s ease-in-out infinite;
+  box-shadow: 4px 4px 0 var(--color-black);
+  transition: translate 0.08s steps(2);
+  animation: cell-beat 2.8s 1.5s ease-in-out infinite;
 }
 
-.nav-log > .relative {
-  transform: skewX(10deg);
+@keyframes cell-beat {
+  50% {
+    box-shadow:
+      4px 4px 0 var(--color-black),
+      7px 7px 0 var(--color-cuerpo);
+  }
 }
 
-.nav-log:active {
-  translate: 3px 3px;
+.nav-log-mark > b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 0.8;
+  transition: translate 0.08s steps(2);
 }
 
-/* On the logging screen it leads nowhere: it stays, dimmed, so the bar does
-   not change shape under your thumb. */
+.nav-log:active::before,
+.nav-log:active .nav-log-mark > b {
+  translate: 2px 2px;
+}
+
+/* On the logging screen it leads nowhere: it stays, marked as the current
+   screen like any tab, so the bar does not change shape under your thumb. */
 .nav-log[aria-current="page"] {
-  filter: grayscale(1) brightness(0.5);
-  animation: none;
   pointer-events: none;
+}
+
+.nav-log[aria-current="page"]::before {
+  animation: none;
+}
+
+.nav-log[aria-current="page"] .nav-tab-label {
+  background: var(--color-cuerpo);
+  color: var(--color-bone);
+  transform: skewX(-10deg);
 }
 
 /* What is due today, as a yellow diamond on the missions icon's corner — the
@@ -1543,20 +1581,6 @@ body:has([role="dialog"]) .bottom-nav {
   from {
     opacity: 0;
     transform: rotate(var(--rotation, 0deg)) skewX(-18deg) translateX(-70px);
-  }
-}
-
-@keyframes beat {
-  0%,
-  100% {
-    box-shadow:
-      5px 5px 0 var(--color-black),
-      10px 10px 0 var(--color-cuerpo);
-  }
-  50% {
-    box-shadow:
-      5px 5px 0 var(--color-black),
-      15px 15px 0 var(--color-cuerpo);
   }
 }
 
