@@ -91,7 +91,7 @@ Los videojuegos, libros, series, películas, anime y manga/cómic que tienes ent
 - Terminar pide una nota opcional de 1 a 5 rombos, cae un sello «¡COMPLETADO!» y la obra pasa a la **vitrina** (cuadrícula de trofeos)
 - Borrar una obra no toca las sesiones registradas: ocurrieron y su XP se queda en Mente
 - Los filtros por tipo solo aparecen cuando hay más de un tipo que distinguir
-- En curso y en la recámara se agrupan **por tipo** (juegos con juegos, libros con libros), en el orden de los filtros y con un rótulo por grupo; con un filtro puesto los rótulos sobran y no salen. La vitrina no se agrupa: con un trofeo por tipo, la cuadrícula de dos columnas quedaba a medias, y cada trofeo ya dice su tipo
+- En curso y en la recámara se agrupan **por tipo** (juegos con juegos, libros con libros), en el orden de los filtros y con un rótulo por grupo con peso de titular (icono en etiqueta hueso, nombre en la fuente display con trazo y la cuenta en cifras amarillas), porque es lo que ordena la pantalla; con un filtro puesto los rótulos sobran y no salen. La vitrina no se agrupa: con un trofeo por tipo, la cuadrícula de dos columnas quedaba a medias, y cada trofeo ya dice su tipo
 
 ## Dirección visual (referencia definitiva: mockup HTML v3 de sesión previa)
 

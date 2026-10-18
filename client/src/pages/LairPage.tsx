@@ -95,17 +95,34 @@ function KindGroups({
 
   let index = 0;
   return (
-    <div className="grid gap-7">
+    <div className="grid gap-9">
       {WORK_KINDS.map((kind) => {
         const items = works.filter((w) => w.kind === kind);
         if (items.length === 0) return null;
         return (
           <div key={kind}>
-            <h3 className="anim-row m-0 mb-3.5 flex">
-              <span className="on-scene inline-flex items-center gap-1.5 text-[10px] font-bold tracking-[0.18em] text-bone uppercase">
-                <WorkKindIcon kind={kind} className="h-3.5 w-3.5" />
-                {KIND_LABEL[kind].many} · {items.length}
+            {/* A heading with weight, not a caption: it is what sorts the
+                screen. The icon on a bone tag, the word in the display face
+                with the signs' outline, and the count in the figures'. */}
+            <h3 className="anim-row m-0 mb-4 flex items-center gap-3">
+              <span
+                className="grid h-9 w-10 shrink-0 place-items-center bg-bone text-black"
+                style={{
+                  transform: "skewX(-10deg)",
+                  boxShadow: "4px 4px 0 var(--color-black)",
+                }}
+              >
+                <WorkKindIcon
+                  kind={kind}
+                  className="h-[22px] w-[22px]"
+                />
               </span>
+              <span className="text-sign font-display text-[26px] leading-none text-bone uppercase">
+                {KIND_LABEL[kind].many}
+              </span>
+              <b className="text-sign font-figure text-[22px] leading-none text-yellow">
+                {items.length}
+              </b>
             </h3>
             <ul className={listClassName}>
               {items.map((w) => render(w, index++))}

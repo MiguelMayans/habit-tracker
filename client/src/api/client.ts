@@ -12,6 +12,13 @@ import { getApiKey, LOCKED_EVENT } from "../lib/apiKey";
  */
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
+/**
+ * How long a request may go unanswered. Above Netlify's own limit for a
+ * function (10 s), so a slow-but-alive response still lands; below the point
+ * where a frozen screen makes you think the app has hung.
+ */
+const REQUEST_TIMEOUT_MS = 15_000;
+
 export type Category = {
   id: number;
   name: string;
@@ -123,8 +130,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (key) headers["X-Api-Key"] = key;
 
   try {
-    response = await fetch(`${API_URL}${path}`, { ...init, headers });
-  } catch {
+    response = await fetch(`${API_URL}${path}`, {
+      ...init,
+      headers,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    // A request nobody answers must end in an error, not in a button stuck
+    // on "Guardando…" forever.
+    if ((error as Error).name === "TimeoutError") {
+      throw new Error(
+        "El servidor no ha respondido a tiempo. Prueba otra vez en un momento.",
+      );
+    }
     // With the service worker the app opens offline, so this is now the
     // normal way to find out there is no connection: say that, plainly.
     // "Is the server running?" only makes sense to whoever is developing.
