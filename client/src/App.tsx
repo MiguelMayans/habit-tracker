@@ -5,7 +5,8 @@ import { CategoryDetailPage } from "./pages/CategoryDetailPage";
 import { CategoryHistoryPage } from "./pages/CategoryHistoryPage";
 import { LogActivityPage } from "./pages/LogActivityPage";
 import { MissionsPage } from "./pages/MissionsPage";
-import { LogFab } from "./components/LogFab";
+import { LairPage } from "./pages/LairPage";
+import { BottomNav } from "./components/BottomNav";
 import { ScreenTransition } from "./components/ScreenTransition";
 import { UnlockScreen } from "./components/UnlockScreen";
 import { UpdateBanner } from "./components/UpdateBanner";
@@ -103,6 +104,7 @@ function App() {
                 />
                 <Route path="/log-activity" element={<LogActivityPage />} />
                 <Route path="/missions" element={<MissionsPage />} />
+                <Route path="/lair" element={<LairPage />} />
                 <Route
                   path="*"
                   element={
@@ -124,7 +126,7 @@ function App() {
           </ScreenTransition>
         </main>
 
-        <LogFab />
+        <BottomNav />
         {locked && <UnlockScreen />}
         <UpdateBanner />
       </div>

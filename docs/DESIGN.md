@@ -79,7 +79,18 @@ Llamadas, gestiones, recados: cosas que hay que hacer, no actividades que ya pas
 - La fecha límite se guarda como **día local** (`AAAA-MM-DD`), no como instante: "vence hoy" tiene que significar el hoy del usuario, y solo el navegador conoce su zona horaria
 - `activityId` no es clave foránea a propósito: Turso las aplica, y la actividad se puede seguir deshaciendo desde el historial de su categoría. Si ya no existe, desmarcar simplemente reabre
 - Las cumplidas se ven una semana (plegadas al fondo); después dejan de listarse
-- **Interfaz** (`MissionsPage`, `/missions`): se entra por la placa negra de arriba a la derecha de la home, con un rombo amarillo que cuenta lo que vence hoy o ya ha vencido. Grupos por urgencia: VENCIDAS (cinta roja), HOY (amarilla), PRÓXIMAS, SIN FECHA y HECHAS. El rombo de la izquierda cumple; el resto de la fila abre la hoja de edición. Al cumplir, un tachón rojo cruza el título, cae un sello «¡HECHA!» (con el impacto de XP si la hay) y la fila sale despedida a la derecha. Si el título empieza por «Llamar…», «Pagar…», «Comprar…», lleva un icono de teléfono, papeleo o bolsa: se lee del texto, no hay que clasificar nada
+- **Interfaz** (`MissionsPage`, `/missions`): se entra desde la izquierda de la barra inferior, con un rombo amarillo que cuenta lo que vence hoy o ya ha vencido. Grupos por urgencia: VENCIDAS (cinta roja), HOY (amarilla), PRÓXIMAS, SIN FECHA y HECHAS. El rombo de la izquierda cumple; el resto de la fila abre la hoja de edición. Al cumplir, un tachón rojo cruza el título, cae un sello «¡HECHA!» (con el impacto de XP si la hay) y la fila sale despedida a la derecha. Si el título empieza por «Llamar…», «Pagar…», «Comprar…», lleva un icono de teléfono, papeleo o bolsa: se lee del texto, no hay que clasificar nada
+
+## Guarida (ocio en curso)
+
+Los videojuegos, libros, series, películas, anime y manga/cómic que tienes entre manos. Es el escondite de los Phantom Thieves, y su cielo es el morado de Mente.
+
+- Cada obra tiene **tipo**, **título**, **estado** (en curso / en la recámara / terminado) y una línea de **progreso en texto libre** ("T2 · E5", "pág. 140"): cada tipo mide el avance a su manera, y un campo estructurado por tipo sería un formulario que nadie rellena
+- **XP: solo por sesiones.** El botón «He jugado / leído / visto hoy» de una obra en curso despliega las tres intensidades y registra una actividad en **Mente** (ocio consciente), con el título como descripción y en la misma transacción que apunta `lastSessionAt` en la obra. Tener cosas en la lista o terminarlas no da XP: cuenta el rato vivido con presencia, no el consumo. Deshacer la sesión es deshacer esa actividad, con la misma excepción de siempre
+- Las fechas siguen al estado en el servidor: empezar pone `startedAt` (la primera vez), terminar pone `finishedAt`, y sacar algo de terminados lo borra
+- Terminar pide una nota opcional de 1 a 5 rombos, cae un sello «¡COMPLETADO!» y la obra pasa a la **vitrina** (cuadrícula de trofeos)
+- Borrar una obra no toca las sesiones registradas: ocurrieron y su XP se queda en Mente
+- Los filtros por tipo solo aparecen cuando hay más de un tipo que distinguir
 
 ## Dirección visual (referencia definitiva: mockup HTML v3 de sesión previa)
 
@@ -130,4 +141,4 @@ Llamadas, gestiones, recados: cosas que hay que hacer, no actividades que ya pas
   - Home = lista vertical de las 5 categorías (color de acento, nombre diagonal grande, nivel + barra de XP visible)
   - Tap en categoría → header full-width de alto impacto + lista de Focos
   - **Gesto de los Focos, igual en la home y en el detalle** (`useQuickLog` + `QuickIntensities`): tocar un foco activo despliega las tres intensidades y registra en el sitio; tocar uno congelado engendra su hijo. Mantener pulsado, o el asa de tres rombos del borde derecho, abre la hoja de gestión (`FocusMenu`: renombrar, cerrar/reabrir, borrar). El asa existe porque la pulsación larga no se descubre mirando ni se alcanza con teclado
-  - FAB persistente para "Registrar actividad" visible en todas las pantallas
+  - **Barra flotante inferior** (`BottomNav`) en todas las pantallas: MISIONES a la izquierda, **REGISTRAR** en el centro (amarillo, más alto que la barra y latiendo: sigue siendo la acción principal) y GUARIDA a la derecha. La pantalla actual se marca con el icono en amarillo y la etiqueta sobre cinta roja. Sustituye al FAB de "Registrar actividad" y a la placa de misiones de la cabecera. Mientras hay un diálogo abierto se aparta: los diálogos viven dentro de `<main>`, cuyo `z-index` es su propio contexto de apilamiento

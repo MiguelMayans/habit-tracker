@@ -51,7 +51,7 @@ export function MissionRow({
   return (
     <li
       className={`mission-row relative ${
-        stamping ? "mission-leaving" : "anim-card"
+        stamping ? "fling-out" : "anim-card"
       } ${highlighted ? "anim-highlight" : ""}`}
       style={
         {
@@ -123,7 +123,7 @@ export function MissionRow({
         </div>
       </div>
 
-      {stamping && <span className="mission-stamp">¡HECHA!</span>}
+      {stamping && <span className="stamp-mark">¡HECHA!</span>}
 
       {gain !== null && (
         <span

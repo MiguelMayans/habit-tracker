@@ -309,3 +309,66 @@ export function reopenMission(id: number): Promise<{
 export function deleteMission(id: number): Promise<{ id: number }> {
   return request(`/missions/${id}`, { method: "DELETE" });
 }
+
+export type WorkKind = "game" | "book" | "series" | "movie" | "anime" | "comic";
+export type WorkStatus = "active" | "queued" | "done";
+
+/** Something in the Lair: in play, queued up or finished. */
+export type Work = {
+  id: number;
+  kind: WorkKind;
+  title: string;
+  status: WorkStatus;
+  /** Free text: "T2 · E5", "pág. 140", "final boss". */
+  progress: string | null;
+  /** 1..5, set when it is finished. */
+  rating: number | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  lastSessionAt: string | null;
+  createdAt: string;
+};
+
+export type WorkFields = {
+  kind?: WorkKind;
+  title?: string;
+  status?: WorkStatus;
+  progress?: string | null;
+  rating?: number | null;
+};
+
+export function getWorks(): Promise<Work[]> {
+  return request<Work[]>("/works");
+}
+
+export function createWork(
+  data: WorkFields & { kind: WorkKind; title: string },
+): Promise<Work> {
+  return request<Work>("/works", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+/** The dates follow the status on the server: only say what state it is in. */
+export function updateWork(id: number, changes: WorkFields): Promise<Work> {
+  return request<Work>(`/works/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(changes),
+  });
+}
+
+export function deleteWork(id: number): Promise<{ id: number }> {
+  return request(`/works/${id}`, { method: "DELETE" });
+}
+
+/** "Today I played / read / watched": an activity in Mente. */
+export function logWorkSession(
+  id: number,
+  intensity: Intensity,
+): Promise<{ work: Work; activity: RegisterActivityResult }> {
+  return request(`/works/${id}/session`, {
+    method: "POST",
+    body: JSON.stringify({ intensity }),
+  });
+}

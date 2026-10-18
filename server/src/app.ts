@@ -8,6 +8,7 @@ import { categoriesRouter } from "./routes/categories.js";
 import { focusesRouter } from "./routes/focuses.js";
 import { activitiesRouter } from "./routes/activities.js";
 import { missionsRouter } from "./routes/missions.js";
+import { worksRouter } from "./routes/works.js";
 
 /**
  * The Express app, not listening on any port.
@@ -34,3 +35,4 @@ app.use(categoriesRouter);
 app.use(focusesRouter);
 app.use(activitiesRouter);
 app.use(missionsRouter);
+app.use(worksRouter);

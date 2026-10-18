@@ -69,3 +69,32 @@ export const missions = sqliteTable("missions", {
     .notNull()
     .default(sql`(unixepoch())`),
 });
+
+/**
+ * The Lair (Guarida): the games, books, series, films, anime and comics in
+ * play, queued up or finished.
+ *
+ * - `kind` and `status` are stored in English: they are codes, not copy.
+ * - `progress` is free text ("T2 · E5", "pág. 140", "final boss"): every kind
+ *   measures progress differently, and a structured field per kind would be a
+ *   form nobody fills in.
+ * - A session on a work logs an activity in Mente (docs/DESIGN.md: Mente is
+ *   conscious leisure). `lastSessionAt` remembers the last one, for ordering
+ *   and the "last session" line; the XP lives in the activity, as always.
+ */
+export const works = sqliteTable("works", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  kind: text("kind", {
+    enum: ["game", "book", "series", "movie", "anime", "comic"],
+  }).notNull(),
+  title: text("title").notNull(),
+  status: text("status", { enum: ["active", "queued", "done"] }).notNull(),
+  progress: text("progress"),
+  rating: integer("rating"),
+  startedAt: integer("started_at", { mode: "timestamp" }),
+  finishedAt: integer("finished_at", { mode: "timestamp" }),
+  lastSessionAt: integer("last_session_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});

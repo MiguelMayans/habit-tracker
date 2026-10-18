@@ -19,7 +19,8 @@ export function QuickIntensities({
   onPick,
 }: {
   categoryId: number;
-  focusId: number;
+  /** Without one (a Lair session) there is no menu to go to. */
+  focusId?: number;
   busy: boolean;
   /** The chip itself goes along, so the hit can be drawn where it was. */
   onPick: (intensity: Intensity, chip: HTMLElement) => void;
@@ -52,12 +53,14 @@ export function QuickIntensities({
       {/* Closing a focus, renaming it and the date live in the menu, not here:
           from a list what you do is log, and an action that changes the focus
           itself should not sit a finger away from the intensities. */}
+      {focusId !== undefined && (
       <Link
         to={`/log-activity?category=${categoryId}&focus=${focusId}`}
         className="mt-2.5 inline-block text-[9px] font-bold tracking-[0.16em] text-bone/55 underline"
       >
         IR AL MENÚ
       </Link>
+      )}
     </div>
   );
 }

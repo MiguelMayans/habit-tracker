@@ -107,7 +107,7 @@ export function CategoryOptions({
           <button
             key={c.id}
             type="button"
-            className="mission-cat disabled:opacity-40"
+            className="icon-pick disabled:opacity-40"
             aria-pressed={value === c.id}
             aria-label={c.name}
             disabled={disabled}
