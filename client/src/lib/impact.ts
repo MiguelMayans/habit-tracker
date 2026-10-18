@@ -13,6 +13,8 @@
  *   (see App.tsx): the world reacts to what you just did.
  */
 
+import { playSound } from "./sound";
+
 const SPIKES = 12;
 
 function reducedMotion(): boolean {
@@ -40,6 +42,8 @@ export function impactOrigin(el: Element): {
 
 export function impactAt(origin: ReturnType<typeof impactOrigin>) {
   window.dispatchEvent(new CustomEvent("xp-impact"));
+  // Sound is not motion: it plays even with reduced motion on.
+  playSound("hit");
   if (reducedMotion()) return;
 
   const root = document.createElement("div");

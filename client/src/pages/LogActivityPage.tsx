@@ -11,6 +11,7 @@ import {
   type Intensity,
   type RegisterActivityResult,
 } from "../api/client";
+import { playSound } from "../lib/sound";
 import { categoryColorVar } from "../lib/categoryColor";
 import { categoryWordmark } from "../lib/categoryWordmark";
 import { useScreenReady } from "../lib/screenReady";
@@ -204,6 +205,9 @@ export function LogActivityPage() {
         date: date === "" ? undefined : new Date(date).toISOString(),
       });
 
+      // The full form has no tile to burst from: the modal is the hit, and
+      // this is its sound.
+      playSound("hit");
       setResult(res);
       setDescription("");
       setDate("");

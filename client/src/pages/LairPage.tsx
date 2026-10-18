@@ -17,6 +17,7 @@ import {
   type WorkKind,
 } from "../api/client";
 import { impactAt, impactOrigin } from "../lib/impact";
+import { playSound } from "../lib/sound";
 import { useLight } from "../lib/useLight";
 import { KIND_LABEL, WORK_KINDS } from "../lib/works";
 import {
@@ -216,6 +217,7 @@ export function LairPage() {
     setRowError(null);
     setSessionOpen(null);
     setFinishing(w.id);
+    playSound("stamp");
     const stamped = new Promise((r) =>
       window.setTimeout(r, reducedMotion() ? 0 : FINISH_MS),
     );

@@ -1119,6 +1119,34 @@ body:has([role="dialog"]) .bottom-nav {
   }
 }
 
+/* Sound on/off, top right of the home: a small black plaque, the logo's
+   corner kept clear. Off, it dims. */
+.sound-toggle {
+  position: absolute;
+  top: -26px;
+  right: -4px;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 32px;
+  background: var(--color-black);
+  color: var(--color-bone);
+  border: 2px solid var(--color-bone);
+  transform: rotate(4deg) skewX(-10deg);
+  box-shadow: 3px 3px 0 var(--color-cuerpo);
+}
+
+.sound-toggle > svg {
+  transform: skewX(10deg);
+}
+
+.sound-toggle[aria-pressed="false"] {
+  color: rgb(245 245 240 / 0.5);
+  border-color: rgb(245 245 240 / 0.5);
+  box-shadow: 3px 3px 0 var(--color-black);
+}
+
 /* An option chip (when, on the missions): a small toggle in the intensity
    chips' idiom. Pressed, it lifts onto a red shadow. */
 .option-chip {

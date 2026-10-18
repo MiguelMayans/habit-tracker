@@ -20,6 +20,7 @@ import {
   type MissionGroup,
 } from "../lib/missions";
 import { impactAt, impactOrigin } from "../lib/impact";
+import { playSound } from "../lib/sound";
 import { MissionRow } from "../components/MissionRow";
 import { MissionSheet } from "../components/MissionSheet";
 import { CategoryOptions, WhenPicker } from "../components/MissionOptions";
@@ -164,6 +165,7 @@ export function MissionsPage() {
 
     const origin = impactOrigin(el);
     setStamp(m.id, null);
+    playSound("stamp");
     const stamped = new Promise((r) =>
       window.setTimeout(r, reducedMotion() ? 0 : STAMP_MS),
     );

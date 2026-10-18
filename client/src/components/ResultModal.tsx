@@ -8,6 +8,7 @@ import { useCountUp } from "../lib/useCountUp";
 import { CategoryIcon } from "./CategoryIcon";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { LevelNumber } from "./LevelNumber";
+import { playSound } from "../lib/sound";
 
 /** Beats of the sequence, in ms from the moment the modal opens. */
 const T_START = 380;
@@ -61,6 +62,7 @@ export function ResultModal({
   const onHit = useCallback((title: string, level: number) => {
     if (bannerShown.current) return;
     bannerShown.current = true;
+    playSound("levelUp");
     setBanner({ title, level });
   }, []);
   const hideBanner = useCallback(() => setBanner(null), []);
