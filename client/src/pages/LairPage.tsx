@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useScreenReady } from "../lib/screenReady";
 import {
@@ -69,6 +69,51 @@ function SectionTape({
         {label} · {count}
       </span>
     </h2>
+  );
+}
+
+/**
+ * A section's works, grouped by kind — books with books, games with games —
+ * in the filter chips' order, each group under a small label. With a filter
+ * on there is only one kind, and the labels would only repeat it.
+ */
+function KindGroups({
+  works,
+  grouped,
+  listClassName,
+  render,
+}: {
+  works: Work[];
+  grouped: boolean;
+  listClassName: string;
+  /** `index` runs across the whole section, for the collage's tilts. */
+  render: (work: Work, index: number) => ReactNode;
+}) {
+  if (!grouped) {
+    return <ul className={listClassName}>{works.map(render)}</ul>;
+  }
+
+  let index = 0;
+  return (
+    <div className="grid gap-7">
+      {WORK_KINDS.map((kind) => {
+        const items = works.filter((w) => w.kind === kind);
+        if (items.length === 0) return null;
+        return (
+          <div key={kind}>
+            <h3 className="anim-row m-0 mb-3.5 flex">
+              <span className="on-scene inline-flex items-center gap-1.5 text-[10px] font-bold tracking-[0.18em] text-bone uppercase">
+                <WorkKindIcon kind={kind} className="h-3.5 w-3.5" />
+                {KIND_LABEL[kind].many} · {items.length}
+              </span>
+            </h3>
+            <ul className={listClassName}>
+              {items.map((w) => render(w, index++))}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -366,8 +411,11 @@ export function LairPage() {
             tape={MENTE}
             ink="var(--color-bone)"
           />
-          <ul className="m-0 grid list-none gap-6 p-0">
-            {active.map((w, i) => (
+          <KindGroups
+            works={active}
+            grouped={filter === null}
+            listClassName="m-0 grid list-none gap-6 p-0"
+            render={(w, i) => (
               <ActiveWorkCard
                 key={w.id}
                 work={w}
@@ -384,8 +432,8 @@ export function LairPage() {
                 onFinish={() => setToFinish(w)}
                 onOpen={() => openSheet(w)}
               />
-            ))}
-          </ul>
+            )}
+          />
         </section>
       )}
 
@@ -397,8 +445,11 @@ export function LairPage() {
             tape="var(--color-bone)"
             ink="var(--color-black)"
           />
-          <ul className="m-0 grid list-none gap-3.5 p-0">
-            {queued.map((w, i) => (
+          <KindGroups
+            works={queued}
+            grouped={filter === null}
+            listClassName="m-0 grid list-none gap-3.5 p-0"
+            render={(w, i) => (
               <QueuedWorkRow
                 key={w.id}
                 work={w}
@@ -407,8 +458,8 @@ export function LairPage() {
                 onStart={() => onStart(w)}
                 onOpen={() => openSheet(w)}
               />
-            ))}
-          </ul>
+            )}
+          />
         </section>
       )}
 
@@ -420,11 +471,17 @@ export function LairPage() {
             tape="var(--color-yellow)"
             ink="var(--color-black)"
           />
-          <ul className="m-0 grid list-none grid-cols-2 gap-4 p-0">
-            {done.map((w, i) => (
+          {/* The case stays one grid, newest first: grouped, each kind
+              with a single trophy left half a row empty, and every tile
+              already says its kind. */}
+          <KindGroups
+            works={done}
+            grouped={false}
+            listClassName="m-0 grid list-none grid-cols-2 gap-4 p-0"
+            render={(w, i) => (
               <TrophyTile key={w.id} work={w} index={i} onOpen={() => openSheet(w)} />
-            ))}
-          </ul>
+            )}
+          />
         </section>
       )}
 
