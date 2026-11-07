@@ -16,7 +16,7 @@ export function LevelNumber({
     return (
       <span className={`inline-grid justify-items-end ${className}`}>
         <span className="text-[12px] font-medium text-ink-soft">Nivel</span>
-        <b className="text-[34px] leading-none font-semibold">{value}</b>
+        <b className="display text-[40px] leading-none">{value}</b>
       </span>
     );
   }

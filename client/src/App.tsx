@@ -11,6 +11,7 @@ import { ScreenTransition } from "./components/ScreenTransition";
 import { UnlockScreen } from "./components/UnlockScreen";
 import { UpdateBanner } from "./components/UpdateBanner";
 import { LOCKED_EVENT } from "./lib/apiKey";
+import { daypart } from "./lib/daypart";
 
 function App() {
   // The server rejected the key (see lib/apiKey.ts): ask for it.
@@ -19,6 +20,18 @@ function App() {
     const lock = () => setLocked(true);
     window.addEventListener(LOCKED_EVENT, lock);
     return () => window.removeEventListener(LOCKED_EVENT, lock);
+  }, []);
+
+  // The light of the hour behind everything (see index.css). Checked again
+  // whenever the app comes back to the foreground: a PWA left open in the
+  // morning is still around at night.
+  useEffect(() => {
+    const set = () => {
+      document.documentElement.dataset.daypart = daypart();
+    };
+    set();
+    document.addEventListener("visibilitychange", set);
+    return () => document.removeEventListener("visibilitychange", set);
   }, []);
 
   return (
@@ -41,7 +54,7 @@ function App() {
                   path="*"
                   element={
                     <div className="px-5 pt-16 pb-32">
-                      <h1 className="m-0 text-[28px] font-semibold">
+                      <h1 className="display m-0 text-[34px]">
                         Aquí no hay nada
                       </h1>
                       <p className="mt-2 text-[15px] text-ink-soft">

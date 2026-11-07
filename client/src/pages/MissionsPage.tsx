@@ -260,7 +260,7 @@ export function MissionsPage() {
   return (
     <div className="px-5 pt-10 pb-32">
       <header className="settle mb-7">
-        <h1 className="m-0 text-[30px] leading-tight font-semibold">Misiones</h1>
+        <h1 className="display m-0 text-[34px] leading-tight">Misiones</h1>
         <p className="mt-1 mb-0 text-[14px] text-ink-soft">
           {pending.length === 0
             ? "Nada pendiente"

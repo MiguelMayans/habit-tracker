@@ -86,7 +86,7 @@ export function MissionRow({
       <button
         type="button"
         onClick={onOpen}
-        className="block min-w-0 flex-1 py-4 pr-5 text-left"
+        className="press-card block min-w-0 flex-1 py-4 pr-5 text-left"
       >
         <span
           className={`block text-[15px] leading-snug font-medium break-words transition-colors duration-200 ${

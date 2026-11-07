@@ -42,13 +42,13 @@ export function ActiveWorkCard({
 
   return (
     <li
-      className={`card ${finishing ? "leaving" : "settle"}`}
+      className={`card card-tinted ${finishing ? "leaving" : "settle"}`}
       style={{ "--delay": `${0.06 + index * 0.04}s` } as React.CSSProperties}
     >
       <button
         type="button"
         onClick={onOpen}
-        className="block w-full px-5 pt-5 pb-3 text-left"
+        className="press-card block w-full px-5 pt-5 pb-3 text-left"
         aria-label={`Editar ${w.title}`}
       >
         <h3 className="m-0 text-[17px] leading-snug font-semibold break-words">{w.title}</h3>
@@ -153,7 +153,7 @@ export function TrophyTile({
       <button
         type="button"
         onClick={onOpen}
-        className="card flex h-full w-full flex-col items-start gap-2 px-4 pt-4 pb-4 text-left"
+        className="card press flex h-full w-full flex-col items-start gap-2 px-4 pt-4 pb-4 text-left"
       >
         <span className="flex items-center gap-1.5 text-[12px] text-ink-soft">
           <WorkKindIcon kind={w.kind} className="h-3.5 w-3.5" />

@@ -56,7 +56,7 @@ function CategoryPick({
       role="radio"
       aria-checked={selected}
       onClick={onPick}
-      className={`flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition-colors ${
+      className={`press flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition-colors ${
         selected ? "border-transparent text-paper" : "border-line bg-paper"
       }`}
       style={
@@ -247,7 +247,7 @@ export function LogActivityPage() {
     <div className="px-5 pt-6 pb-32">
       <BackLink />
 
-      <h1 className="settle mt-6 mb-8 text-[30px] leading-tight font-semibold">
+      <h1 className="display settle mt-6 mb-8 text-[34px] leading-tight">
         Registrar
       </h1>
 

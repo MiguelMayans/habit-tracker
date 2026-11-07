@@ -78,12 +78,12 @@ export function CategoryCard({
 
   return (
     <li
-      className="card settle"
+      className="card card-tinted settle"
       style={
         { "--accent": accent, "--delay": `${0.05 + i * 0.04}s` } as React.CSSProperties
       }
     >
-      <Link to={`/categories/${c.id}`} className="block px-5 pt-5 pb-4">
+      <Link to={`/categories/${c.id}`} className="press-card block px-5 pt-5 pb-4">
         <div className="flex items-center gap-3.5">
           <span className="icon-disc h-11 w-11">
             <CategoryIcon slug={c.slug} strokeWidth={1.8} className="h-[22px] w-[22px]" />

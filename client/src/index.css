@@ -40,19 +40,74 @@
   --color-warn: #b5573c;
 
   --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  /* For the few words that set the tone — the greeting, screen titles, the
+     day's figure: a soft serif, so the app has a voice and not only a grid. */
+  --font-serif: "Fraunces", ui-serif, Georgia, serif;
 }
 
 html {
   background: var(--color-sand);
+  /* Reserve the scrollbar's room even on short screens: otherwise, on a
+     desktop, the page narrows when it appears and everything centred —
+     the bottom bar included — jumps sideways between screens. */
+  scrollbar-gutter: stable;
+
+  /* The light of the hour (data-daypart, set in App.tsx): warm peach in
+     the morning, honey in the afternoon, lavender at dusk, a cool grey at
+     night. Only ever a tint on the sand. */
+  --glow: #f4d8bd;
+  --glow-2: #dfe6d6;
 }
 
+html[data-daypart="afternoon"] {
+  --glow: #f2dfae;
+  --glow-2: #e6d9c8;
+}
+
+html[data-daypart="evening"] {
+  --glow: #e7d5e2;
+  --glow-2: #ead8c6;
+}
+
+html[data-daypart="night"] {
+  --glow: #d9dce6;
+  --glow-2: #e3dbe3;
+}
+
+/* No background on body: the sand lives on html, so the light below
+   (a negative z-index layer) is painted over it rather than under it. */
 body {
-  background: var(--color-sand);
   color: var(--color-ink);
   font-family: var(--font-sans);
   font-feature-settings: "tnum" 1;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Two soft pools of light behind everything, fixed so they stay put while
+   the content scrolls over them. Flat sand alone read as a blank page. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 45% at 85% -5%, var(--glow), transparent 70%),
+    radial-gradient(55% 40% at -10% 105%, var(--glow-2), transparent 70%);
+  transition: background 1s ease;
+}
+
+#root {
+  isolation: isolate;
+}
+
+/* Titles in the serif: soft, a touch tight, never bold. */
+.display {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-variation-settings: "SOFT" 100;
+  letter-spacing: -0.015em;
 }
 
 /* The pieces live in the components layer, so a Tailwind utility on the
@@ -66,7 +121,40 @@ body {
     background: var(--color-paper);
     border: 1px solid var(--color-line);
     border-radius: 20px;
-    box-shadow: 0 1px 2px rgb(46 42 37 / 0.03);
+    box-shadow:
+      0 1px 2px rgb(46 42 37 / 0.04),
+      0 10px 28px -16px rgb(46 42 37 / 0.14);
+  }
+
+  /* A card whose main target is being pressed gives a little as a whole
+     (mark that target with .press-card). */
+  .card {
+    transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .card:has(.press-card:active) {
+    transform: scale(0.985);
+  }
+
+  /* A card that belongs to something with a colour catches a little of it,
+     like light in a corner. */
+  .card-tinted {
+    background:
+      radial-gradient(
+        120% 90% at 100% 0%,
+        color-mix(in oklab, var(--accent) 11%, transparent),
+        transparent 55%
+      ),
+      var(--color-paper);
+  }
+
+  /* Something that can be tapped gives a little under the finger. */
+  .press {
+    transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .press:active {
+    transform: scale(0.985);
   }
 
   /* A tinted circle holding an icon, in the colour passed as --accent. */
@@ -75,7 +163,11 @@ body {
     flex-shrink: 0;
     place-items: center;
     border-radius: 999px;
-    background: color-mix(in oklab, var(--accent, var(--color-ink)) 13%, var(--color-paper));
+    background: linear-gradient(
+      150deg,
+      color-mix(in oklab, var(--accent, var(--color-ink)) 8%, var(--color-paper)),
+      color-mix(in oklab, var(--accent, var(--color-ink)) 20%, var(--color-paper))
+    );
     color: var(--accent, var(--color-ink));
   }
 
@@ -249,7 +341,11 @@ body {
     display: block;
     height: 100%;
     border-radius: 999px;
-    background: var(--accent, var(--color-ink));
+    background: linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--accent, var(--color-ink)) 65%, var(--color-paper)),
+      var(--accent, var(--color-ink))
+    );
     transition: width 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
@@ -273,7 +369,7 @@ body {
 
   .bottom-nav {
     position: fixed;
-    bottom: 14px;
+    bottom: max(14px, env(safe-area-inset-bottom));
     left: 50%;
     z-index: 40;
     display: grid;
@@ -284,9 +380,12 @@ body {
     translate: -50% 0;
     border-radius: 999px;
     border: 1px solid var(--color-line);
-    background: rgb(251 248 242 / 0.92);
-    backdrop-filter: blur(12px);
-    box-shadow: 0 6px 24px rgb(46 42 37 / 0.08);
+    background: rgb(251 248 242 / 0.62);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    backdrop-filter: blur(18px) saturate(1.4);
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.6) inset,
+      0 10px 30px -10px rgb(46 42 37 / 0.18);
   }
 
   /* Dialogs live inside <main>, whose stacking context caps their z-index:
@@ -465,6 +564,27 @@ body {
 
   .highlight {
     animation: highlight 1.6s ease-out;
+  }
+
+  /* Horizontal rows that scroll (filters): swipeable, no visible bar. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* The greeting's sun turns into place once, on arrival. */
+  @keyframes sun-in {
+    from {
+      opacity: 0;
+      transform: rotate(-60deg) scale(0.6);
+    }
+  }
+
+  .sun-in {
+    animation: sun-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
   }
 
   /* Press-and-hold targets: no text selection or magnifier while holding. */

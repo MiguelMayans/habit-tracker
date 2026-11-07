@@ -76,13 +76,13 @@ export function RhythmStrip({
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="eyebrow m-0">Hoy</p>
-          <p className="mt-1 mb-0 text-[24px] leading-tight font-semibold">
+          <p className="display mt-1 mb-0 text-[30px] leading-tight">
             {todayXp > 0 ? `+${todayXp} XP` : "Aún nada"}
           </p>
         </div>
         {streak > 0 && (
           <p className="m-0 text-right text-[13px] text-ink-soft">
-            <b className="block text-[24px] leading-tight font-semibold text-ink">
+            <b className="display block text-[30px] leading-tight font-medium text-ink">
               {streak}
             </b>
             {streak === 1 ? "día seguido" : "días seguidos"}

@@ -126,7 +126,7 @@ export function CategoryHistoryPage() {
     >
       <BackLink to={`/categories/${categoryId}`} label={category.name} />
 
-      <h1 className="settle mt-6 mb-1 text-[30px] leading-tight font-semibold">
+      <h1 className="display settle mt-6 mb-1 text-[34px] leading-tight">
         Historial
       </h1>
       <p className="settle mt-0 mb-8 text-[14px] text-ink-soft">

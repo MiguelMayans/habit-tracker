@@ -276,7 +276,7 @@ export function LairPage() {
     >
       <header className="settle mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="m-0 text-[30px] leading-tight font-semibold">Guarida</h1>
+          <h1 className="display m-0 text-[34px] leading-tight">Guarida</h1>
           <p className="mt-1 mb-0 text-[14px] text-ink-soft">
             Lo que juegas, lees y ves. Cada sesión suma en Mente.
           </p>
@@ -304,7 +304,7 @@ export function LairPage() {
       {/* Filtering by kind only once there is more than one to tell apart:
           with a single kind, a row of chips would filter nothing. */}
       {kindsInUse.size > 1 && (
-        <div className="settle -mx-5 mb-8 flex gap-2 overflow-x-auto px-5 pb-1">
+        <div className="no-scrollbar settle -mx-5 mb-8 flex gap-2 overflow-x-auto px-5">
           <button
             type="button"
             className="chip shrink-0"

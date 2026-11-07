@@ -80,7 +80,7 @@ function FocusTile({
       <div className="flex items-start">
         <button
           type="button"
-          className="long-pressable block min-w-0 flex-1 py-4 pl-5 text-left"
+          className="press-card long-pressable block min-w-0 flex-1 py-4 pl-5 text-left"
           aria-expanded={f.frozen ? undefined : expanded}
           {...press}
           onClick={(e) => {
@@ -440,7 +440,7 @@ export function CategoryDetailPage() {
           <span className="icon-disc h-14 w-14">
             <CategoryIcon slug={category.slug} strokeWidth={1.7} className="h-7 w-7" />
           </span>
-          <h1 className="m-0 flex-1 text-[30px] leading-tight font-semibold">
+          <h1 className="display m-0 flex-1 text-[34px] leading-tight">
             {category.name}
           </h1>
           <LevelNumber value={category.level} size="lg" />

@@ -79,14 +79,6 @@ export function longDate(d: Date): string {
   return `${WEEKDAYS[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()].toLowerCase()}`;
 }
 
-/** A greeting for the time of day. */
-export function greeting(d: Date): string {
-  const h = d.getHours();
-  if (h >= 6 && h < 13) return "Buenos días";
-  if (h >= 13 && h < 21) return "Buenas tardes";
-  return "Buenas noches";
-}
-
 /**
  * For lists: recent entries read as relative time, which is how you remember
  * them, and past a week they switch to a date, which is the point where

@@ -5,13 +5,15 @@ import {
   type Category,
   type RecentActivity,
 } from "../api/client";
-import { calculateStreak, greeting, isToday, longDate } from "../lib/dates";
+import { calculateStreak, isToday, longDate } from "../lib/dates";
+import { greeting } from "../lib/daypart";
 import { XP_BY_INTENSITY } from "../lib/intensity";
 import { CategoryCard } from "../components/CategoryCard";
 import { RhythmStrip } from "../components/RhythmStrip";
 import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
 import { SoundToggle } from "../components/SoundToggle";
+import { DaypartMark } from "../components/DaypartMark";
 
 // Enough for a streak of months: a streak breaks the moment a day is missing,
 // so fetching more would only serve unrealistically long ones.
@@ -70,14 +72,17 @@ export function CategoriesPage() {
 
   return (
     <div className="px-5 pt-10 pb-32">
-      <header className="settle mb-7 flex items-start justify-between gap-4">
-        <div>
+      <header className="settle mb-7">
+        <div className="flex items-center justify-between gap-4">
           <p className="eyebrow m-0">{longDate(now)}</p>
-          <h1 className="mt-1.5 mb-0 text-[30px] leading-tight font-semibold">
-            {greeting(now)}
-          </h1>
+          <SoundToggle />
         </div>
-        <SoundToggle />
+        {/* A line said to you, not a dashboard title — the way Claude greets
+            you on its home. */}
+        <h1 className="display mt-3 mb-0 flex items-start gap-3 text-[34px] leading-[1.1]">
+          <DaypartMark className="mt-1 h-8 w-8" />
+          <span>{greeting(now)}</span>
+        </h1>
       </header>
 
       <RhythmStrip activities={recent} streak={streak} todayXp={todayXp} />

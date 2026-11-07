@@ -44,7 +44,7 @@ export function DialogFrame({
       <div className="sheet-in relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-[28px] bg-paper px-6 pt-3 pb-8 shadow-[0_-8px_40px_rgb(46_42_37/0.12)] sm:rounded-[28px] sm:pt-6">
         {/* The grab handle: says "this is a sheet" without words. */}
         <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-line sm:hidden" />
-        <h2 id={titleId} className="m-0 mb-5 text-[20px] font-semibold">
+        <h2 id={titleId} className="display m-0 mb-5 text-[24px] leading-tight">
           {title}
         </h2>
         {children}

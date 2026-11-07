@@ -40,7 +40,7 @@ export function UnlockScreen() {
     >
       <form onSubmit={onSubmit} className="settle w-full max-w-sm">
         <p className="eyebrow m-0">Mike&apos;s Life</p>
-        <h1 id="unlock-title" className="mt-2 mb-0 text-[28px] font-semibold">
+        <h1 id="unlock-title" className="display mt-2 mb-0 text-[34px]">
           Clave de acceso
         </h1>
         <p className="mt-2 mb-6 text-[15px] leading-relaxed text-ink-soft">
