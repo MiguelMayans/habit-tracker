@@ -44,7 +44,7 @@ export function WorkSheet({
   return (
     <DialogFrame
       titleId="work-sheet-title"
-      title={work ? "Editar" : "Añadir a la guarida"}
+      title={work ? "Editar" : "Añadir al refugio"}
       onCancel={onCancel}
     >
       <form

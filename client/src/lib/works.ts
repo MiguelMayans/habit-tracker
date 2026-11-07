@@ -5,6 +5,20 @@ export const WORK_KINDS: WorkKind[] = [
   "game", "book", "series", "movie", "anime", "comic",
 ];
 
+/**
+ * Each kind's colour in the Refuge, drawn from the same earthy family as the
+ * categories (plus a slate blue for games, the one hue the categories lack),
+ * so a shelf of mixed things reads at a glance.
+ */
+export const KIND_COLOR: Record<WorkKind, string> = {
+  game: "#5b82ad",
+  book: "var(--color-disciplina)",
+  series: "var(--color-corazon)",
+  movie: "var(--color-cuerpo)",
+  anime: "var(--color-mente)",
+  comic: "var(--color-ingenio)",
+};
+
 /** How each kind is named on screen: singular for a work, plural for a filter. */
 export const KIND_LABEL: Record<WorkKind, { one: string; many: string }> = {
   game: { one: "Videojuego", many: "Juegos" },

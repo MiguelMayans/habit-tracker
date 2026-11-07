@@ -78,31 +78,36 @@ export function CategoryCard({
 
   return (
     <li
-      className="card card-tinted settle"
+      className="card-color settle"
       style={
-        { "--accent": accent, "--delay": `${0.05 + i * 0.04}s` } as React.CSSProperties
+        { "--accent": accent, "--delay": `${0.05 + i * 0.05}s` } as React.CSSProperties
       }
     >
-      <Link to={`/categories/${c.id}`} className="press-card block px-5 pt-5 pb-4">
-        <div className="flex items-center gap-3.5">
-          <span className="icon-disc h-11 w-11">
-            <CategoryIcon slug={c.slug} strokeWidth={1.8} className="h-[22px] w-[22px]" />
+      <CategoryIcon slug={c.slug} strokeWidth={1.4} className="watermark" />
+
+      <Link to={`/categories/${c.id}`} className="press-card relative block px-5 pt-5 pb-4">
+        <div className="flex items-start gap-3.5">
+          <span className="icon-solid mt-0.5 h-11 w-11">
+            <CategoryIcon slug={c.slug} strokeWidth={1.9} className="h-[22px] w-[22px]" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="m-0 text-[17px] leading-tight font-semibold">{c.name}</h2>
+            <h2 className="display m-0 text-[24px] leading-tight">{c.name}</h2>
             <p
-              className={`mt-0.5 mb-0 text-[13px] ${last.cold ? "text-warn" : "text-ink-soft"}`}
+              className={`mt-0.5 mb-0 text-[13px] ${last.cold ? "font-medium text-warn" : "text-ink-soft"}`}
             >
               {last.text}
             </p>
           </div>
-          <LevelNumber value={c.level} />
+          <span className="grid justify-items-end">
+            <span className="text-[11px] font-medium tracking-wide text-ink-soft">Nivel</span>
+            <b className="level-big text-[40px]">{c.level}</b>
+          </span>
         </div>
 
-        <div className="progress mt-4">
+        <div className="progress mt-4 h-2">
           <i style={{ width: `${Math.round(c.progress * 100)}%` }} />
         </div>
-        <p className="mt-2 mb-0 text-[12px] text-ink-faint">
+        <p className="mt-2 mb-0 text-[12px] text-ink-soft">
           {c.atMaxLevel
             ? "Nivel máximo"
             : `${c.xpToNextLevel} XP para el nivel ${c.level + 1}`}
@@ -112,7 +117,7 @@ export function CategoryCard({
       {c.focusCount === 0 ? (
         <Link
           to={`/categories/${c.id}?new=focus`}
-          className="flex items-center gap-1.5 border-t border-line px-5 py-3.5 text-[14px] font-medium text-ink-soft"
+          className="relative flex items-center gap-1.5 border-t border-ink/8 px-5 py-3.5 text-[14px] font-medium text-ink-soft"
         >
           <span className="text-[17px] leading-none">+</span> Añadir un foco
         </Link>
@@ -122,7 +127,7 @@ export function CategoryCard({
           onClick={onToggle}
           aria-expanded={isOpen}
           aria-controls={panelId}
-          className="flex w-full items-center gap-2 border-t border-line px-5 py-3.5 text-left text-[14px] font-medium text-ink-soft"
+          className="relative flex w-full items-center gap-2 border-t border-ink/8 px-5 py-3.5 text-left text-[14px] font-medium text-ink-soft"
         >
           {c.focusCount} {c.focusCount === 1 ? "foco" : "focos"}
           <svg
@@ -141,7 +146,7 @@ export function CategoryCard({
       )}
 
       {isOpen && (
-        <div id={panelId} className="px-5 pb-5">
+        <div id={panelId} className="relative px-5 pb-5">
           {loadingFocuses && (
             <div className="grid gap-3 pt-1" aria-label="Cargando focos">
               <div className="skeleton h-10 rounded-xl" />

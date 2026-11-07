@@ -71,3 +71,4 @@ docs/DESIGN.md.
 - [x] Rediseño «calma»: arena y crema, tinta cálida, una sola tipografía
   (Figtree), acentos terrosos, movimiento suave y sonido apagado por defecto.
   Mismas pantallas, mismas reglas. Ver «Dirección visual» en docs/DESIGN.md.
+- [x] Segunda vuelta: tarjetas de color con marca de agua, tarjeta «Hoy» oscura, serif, luz de la hora, confeti al subir de nivel. «Guarida» pasa a «Refugio».

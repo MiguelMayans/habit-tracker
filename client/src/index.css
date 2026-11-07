@@ -29,11 +29,11 @@
   /* Category accents — muted, earthy. The slugs are database values, so
      these names stay in Spanish. Used as dots, icons and thin bars, never as
      large fills: text always stays in ink. */
-  --color-cuerpo: #b86b4f;
-  --color-mente: #7d74ae;
-  --color-corazon: #b9737e;
-  --color-disciplina: #b08637;
-  --color-ingenio: #5e8f76;
+  --color-cuerpo: #c4664a;
+  --color-mente: #7a6fc0;
+  --color-corazon: #c76b7e;
+  --color-disciplina: #c08a2e;
+  --color-ingenio: #4f9677;
 
   /* For what needs a warning (overdue, errors), without alarm: the same
      terracotta as Cuerpo, which is the warmest thing in the palette. */
@@ -93,9 +93,21 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(60% 45% at 85% -5%, var(--glow), transparent 70%),
-    radial-gradient(55% 40% at -10% 105%, var(--glow-2), transparent 70%);
+    radial-gradient(75% 50% at 90% -8%, var(--glow), transparent 72%),
+    radial-gradient(65% 45% at -15% 108%, var(--glow-2), transparent 72%);
   transition: background 1s ease;
+}
+
+/* Paper grain: a still print texture over the light, so the flat colours
+   read as ink on paper rather than pixels. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.16 0 0 0 0 0.14 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.09;
 }
 
 #root {
@@ -409,6 +421,7 @@ body::before {
 
   .nav-tab[aria-current="page"] {
     color: var(--color-ink);
+    background: rgb(46 42 37 / 0.06);
   }
 
   .nav-log {
@@ -476,15 +489,16 @@ body::before {
 
   /* Things settle in: a fade and a few pixels of travel. Lists stagger by
      passing --delay. */
-  @keyframes settle {
+  /* With a little spring: things land, they do not just appear. */
+  @keyframes settle-spring {
     from {
       opacity: 0;
-      transform: translateY(6px);
+      transform: translateY(14px) scale(0.98);
     }
   }
 
   .settle {
-    animation: settle 0.35s calc(var(--delay, 0s)) cubic-bezier(0.2, 0.7, 0.2, 1)
+    animation: settle-spring 0.55s calc(var(--delay, 0s)) cubic-bezier(0.34, 1.4, 0.64, 1)
       backwards;
   }
 
@@ -520,26 +534,6 @@ body::before {
 
   .sheet-in {
     animation: sheet-in 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-
-  /* XP just earned: appears, holds, gone. */
-  @keyframes gain {
-    0% {
-      opacity: 0;
-      transform: translateY(4px);
-    }
-    15%,
-    80% {
-      opacity: 1;
-      transform: none;
-    }
-    100% {
-      opacity: 0;
-    }
-  }
-
-  .gain {
-    animation: gain 1.8s ease-out forwards;
   }
 
   /* A done item leaving the list: it fades and folds away. */
@@ -585,6 +579,160 @@ body::before {
 
   .sun-in {
     animation: sun-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  }
+
+  /* ---- Colour cards ---- */
+
+  /* A whole card in its category's colour, pastel: the Persona idea of a
+     card that IS its colour, at a fraction of the volume. Text stays ink. */
+  .card-color {
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+    background: color-mix(in oklab, var(--accent) 17%, var(--color-paper));
+    box-shadow:
+      0 1px 2px rgb(46 42 37 / 0.05),
+      0 14px 30px -18px color-mix(in oklab, var(--accent) 60%, transparent);
+    transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .card-color:has(.press-card:active) {
+    transform: scale(0.985);
+  }
+
+  /* On a colour card, the bar's track is the colour a step deeper. */
+  .card-color .progress {
+    background: color-mix(in oklab, var(--accent) 18%, var(--color-paper));
+  }
+
+  /* The category's icon, huge, tilted and faint, bleeding off the corner —
+     the watermark the Persona cards had, in a whisper. */
+  .watermark {
+    position: absolute;
+    right: -18px;
+    bottom: -26px;
+    width: 140px;
+    height: 140px;
+    color: var(--accent);
+    opacity: 0.13;
+    transform: rotate(-14deg);
+    pointer-events: none;
+  }
+
+  /* The solid badge: icon in paper on its colour. */
+  .icon-solid {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--color-paper);
+    box-shadow: 0 6px 14px -6px var(--accent);
+  }
+
+  /* A level as a big serif figure in its colour, deepened to read on the
+     pastel. */
+  .level-big {
+    font-family: var(--font-serif);
+    font-variation-settings: "SOFT" 100;
+    font-weight: 500;
+    line-height: 0.9;
+    color: color-mix(in oklab, var(--accent) 75%, var(--color-ink));
+  }
+
+  /* The ink card: the one dark surface, the anchor of the home. */
+  .card-ink {
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    box-shadow: 0 18px 36px -20px rgb(46 42 37 / 0.6);
+  }
+
+  /* Bars fill from empty when they arrive. */
+  @keyframes grow {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  .progress > i {
+    transform-origin: left center;
+    animation: grow 0.9s calc(var(--delay, 0s) + 0.15s) cubic-bezier(0.2, 0.8, 0.2, 1)
+      backwards;
+  }
+
+  /* XP just earned floats up and away. */
+  @keyframes float-up {
+    0% {
+      opacity: 0;
+      transform: translateY(6px) scale(0.9);
+    }
+    20% {
+      opacity: 1;
+      transform: translateY(0) scale(1.05);
+    }
+    75% {
+      opacity: 1;
+      transform: translateY(-6px);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-14px);
+    }
+  }
+
+  .gain {
+    display: inline-block;
+    animation: float-up 1.8s ease-out forwards;
+  }
+
+  /* A tick that pops when it lands. */
+  @keyframes pop {
+    0% {
+      transform: scale(0.6);
+    }
+    60% {
+      transform: scale(1.18);
+    }
+  }
+
+  .pop {
+    animation: pop 0.38s cubic-bezier(0.34, 1.5, 0.64, 1);
+  }
+
+  /* Confetti for a level up: a few soft dots that drift out and fade —
+     a celebration you notice, not one that shouts. */
+  .confetti {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    pointer-events: none;
+  }
+
+  .confetti > i {
+    position: absolute;
+    width: var(--s, 8px);
+    height: var(--s, 8px);
+    border-radius: 999px;
+    background: var(--c);
+    opacity: 0;
+    animation: confetti 1.6s var(--d, 0s) cubic-bezier(0.15, 0.7, 0.3, 1) forwards;
+  }
+
+  @keyframes confetti {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) scale(0.4);
+    }
+    15% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--x), var(--y)) scale(1);
+    }
   }
 
   /* Press-and-hold targets: no text selection or magnifier while holding. */

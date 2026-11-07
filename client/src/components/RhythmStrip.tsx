@@ -8,15 +8,15 @@ const DAYS = 30;
 /**
  * How filled a day's dot is, from the XP earned in it. The thresholds come
  * from what the intensities cost (10 / 20 / 35): under 20 is a single
- * gesture, 70 or more is a full day. Ink at growing strength, never a bright
- * colour: this is a glance at your rhythm, not a scoreboard.
+ * gesture, 70 or more is a full day. Honey at growing strength on the dark
+ * card, like lamps lit along a street.
  */
 function fill(xp: number): string {
-  if (xp === 0) return "var(--color-mist)";
-  if (xp < 20) return "rgb(46 42 37 / 0.22)";
-  if (xp < 40) return "rgb(46 42 37 / 0.42)";
-  if (xp < 70) return "rgb(46 42 37 / 0.65)";
-  return "var(--color-ink)";
+  if (xp === 0) return "rgb(251 248 242 / 0.12)";
+  if (xp < 20) return "rgb(242 200 120 / 0.4)";
+  if (xp < 40) return "rgb(242 200 120 / 0.62)";
+  if (xp < 70) return "rgb(242 200 120 / 0.85)";
+  return "#f6cf86";
 }
 
 /**
@@ -72,32 +72,51 @@ export function RhythmStrip({
     : "Últimos 30 días";
 
   return (
-    <section className="card settle mb-8 px-5 py-5">
-      <div className="flex items-end justify-between gap-4">
+    <section className="card-ink settle mb-8 px-5 py-5">
+      {/* The light of the hour, caught in the dark card's corner. */}
+      <div
+        className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full opacity-30 blur-2xl"
+        style={{ background: "var(--glow)" }}
+        aria-hidden="true"
+      />
+
+      <div className="relative flex items-end justify-between gap-4">
         <div>
-          <p className="eyebrow m-0">Hoy</p>
-          <p className="display mt-1 mb-0 text-[30px] leading-tight">
+          <p className="m-0 text-[12px] font-semibold tracking-wide text-paper/60">Hoy</p>
+          <p className="display mt-1 mb-0 text-[36px] leading-none">
             {todayXp > 0 ? `+${todayXp} XP` : "Aún nada"}
           </p>
         </div>
         {streak > 0 && (
-          <p className="m-0 text-right text-[13px] text-ink-soft">
-            <b className="display block text-[30px] leading-tight font-medium text-ink">
-              {streak}
-            </b>
-            {streak === 1 ? "día seguido" : "días seguidos"}
-          </p>
+          <div className="text-right">
+            <p className="m-0 flex items-center justify-end gap-1.5">
+              <svg viewBox="0 0 24 24" className="h-5 w-5 text-[#f6cf86]" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M12.6 2.5c.4 3-1.6 4.6-3 6.3C8 10.6 7 12.2 7 14.6A5 5 0 0 0 12 19.5a5 5 0 0 0 5-5c0-2.2-1-3.6-1.8-4.6-.3 1.3-1 2.1-1.9 2.4.6-3.6-.2-6.6-.7-9.8Z"
+                />
+              </svg>
+              <b className="display text-[36px] leading-none font-medium">{streak}</b>
+            </p>
+            <p className="mt-1 mb-0 text-[12px] text-paper/60">
+              {streak === 1 ? "día seguido" : "días seguidos"}
+            </p>
+          </div>
         )}
       </div>
 
-      <p aria-live="polite" className="mt-5 mb-2.5 text-[12px] text-ink-soft">
+      <p aria-live="polite" className="relative mt-6 mb-2.5 text-[12px] text-paper/60">
         {caption}
       </p>
-      <ul className="m-0 flex list-none gap-[3px] p-0">
-        {days.map((d) => {
+      <ul className="relative m-0 flex list-none gap-[3px] p-0">
+        {days.map((d, i) => {
           const label = `${shortRelativeDate(d.date.toISOString())}: ${d.xp} XP`;
           return (
-            <li key={d.key} className="flex-1">
+            <li
+              key={d.key}
+              className="settle flex-1"
+              style={{ "--delay": `${0.2 + i * 0.015}s` } as React.CSSProperties}
+            >
               <button
                 type="button"
                 title={label}
@@ -111,9 +130,9 @@ export function RhythmStrip({
                   // still change. The inspected day gets a stronger ring.
                   boxShadow:
                     d.key === selected
-                      ? "0 0 0 2px var(--color-paper), 0 0 0 3.5px var(--color-ink)"
+                      ? "0 0 0 2px var(--color-ink), 0 0 0 3.5px var(--color-paper)"
                       : d.isToday
-                        ? "inset 0 0 0 1.5px var(--color-ink-faint)"
+                        ? "inset 0 0 0 1.5px rgb(251 248 242 / 0.7)"
                         : undefined,
                 }}
               />

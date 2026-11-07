@@ -75,7 +75,7 @@ export function BottomNav() {
 
       <Link to="/lair" className="nav-tab" aria-current={current("/lair")}>
         <LairGlyph className="h-[22px] w-[22px]" />
-        Guarida
+        Refugio
       </Link>
     </nav>
   );

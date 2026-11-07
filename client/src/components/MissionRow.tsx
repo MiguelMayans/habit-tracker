@@ -46,10 +46,15 @@ export function MissionRow({
 
   return (
     <li
-      className={`card flex items-start ${completing ? "leaving" : "settle"} ${
-        highlighted ? "highlight" : ""
-      }`}
-      style={{ "--delay": `${0.04 + index * 0.03}s` } as React.CSSProperties}
+      className={`card flex items-start ${accent ? "card-tinted" : ""} ${
+        completing ? "leaving" : "settle"
+      } ${highlighted ? "highlight" : ""}`}
+      style={
+        {
+          "--delay": `${0.04 + index * 0.03}s`,
+          "--accent": accent ?? undefined,
+        } as React.CSSProperties
+      }
     >
       <button
         type="button"
@@ -64,7 +69,7 @@ export function MissionRow({
         <span
           className={`grid h-6 w-6 place-items-center rounded-full border-[1.5px] transition-colors duration-200 ${
             checked ? "border-ink bg-ink text-paper" : "border-ink-faint"
-          }`}
+          } ${completing ? "pop" : ""}`}
         >
           {checked && (
             <svg

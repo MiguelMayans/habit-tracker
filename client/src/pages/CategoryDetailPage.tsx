@@ -74,7 +74,7 @@ function FocusTile({
 
   return (
     <li
-      className={`card settle ${highlighted ? "highlight" : ""} ${parent ? "ml-6" : ""}`}
+      className={`card card-tinted settle ${highlighted ? "highlight" : ""} ${parent ? "ml-6" : ""}`}
       style={{ "--delay": `${0.08 + index * 0.04}s` } as React.CSSProperties}
     >
       <div className="flex items-start">
@@ -435,21 +435,26 @@ export function CategoryDetailPage() {
     >
       <BackLink />
 
-      <header className="settle mt-6 mb-8">
-        <div className="flex items-center gap-4">
-          <span className="icon-disc h-14 w-14">
-            <CategoryIcon slug={category.slug} strokeWidth={1.7} className="h-7 w-7" />
+      <header className="card-color settle mt-5 mb-9 px-5 pt-6 pb-5">
+        <CategoryIcon slug={category.slug} strokeWidth={1.4} className="watermark !h-[190px] !w-[190px]" />
+
+        <div className="relative flex items-start gap-4">
+          <span className="icon-solid h-14 w-14">
+            <CategoryIcon slug={category.slug} strokeWidth={1.8} className="h-7 w-7" />
           </span>
-          <h1 className="display m-0 flex-1 text-[34px] leading-tight">
+          <h1 className="display m-0 mt-1.5 flex-1 text-[36px] leading-none">
             {category.name}
           </h1>
-          <LevelNumber value={category.level} size="lg" />
+          <span className="grid justify-items-end">
+            <span className="text-[11px] font-medium tracking-wide text-ink-soft">Nivel</span>
+            <b className="level-big text-[52px]">{category.level}</b>
+          </span>
         </div>
 
-        <div className="progress mt-6">
+        <div className="progress relative mt-6 h-2.5">
           <i style={{ width: `${Math.round(category.progress * 100)}%` }} />
         </div>
-        <p className="mt-2 mb-0 text-[13px] text-ink-soft">
+        <p className="relative mt-2.5 mb-0 text-[13px] text-ink-soft">
           {category.currentXp} XP ·{" "}
           {category.atMaxLevel
             ? "nivel máximo"

@@ -30,7 +30,7 @@ export function QuickIntensities({
             type="button"
             disabled={busy}
             onClick={() => onPick(i)}
-            className="press grid gap-0.5 rounded-2xl border border-line bg-sand/60 px-2 py-2.5 transition-colors active:bg-mist disabled:opacity-50"
+            className="press grid gap-0.5 rounded-2xl border border-ink/10 bg-paper/60 px-2 py-2.5 transition-colors active:bg-mist disabled:opacity-50"
           >
             <span className="text-[14px] font-medium">{INTENSITY_LABEL[i]}</span>
             <span className="text-[12px] text-ink-soft">+{XP_BY_INTENSITY[i]} XP</span>

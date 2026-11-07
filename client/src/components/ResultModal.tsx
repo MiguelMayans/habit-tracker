@@ -14,6 +14,23 @@ const T_START = 300;
 const T_FILL = 800;
 
 /**
+ * The confetti for a level up: a ring of soft dots in the five category
+ * colours, each with its own angle, reach and size. Fixed rather than random,
+ * so it looks composed instead of noisy.
+ */
+const CONFETTI = Array.from({ length: 18 }, (_, i) => {
+  const angle = (i / 18) * Math.PI * 2 + (i % 3) * 0.2;
+  const reach = 70 + ((i * 37) % 60);
+  return {
+    x: `${Math.round(Math.cos(angle) * reach)}px`,
+    y: `${Math.round(Math.sin(angle) * reach * 0.7 + 30)}px`,
+    s: `${6 + ((i * 5) % 6)}px`,
+    c: `var(--color-${["cuerpo", "mente", "corazon", "disciplina", "ingenio"][i % 5]})`,
+    d: `${(T_START + T_FILL) / 1000 + (i % 4) * 0.03}s`,
+  };
+});
+
+/**
  * What you see after logging from the full form, or whenever a log raises a
  * level: what it was worth, and each bar moving from where it was to where it
  * is now. A level up is said in words and the bar simply starts again — no
@@ -77,6 +94,18 @@ export function ResultModal({
   return (
     <>
       <DialogFrame titleId="result-title" title={title} onCancel={onClose}>
+        {leveled && (
+          <div className="confetti" aria-hidden="true">
+            {CONFETTI.map((p, i) => (
+              <i
+                key={i}
+                style={
+                  { "--x": p.x, "--y": p.y, "--s": p.s, "--c": p.c, "--d": p.d } as React.CSSProperties
+                }
+              />
+            ))}
+          </div>
+        )}
         <p className="m-0 -mt-3 text-[15px] text-ink-soft">
           +{result.xpGained} XP
           {result.focus?.frozen && result.focus.leveledUp && " · el foco alcanza la maestría"}

@@ -1,6 +1,6 @@
 import type { Intensity, Work } from "../api/client";
 import { sinceLastActivity } from "../lib/dates";
-import { KIND_LABEL, SESSION_VERB } from "../lib/works";
+import { KIND_COLOR, KIND_LABEL, SESSION_VERB } from "../lib/works";
 import { QuickIntensities } from "./QuickIntensities";
 import { Rating } from "./Rating";
 import { WorkKindIcon } from "./WorkIcons";
@@ -42,28 +42,34 @@ export function ActiveWorkCard({
 
   return (
     <li
-      className={`card card-tinted ${finishing ? "leaving" : "settle"}`}
-      style={{ "--delay": `${0.06 + index * 0.04}s` } as React.CSSProperties}
+      className={`card-color ${finishing ? "leaving" : "settle"}`}
+      style={
+        {
+          "--delay": `${0.06 + index * 0.04}s`,
+          "--accent": KIND_COLOR[w.kind],
+        } as React.CSSProperties
+      }
     >
+      <WorkKindIcon kind={w.kind} className="watermark" />
       <button
         type="button"
         onClick={onOpen}
-        className="press-card block w-full px-5 pt-5 pb-3 text-left"
+        className="press-card relative block w-full px-5 pt-5 pb-3 text-left"
         aria-label={`Editar ${w.title}`}
       >
-        <h3 className="m-0 text-[17px] leading-snug font-semibold break-words">{w.title}</h3>
+        <h3 className="display m-0 text-[22px] leading-tight break-words">{w.title}</h3>
         <p className="mt-1 mb-0 text-[13px] text-ink-soft">
           {w.progress ? `${w.progress} · ` : ""}
           {last}
         </p>
         {gain !== null && (
-          <p className="gain mt-1 mb-0 text-[13px] font-semibold" style={{ color: "var(--accent)" }}>
+          <p className="gain mt-1 mb-0 text-[13px] font-semibold" style={{ color: "var(--color-mente)" }}>
             +{gain} XP en Mente
           </p>
         )}
       </button>
 
-      <div className="flex gap-2 px-5 pb-4">
+      <div className="relative flex gap-2 px-5 pb-4">
         <button
           type="button"
           onClick={onToggleSession}
@@ -85,7 +91,7 @@ export function ActiveWorkCard({
       </div>
 
       {open && menteId !== null && (
-        <div className="px-5 pb-3">
+        <div className="relative px-5 pb-3">
           <QuickIntensities categoryId={menteId} busy={busy} onPick={onPick} />
         </div>
       )}
@@ -109,8 +115,13 @@ export function QueuedWorkRow({
 }) {
   return (
     <li
-      className="card settle flex items-center"
-      style={{ "--delay": `${0.08 + index * 0.03}s` } as React.CSSProperties}
+      className="card card-tinted settle flex items-center"
+      style={
+        {
+          "--delay": `${0.08 + index * 0.03}s`,
+          "--accent": KIND_COLOR[w.kind],
+        } as React.CSSProperties
+      }
     >
       <button
         type="button"
@@ -149,18 +160,23 @@ export function TrophyTile({
   const done = w.finishedAt ? new Date(w.finishedAt) : null;
 
   return (
-    <li className="settle" style={{ "--delay": `${0.1 + index * 0.03}s` } as React.CSSProperties}>
+    <li
+      className="settle"
+      style={
+        { "--delay": `${0.1 + index * 0.03}s`, "--accent": KIND_COLOR[w.kind] } as React.CSSProperties
+      }
+    >
       <button
         type="button"
         onClick={onOpen}
-        className="card press flex h-full w-full flex-col items-start gap-2 px-4 pt-4 pb-4 text-left"
+        className="card card-tinted press flex h-full w-full flex-col items-start gap-2 px-4 pt-4 pb-4 text-left"
       >
         <span className="flex items-center gap-1.5 text-[12px] text-ink-soft">
-          <WorkKindIcon kind={w.kind} className="h-3.5 w-3.5" />
+          <WorkKindIcon kind={w.kind} className="h-3.5 w-3.5 text-(--accent)" />
           {KIND_LABEL[w.kind].one}
           {done && ` · ${MONTHS[done.getMonth()]} ${done.getFullYear()}`}
         </span>
-        <span className="text-[15px] leading-snug font-semibold break-words">{w.title}</span>
+        <span className="display text-[18px] leading-tight break-words">{w.title}</span>
         <span className="mt-auto pt-1">
           {w.rating !== null ? (
             <Rating value={w.rating} size={7} />

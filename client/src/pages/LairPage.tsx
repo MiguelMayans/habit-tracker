@@ -15,7 +15,7 @@ import {
   type WorkKind,
 } from "../api/client";
 import { playSound } from "../lib/sound";
-import { KIND_LABEL, WORK_KINDS } from "../lib/works";
+import { KIND_COLOR, KIND_LABEL, WORK_KINDS } from "../lib/works";
 import {
   ActiveWorkCard,
   QueuedWorkRow,
@@ -71,8 +71,11 @@ function KindGroups({
         return (
           <div key={kind}>
             {/* A real heading, not a caption: it is what sorts the screen. */}
-            <h3 className="settle m-0 mb-2.5 flex items-center gap-2">
-              <span className="icon-disc h-7 w-7">
+            <h3
+              className="settle m-0 mb-3 flex items-center gap-2"
+              style={{ "--accent": KIND_COLOR[kind] } as React.CSSProperties}
+            >
+              <span className="icon-solid h-7 w-7">
                 <WorkKindIcon kind={kind} className="h-4 w-4" />
               </span>
               <span className="text-[15px] font-semibold">{KIND_LABEL[kind].many}</span>
@@ -276,15 +279,15 @@ export function LairPage() {
     >
       <header className="settle mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="display m-0 text-[34px] leading-tight">Guarida</h1>
+          <h1 className="display m-0 text-[34px] leading-tight">Refugio</h1>
           <p className="mt-1 mb-0 text-[14px] text-ink-soft">
-            Lo que juegas, lees y ves. Cada sesión suma en Mente.
+            Lo que juegas, lees y ves. Cada rato suma en Mente.
           </p>
         </div>
         <button
           type="button"
           onClick={() => openSheet(null)}
-          aria-label="Añadir a la guarida"
+          aria-label="Añadir al refugio"
           className="btn h-11 min-h-0 w-11 shrink-0 px-0"
         >
           <svg
@@ -332,7 +335,7 @@ export function LairPage() {
 
       {works.length === 0 && (
         <div className="settle py-8 text-center">
-          <p className="m-0 text-[18px] font-semibold">La guarida está vacía</p>
+          <p className="m-0 text-[18px] font-semibold">Tu refugio está vacío</p>
           <p className="mt-1.5 mb-5 text-[15px] text-ink-soft">
             Añade lo que estés jugando, leyendo o viendo.
           </p>
@@ -430,7 +433,7 @@ export function LairPage() {
 
       {toDelete && (
         <ConfirmDialog
-          bandTitle="¿Quitar de la guarida?"
+          bandTitle="¿Quitar del refugio?"
           titleId="delete-work-title"
           busy={deleting}
           error={deleteError}
