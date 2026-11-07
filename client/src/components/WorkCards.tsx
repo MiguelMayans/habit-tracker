@@ -2,19 +2,23 @@ import type { Intensity, Work } from "../api/client";
 import { sinceLastActivity } from "../lib/dates";
 import { KIND_COLOR, KIND_LABEL, SESSION_VERB } from "../lib/works";
 import { QuickIntensities } from "./QuickIntensities";
-import { Rating } from "./Rating";
+import { Collapse } from "./Collapse";
 import { WorkKindIcon } from "./WorkIcons";
 import { vtName } from "../lib/viewTransition";
 
 /**
- * Something in play. The body opens it for editing; "He jugado hoy" unfolds
- * the three intensities — a session lands in Mente, the same two-tap gesture
- * as a focus on the home — and "Terminado" moves it to the shelf.
+ * Something in play, as a poster: its kind's colour in a deep gradient, the
+ * kind's icon huge as the poster's motif, and the title set big at the foot
+ * — the way a streaming shelf or a record sleeve shows it, not a form row.
+ * Posters stack down the page, so everything in play is seen at a glance.
+ *
+ * The poster itself opens it for editing; the dots set how far through it
+ * is; "He jugado hoy" unfolds the intensities for a session in Mente; and
+ * "Terminado" sends it to the shelf.
  */
 export function ActiveWorkCard({
   work: w,
   menteId,
-  index,
   open,
   busy,
   gain,
@@ -27,7 +31,6 @@ export function ActiveWorkCard({
 }: {
   work: Work;
   menteId: number | null;
-  index: number;
   open: boolean;
   busy: boolean;
   gain: number | null;
@@ -41,43 +44,49 @@ export function ActiveWorkCard({
   onPercent: (percent: number) => void;
 }) {
   const last = w.lastSessionAt
-    ? `Última sesión: ${sinceLastActivity(w.lastSessionAt).text.toLowerCase()}`
-    : "Sin sesiones todavía";
+    ? sinceLastActivity(w.lastSessionAt).text.toLowerCase()
+    : "sin sesiones";
 
   return (
     <li
-      className="card-color settle"
+      className="poster"
       style={
         {
-          "--delay": `${0.06 + index * 0.04}s`,
           "--accent": KIND_COLOR[w.kind],
-          // Named, so finishing it flies the card onto the shelf.
+          // Named, so finishing it flies the poster onto the shelf.
           ...vtName(`work-${w.id}`, "row"),
         } as React.CSSProperties
       }
     >
-      <WorkKindIcon kind={w.kind} className="watermark" />
+      <WorkKindIcon kind={w.kind} className="poster-motif" />
+
       <button
         type="button"
         onClick={onOpen}
-        className="press-card relative block w-full px-5 pt-5 pb-3 text-left"
+        className="relative flex flex-1 flex-col text-left"
         aria-label={`Editar ${w.title}`}
       >
-        <h3 className="display m-0 text-[22px] leading-tight break-words">{w.title}</h3>
-        <p className="mt-1 mb-0 text-[13px] text-ink-soft">
-          {w.progress ? `${w.progress} · ` : ""}
-          {last}
-        </p>
+        <span className="flex items-center justify-between gap-3 text-[11px] font-semibold tracking-[0.16em] text-paper/75 uppercase">
+          {KIND_LABEL[w.kind].one}
+          <span className="font-medium tracking-normal normal-case">{last}</span>
+        </span>
+        <span className="flex-1" />
+        <h3 className="display m-0 mt-5 pr-16 text-[26px] leading-[1.05] break-words text-paper">
+          {w.title}
+        </h3>
+        {w.progress && (
+          <span className="mt-1.5 text-[13px] text-paper/80">{w.progress}</span>
+        )}
         {gain !== null && (
-          <p className="gain mt-1 mb-0 text-[13px] font-semibold" style={{ color: "var(--color-mente)" }}>
+          <span className="gain mt-1 text-[13px] font-semibold text-paper">
             +{gain} XP en Mente
-          </p>
+          </span>
         )}
       </button>
 
       <ProgressDots percent={w.percent} onSet={onPercent} />
 
-      <div className="relative flex gap-2 px-5 pb-4">
+      <div className="relative mt-3 flex gap-2">
         <button
           type="button"
           onClick={onToggleSession}
@@ -93,27 +102,32 @@ export function ActiveWorkCard({
           onClick={onFinish}
           disabled={finishing}
           className="chip ml-auto"
+          aria-label={`Terminado: ${w.title}`}
         >
-          Terminado
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+            <path d="m5.5 12.5 4 4 9-10" />
+          </svg>
         </button>
       </div>
 
-      {open && menteId !== null && (
-        <div className="relative px-5 pb-3">
-          <QuickIntensities categoryId={menteId} busy={busy} onPick={onPick} />
-        </div>
+      {menteId !== null && (
+        <Collapse open={open}>
+          <div className="relative pt-3">
+            <QuickIntensities categoryId={menteId} busy={busy} onPick={onPick} />
+          </div>
+        </Collapse>
       )}
     </li>
   );
 }
 
 /**
- * How far through a work is, as ten dots that fill in its colour, with the
- * figure beside them. A dot is worth ten, and can be half full for the
- * "and five": 55 % is five full dots and a half. Tapping the dot at the
- * edge cycles it — full, half, empty — so every step of five is two taps
- * away at most; tapping any other dot jumps straight to it. The dots fill one
- * after another, so a change flows rather than jumps.
+ * How far through a work is, as ten dots, with the figure beside them. A dot
+ * is worth ten, and can be half full for the "and five": 55 % is five full
+ * dots and a half. Tapping the dot at the edge cycles it — full, half,
+ * empty — so every step of five is two taps away at most; tapping any other
+ * dot jumps straight to it. The dots fill one after another, so a change
+ * flows rather than jumps.
  */
 function ProgressDots({
   percent,
@@ -133,10 +147,11 @@ function ProgressDots({
   }
 
   return (
-    <div className="relative flex items-center gap-3 px-5 pb-3">
+    <div className="relative mt-4 flex items-center gap-3">
       <div className="dots" role="group" aria-label="Cuánto llevas">
         {Array.from({ length: 10 }, (_, i) => {
-          const fill = value >= (i + 1) * 10 ? "full" : value >= i * 10 + 5 ? "half" : "empty";
+          const fill =
+            value >= (i + 1) * 10 ? "full" : value >= i * 10 + 5 ? "half" : "empty";
           return (
             <button
               key={i}
@@ -149,80 +164,70 @@ function ProgressDots({
           );
         })}
       </div>
-      <span className="text-[13px] font-semibold text-ink-soft tabular-nums">
+      <span className="text-[13px] font-semibold tabular-nums text-paper/85">
         {percent === null ? "—" : `${value} %`}
       </span>
     </div>
   );
 }
 
-/** Something waiting its turn: compact, with the one action it has. */
+/**
+ * Something waiting its turn: a slim pill in its kind's colour, with the one
+ * action it has. A queue, not a stack of cards.
+ */
 export function QueuedWorkRow({
   work: w,
-  index,
   busy,
   onStart,
   onOpen,
 }: {
   work: Work;
-  index: number;
   busy: boolean;
   onStart: () => void;
   onOpen: () => void;
 }) {
   return (
     <li
-      className="card card-tinted settle flex items-center"
+      className="queue-pill"
       style={
         {
-          "--delay": `${0.08 + index * 0.03}s`,
           "--accent": KIND_COLOR[w.kind],
           ...vtName(`work-${w.id}`, "row"),
         } as React.CSSProperties
       }
     >
+      <span className="icon-solid h-8 w-8">
+        <WorkKindIcon kind={w.kind} className="h-4 w-4" />
+      </span>
       <button
         type="button"
         onClick={onOpen}
-        className="min-w-0 flex-1 py-3.5 pl-5 text-left text-[15px] font-medium break-words"
+        className="min-w-0 flex-1 truncate text-left text-[15px] font-medium"
       >
         {w.title}
       </button>
-      <button
-        type="button"
-        onClick={onStart}
-        disabled={busy}
-        className="chip mr-3 ml-2 shrink-0"
-      >
+      <button type="button" onClick={onStart} disabled={busy} className="chip shrink-0">
         Empezar
       </button>
     </li>
   );
 }
 
-const MONTHS = [
-  "ene", "feb", "mar", "abr", "may", "jun",
-  "jul", "ago", "sep", "oct", "nov", "dic",
-];
-
-/** A finished work on the shelf. */
+/**
+ * A finished work on the wall: a small square in its kind's colour, the
+ * poster's little sister — motif in the corner, the title, the rating.
+ */
 export function TrophyTile({
   work: w,
-  index,
   onOpen,
 }: {
   work: Work;
-  index: number;
   onOpen: () => void;
 }) {
-  const done = w.finishedAt ? new Date(w.finishedAt) : null;
-
   return (
     <li
-      className="settle"
       style={
         {
-          "--delay": `${0.1 + index * 0.03}s`,
           "--accent": KIND_COLOR[w.kind],
           ...vtName(`work-${w.id}`, "row"),
         } as React.CSSProperties
@@ -231,21 +236,23 @@ export function TrophyTile({
       <button
         type="button"
         onClick={onOpen}
-        className="card card-tinted press flex h-full w-full flex-col items-start gap-2 px-4 pt-4 pb-4 text-left"
+        className="tile"
+        aria-label={`${w.title}${w.rating ? `, ${w.rating} de 5` : ""}`}
       >
-        <span className="flex items-center gap-1.5 text-[12px] text-ink-soft">
-          <WorkKindIcon kind={w.kind} className="h-3.5 w-3.5 text-(--accent)" />
-          {KIND_LABEL[w.kind].one}
-          {done && ` · ${MONTHS[done.getMonth()]} ${done.getFullYear()}`}
+        <WorkKindIcon kind={w.kind} className="tile-motif" />
+        <span className="display relative line-clamp-3 text-[14px] leading-[1.1]">
+          {w.title}
         </span>
-        <span className="display text-[18px] leading-tight break-words">{w.title}</span>
-        <span className="mt-auto pt-1">
-          {w.rating !== null ? (
-            <Rating value={w.rating} size={7} />
-          ) : (
-            <span className="text-[12px] text-ink-faint">Sin nota</span>
-          )}
-        </span>
+        {w.rating !== null && (
+          <span className="relative mt-1.5 flex gap-[3px]" aria-hidden="true">
+            {Array.from({ length: 5 }, (_, i) => (
+              <i
+                key={i}
+                className={`block h-1.5 w-1.5 rounded-full ${i < w.rating! ? "bg-paper" : "bg-paper/30"}`}
+              />
+            ))}
+          </span>
+        )}
       </button>
     </li>
   );

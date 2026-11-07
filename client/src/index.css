@@ -712,6 +712,245 @@ body::after {
     border: 2px solid var(--color-ink);
   }
 
+  /* ---- The Refuge (LairPage.tsx, WorkCards.tsx) ---- */
+
+  /* The posters of one kind, stacked: everything in play visible going down
+     the page, with no sideways scrolling to discover what is hidden. */
+  .poster-row {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Something in play, as a poster in its kind's colour: a deep gradient
+     with light pooling in the top corner, its icon huge as the motif, the
+     title big at the foot. */
+  .poster {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 168px;
+    padding: 16px 18px;
+    overflow: hidden;
+    border-radius: 26px;
+    color: var(--color-paper);
+    background:
+      radial-gradient(
+        120% 70% at 100% 0%,
+        color-mix(in oklab, var(--accent) 45%, var(--color-paper)),
+        transparent 62%
+      ),
+      linear-gradient(
+        165deg,
+        color-mix(in oklab, var(--accent) 92%, white),
+        color-mix(in oklab, var(--accent) 78%, black)
+      );
+    box-shadow: 0 20px 34px -20px color-mix(in oklab, var(--accent) 80%, black);
+  }
+
+  .poster-motif {
+    position: absolute;
+    top: 50%;
+    right: -26px;
+    width: 170px;
+    height: 170px;
+    translate: 0 -50%;
+    color: var(--color-paper);
+    opacity: 0.16;
+    rotate: -12deg;
+    pointer-events: none;
+  }
+
+  /* On a poster everything speaks in paper: glassy chips, white dots. */
+  .poster .chip {
+    border-color: rgb(251 248 242 / 0.35);
+    background: rgb(251 248 242 / 0.16);
+    color: var(--color-paper);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+
+  .poster .chip[aria-pressed="true"] {
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  .poster .dots > button {
+    border-color: rgb(251 248 242 / 0.6);
+    background: transparent;
+  }
+
+  .poster .dots > button[data-fill="full"] {
+    border-color: var(--color-paper);
+    background: var(--color-paper);
+  }
+
+  .poster .dots > button[data-fill="half"] {
+    border-color: var(--color-paper);
+    background: linear-gradient(90deg, var(--color-paper) 50%, transparent 50%);
+  }
+
+  /* Waiting its turn: a slim pill, tinted with its kind. */
+  .queue-pill {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 6px 6px 8px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--accent) 12%, var(--color-sand));
+  }
+
+  /* Finished things: a wall of small square tiles, the posters' little
+     sisters — its colour, its motif, the title and the rating. */
+  .tile-wall {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 10px;
+    overflow: hidden;
+    border-radius: 18px;
+    color: var(--color-paper);
+    text-align: left;
+    background: linear-gradient(
+      160deg,
+      color-mix(in oklab, var(--accent) 88%, white),
+      color-mix(in oklab, var(--accent) 80%, black)
+    );
+    transition: transform 0.2s cubic-bezier(0.34, 1.5, 0.64, 1);
+  }
+
+  .tile:active {
+    transform: scale(0.95);
+  }
+
+  .tile-motif {
+    position: absolute;
+    top: -10px;
+    right: -14px;
+    width: 72px;
+    height: 72px;
+    opacity: 0.2;
+    rotate: -12deg;
+  }
+
+  /* ---- Missions (MissionsPage.tsx, MissionRow.tsx) ---- */
+
+  /* A mission is a line on the page, not a card: hairlines between them,
+     the check on the left and the day it is due on the right. */
+  .mission-line {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 64px;
+    border-bottom: 1px solid rgb(46 42 37 / 0.08);
+  }
+
+  /* The check: a clean ring that fills with the mission's colour (ink when
+     it has none) while its tick draws itself in. */
+  .mission-check {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    border: 1.75px solid var(--color-ink-faint);
+    color: var(--color-paper);
+    transition:
+      background-color 0.25s ease,
+      border-color 0.25s ease;
+  }
+
+  .mission-check[aria-checked="true"] {
+    border-color: var(--accent, var(--color-ink));
+    background: var(--accent, var(--color-ink));
+  }
+
+  .mission-check .tick {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0.08s;
+  }
+
+  .mission-check[aria-checked="true"] .tick {
+    stroke-dashoffset: 0;
+  }
+
+  /* Crossing out: a clean line drawn left to right through the words. */
+  .strike {
+    background-image: linear-gradient(var(--color-ink-soft), var(--color-ink-soft));
+    background-repeat: no-repeat;
+    background-position: 0 58%;
+    background-size: 0% 1.5px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition:
+      background-size 0.45s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+      color 0.3s ease 0.3s;
+  }
+
+  .strike[data-on="true"] {
+    background-size: 100% 1.5px;
+    color: var(--color-ink-faint);
+  }
+
+  /* The day it is due, as a small token: the day in big serif, the month
+     under it. Late ones turn terracotta; today's is solid ink. */
+  .due-token {
+    display: grid;
+    flex-shrink: 0;
+    justify-items: center;
+    min-width: 46px;
+    padding: 5px 6px 6px;
+    border-radius: 14px;
+    background: rgb(46 42 37 / 0.05);
+    color: var(--color-ink);
+    line-height: 1;
+  }
+
+  .due-token[data-when="today"] {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  .due-token[data-when="overdue"] {
+    background: color-mix(in oklab, var(--color-warn) 14%, transparent);
+    color: var(--color-warn);
+  }
+
+  /* The composer: one wide line at the top of the page. */
+  .composer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 6px 6px 20px;
+    border-radius: 999px;
+    border: 1px solid rgb(46 42 37 / 0.12);
+    background: rgb(251 248 242 / 0.7);
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .composer:focus-within {
+    border-color: var(--color-ink-faint);
+    box-shadow: 0 0 0 5px rgb(46 42 37 / 0.05);
+  }
+
   /* Autumn leaves (AutumnLeaves.tsx): each drifts down from above the
      screen, swaying and turning, and fades before the bottom. */
   .leaf {
@@ -807,42 +1046,6 @@ body::after {
   }
 
   /* ---- Colour cards ---- */
-
-  /* A whole card in its category's colour, pastel: the Persona idea of a
-     card that IS its colour, at a fraction of the volume. Text stays ink. */
-  .card-color {
-    position: relative;
-    overflow: hidden;
-    border-radius: 24px;
-    background: color-mix(in oklab, var(--accent) 17%, var(--color-paper));
-    box-shadow:
-      0 1px 2px rgb(46 42 37 / 0.05),
-      0 14px 30px -18px color-mix(in oklab, var(--accent) 60%, transparent);
-    transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-
-  .card-color:has(.press-card:active) {
-    transform: scale(0.985);
-  }
-
-  /* On a colour card, the bar's track is the colour a step deeper. */
-  .card-color .progress {
-    background: color-mix(in oklab, var(--accent) 18%, var(--color-paper));
-  }
-
-  /* The category's icon, huge, tilted and faint, bleeding off the corner —
-     the watermark the Persona cards had, in a whisper. */
-  .watermark {
-    position: absolute;
-    right: -18px;
-    bottom: -26px;
-    width: 140px;
-    height: 140px;
-    color: var(--accent);
-    opacity: 0.13;
-    transform: rotate(-14deg);
-    pointer-events: none;
-  }
 
   /* The solid badge: icon in paper on its colour. */
   .icon-solid {

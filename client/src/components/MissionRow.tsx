@@ -3,7 +3,6 @@ import { categoryColorVar } from "../lib/categoryColor";
 import { shortRelativeDate } from "../lib/dates";
 import {
   canReopen,
-  dueLabel,
   missionGroup,
   missionKind,
   MISSION_XP,
@@ -11,15 +10,20 @@ import {
 import { MissionKindIcon } from "./MissionIcons";
 import { vtName } from "../lib/viewTransition";
 
+const MONTHS = [
+  "ene", "feb", "mar", "abr", "may", "jun",
+  "jul", "ago", "sep", "oct", "nov", "dic",
+];
+
 /**
- * One mission. Two targets, two jobs: the circle on the left ticks it off,
- * the rest of the row opens it for editing. Ticking is the thing you do every
- * day, so it gets its own target instead of a gesture to discover.
+ * One mission, as a line on the page. Two targets, two jobs: the ring on the
+ * left ticks it off, the rest of the line opens it for editing. The day it is
+ * due sits on the right as a small token, so a list of errands reads as a
+ * little calendar at a glance.
  */
 export function MissionRow({
   mission: m,
   category,
-  index,
   completing,
   gain,
   busy,
@@ -29,8 +33,7 @@ export function MissionRow({
 }: {
   mission: Mission;
   category: Category | undefined;
-  index: number;
-  /** Being ticked off: the circle fills and the title crosses out. */
+  /** Being ticked off: the ring fills and the title crosses out. */
   completing: boolean;
   /** XP just earned, shown for a moment. */
   gain: number | null;
@@ -47,12 +50,9 @@ export function MissionRow({
 
   return (
     <li
-      className={`card settle flex items-start ${accent ? "card-tinted" : ""} ${
-        highlighted ? "highlight" : ""
-      }`}
+      className={`mission-line ${highlighted ? "highlight" : ""}`}
       style={
         {
-          "--delay": `${0.04 + index * 0.03}s`,
           "--accent": accent ?? undefined,
           // Its name lets it glide to its new place when it is ticked off.
           ...vtName(`mission-${m.id}`, "row"),
@@ -67,50 +67,63 @@ export function MissionRow({
         title={locked ? "Se cumplió otro día y su XP ya cuenta: se queda hecha." : undefined}
         disabled={busy || completing || locked}
         onClick={onToggle}
-        className="grid h-14 w-14 shrink-0 place-items-center"
+        className={`mission-check ${completing ? "pop" : ""}`}
       >
-        <span
-          className={`grid h-6 w-6 place-items-center rounded-full border-[1.5px] transition-colors duration-200 ${
-            checked ? "border-ink bg-ink text-paper" : "border-ink-faint"
-          } ${completing ? "pop" : ""}`}
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-4 w-4"
+          aria-hidden="true"
         >
-          {checked && (
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2.6}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-3.5 w-3.5"
-              aria-hidden="true"
-            >
-              <path d="m6 12.5 4 4 8-9" />
-            </svg>
-          )}
-        </span>
+          <path className="tick" pathLength={1} d="m5.5 12.5 4 4 9-10" />
+        </svg>
       </button>
 
-      <button
-        type="button"
-        onClick={onOpen}
-        className="press-card block min-w-0 flex-1 py-4 pr-5 text-left"
-      >
-        <span
-          className={`block text-[15px] leading-snug font-medium break-words transition-colors duration-200 ${
-            checked ? "text-ink-faint line-through" : ""
-          }`}
-        >
-          {m.title}
+      <button type="button" onClick={onOpen} className="min-w-0 flex-1 py-3 text-left">
+        <span className="text-[16px] leading-snug break-words">
+          <span className="strike" data-on={checked}>
+            {m.title}
+          </span>
         </span>
-
         <Meta mission={m} kind={kind} accent={accent} gain={gain} />
       </button>
+
+      <DueToken mission={m} />
     </li>
   );
 }
 
-/** The line under the title: what kind of errand, when, and what it is worth. */
+/** The day a mission is due, as a token; nothing for "someday". */
+function DueToken({ mission: m }: { mission: Mission }) {
+  if (m.completedAt !== null || !m.dueDate) return null;
+  const group = missionGroup(m);
+  const [, mm, dd] = m.dueDate.split("-").map(Number);
+
+  return (
+    <span
+      className="due-token"
+      data-when={group === "overdue" ? "overdue" : group === "today" ? "today" : "later"}
+      aria-label={group === "today" ? "Para hoy" : `Para el ${dd} de ${MONTHS[mm - 1]}`}
+    >
+      {group === "today" ? (
+        <b className="py-1.5 text-[12px] font-semibold">Hoy</b>
+      ) : (
+        <>
+          <b className="display text-[19px] font-medium">{dd}</b>
+          <span className="mt-0.5 text-[10px] font-semibold tracking-wide uppercase">
+            {MONTHS[mm - 1]}
+          </span>
+        </>
+      )}
+    </span>
+  );
+}
+
+/** The line under the title: what kind of errand and what it is worth. */
 function Meta({
   mission: m,
   kind,
@@ -123,39 +136,21 @@ function Meta({
   gain: number | null;
 }) {
   const done = m.completedAt !== null;
-  const group = missionGroup(m);
+  const overdue = missionGroup(m) === "overdue";
 
-  if (!kind && !m.dueDate && !accent && !done && gain === null) return null;
+  if (!kind && !accent && !done && !overdue && gain === null) return null;
 
   return (
-    <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-ink-soft">
+    <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-ink-soft">
       {kind && <MissionKindIcon kind={kind} className="h-4 w-4 text-ink-faint" />}
-
-      {done ? (
-        <span>Hecha {shortRelativeDate(m.completedAt!).toLowerCase()}</span>
-      ) : (
-        m.dueDate && (
-          <span
-            className={
-              group === "overdue"
-                ? "text-warn"
-                : group === "today"
-                  ? "font-semibold text-ink"
-                  : undefined
-            }
-          >
-            {group === "overdue" ? `Vencida · ${dueLabel(m.dueDate).toLowerCase()}` : dueLabel(m.dueDate)}
-          </span>
-        )
-      )}
-
+      {done && <span>Hecha {shortRelativeDate(m.completedAt!).toLowerCase()}</span>}
+      {overdue && <span className="font-medium text-warn">Vencida</span>}
       {accent && (
         <span className="flex items-center gap-1.5">
           <span className="h-2 w-2 rounded-full" style={{ background: accent }} />
           +{MISSION_XP} XP
         </span>
       )}
-
       {gain !== null && (
         <span className="gain font-semibold" style={{ color: accent ?? undefined }}>
           +{gain} XP

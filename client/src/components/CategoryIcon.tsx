@@ -8,8 +8,9 @@ const TINT = { fill: "currentColor", fillOpacity: 0.2, stroke: "none" } as const
  * soft fill of the same colour, the way a riso print overlaps two inks.
  *
  * Each one is a little scene with an idea of its own rather than the symbol
- * any app would use: a torso with its six-pack, a lotus, two hearts, the
- * loop that starts over, a bulb with a spark. The flourish is always kept apart from the
+ * any app would use: a torso with its six-pack, a head with a sunset over
+ * still water inside, two people under one umbrella, a cairn of balanced
+ * stones, a constellation joining its points. The flourish is always kept apart from the
  * main shape, so it does not smudge when small.
  *
  * Drawn here rather than shipped as images: they scale without pixelating,
@@ -39,63 +40,71 @@ const STROKES: Record<string, ReactNode> = {
     </>
   ),
 
-  // Mente → a lotus: presence, open and still.
+  // Mente → a head in profile, and inside it a sun setting over still
+  // water: a mind at rest, present, not scrolling.
   mente: (
     <>
-      <path {...TINT} d="M12 4.5c2.6 2.4 2.6 7.6 0 11.5-2.6-3.9-2.6-9.1 0-11.5Z" />
-      <path d="M12 4.5c2.6 2.4 2.6 7.6 0 11.5-2.6-3.9-2.6-9.1 0-11.5Z" />
-      <path d="M12 16c-2.8-.2-5.3-2.3-6-6.2 2.3-.1 4.3.8 5.4 2.4" />
-      <path d="M12 16c2.8-.2 5.3-2.3 6-6.2-2.3-.1-4.3.8-5.4 2.4" />
-      <path d="M12 16c-3.5 1.6-7 .9-9-1.4M12 16c3.5 1.6 7 .9 9-1.4" />
-      <path d="M8 19.5h8" />
+      <path
+        {...TINT}
+        d="M14.5 21v-2.8h2.2a1.8 1.8 0 0 0 1.8-1.8v-2.2l1.6-.6c.5-.2.6-.8.3-1.2L18.6 10C18.3 5.6 15 3 11 3 6.6 3 3.5 6.3 3.5 10.6c0 2.6 1.1 4.6 2.8 6V21Z"
+      />
+      <path d="M14.5 21v-2.8h2.2a1.8 1.8 0 0 0 1.8-1.8v-2.2l1.6-.6c.5-.2.6-.8.3-1.2L18.6 10C18.3 5.6 15 3 11 3 6.6 3 3.5 6.3 3.5 10.6c0 2.6 1.1 4.6 2.8 6V21" />
+      <path d="M8.2 12a2.8 2.8 0 0 1 5.6 0Z" fill="currentColor" fillOpacity={0.55} />
+      <path d="M6.8 14.6c1.1.7 2.1.7 3.2 0s2.1-.7 3.2 0 2.1.7 2.4.3" />
     </>
   ),
 
-  // Corazón → two hearts, a small one leaning on the big one: it is about
-  // people.
+  // Corazón → two people under one umbrella: looking after each other.
   corazon: (
     <>
       <path
         {...TINT}
-        d="M9.5 20.5S3 16.3 3 11.9a3.8 3.8 0 0 1 6.5-2.6 3.8 3.8 0 0 1 6.5 2.6c0 4.4-6.5 8.6-6.5 8.6Z"
+        d="M3 10.5a9 6.5 0 0 1 18 0c-1.1-.9-2.4-.9-3.6 0-1.1-.9-2.3-.9-3.6 0-1.1-.9-2.5-.9-3.6 0-1.1-.9-2.3-.9-3.6 0-1.1-.9-2.4-.9-3.6 0Z"
       />
-      <path d="M9.5 20.5S3 16.3 3 11.9a3.8 3.8 0 0 1 6.5-2.6 3.8 3.8 0 0 1 6.5 2.6c0 4.4-6.5 8.6-6.5 8.6Z" />
-      <path
-        {...TINT}
-        fillOpacity={0.45}
-        d="M17.5 11.2s-3.4-2.2-3.4-4.6a2 2 0 0 1 3.4-1.4 2 2 0 0 1 3.4 1.4c0 2.4-3.4 4.6-3.4 4.6Z"
-      />
-      <path d="M17.5 11.2s-3.4-2.2-3.4-4.6a2 2 0 0 1 3.4-1.4 2 2 0 0 1 3.4 1.4c0 2.4-3.4 4.6-3.4 4.6Z" />
+      <path d="M3 10.5a9 6.5 0 0 1 18 0c-1.1-.9-2.4-.9-3.6 0-1.1-.9-2.3-.9-3.6 0-1.1-.9-2.5-.9-3.6 0-1.1-.9-2.3-.9-3.6 0-1.1-.9-2.4-.9-3.6 0Z" />
+      <path d="M12 2.6V4M12 10.5V21" />
+      <circle cx="7.6" cy="14" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="16.4" cy="14" r="1.6" fill="currentColor" stroke="none" />
+      <path d="M4.8 21a2.8 2.8 0 0 1 5.6 0M13.6 21a2.8 2.8 0 0 1 5.6 0" />
     </>
   ),
 
-  // Disciplina → the loop that starts over every day, with a spark of
-  // persistence.
+  // Disciplina → a cairn, stones stacked in balance: what you build one
+  // small, steady day at a time.
   disciplina: (
     <>
-      <path {...TINT} d="M20.4 12.6a8.2 8.2 0 1 1-2.4-5.8l2.6 2.8Z" />
-      <path d="M20.4 13a8.2 8.2 0 1 1-2.4-6.2" />
-      <path d="M20.6 3.9v5.2h-5.2" />
-      <path
-        d="M4.4 1.9l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9Z"
-        fill="currentColor"
-        stroke="none"
-      />
+      <ellipse {...TINT} fillOpacity={0.3} cx="12" cy="17.6" rx="7.4" ry="2.6" />
+      <ellipse cx="12" cy="17.6" rx="7.4" ry="2.6" />
+      <ellipse {...TINT} cx="11.4" cy="12.6" rx="5.2" ry="2.2" />
+      <ellipse cx="11.4" cy="12.6" rx="5.2" ry="2.2" />
+      <ellipse {...TINT} fillOpacity={0.4} cx="12.6" cy="8.4" rx="3.4" ry="1.7" />
+      <ellipse cx="12.6" cy="8.4" rx="3.4" ry="1.7" />
+      <circle cx="12" cy="4.6" r="1.4" fill="currentColor" stroke="none" />
+      <path d="M3 21.2h18" />
     </>
   ),
 
-  // Ingenio → a bulb that has just lit up, with sparks.
+  // Ingenio → a constellation: separate points, joined into a figure — what
+  // learning a skill feels like when it clicks.
   ingenio: (
     <>
-      <path
-        {...TINT}
-        d="M12 3.8a5.8 5.8 0 0 0-3.4 10.5c.6.5.9 1.2.9 2h5c0-.8.3-1.5.9-2A5.8 5.8 0 0 0 12 3.8Z"
-      />
-      <path d="M12 3.8a5.8 5.8 0 0 0-3.4 10.5c.6.5.9 1.2.9 2h5c0-.8.3-1.5.9-2A5.8 5.8 0 0 0 12 3.8Z" />
-      <path d="M9.6 19h4.8M10.6 21.5h2.8" />
-      <path d="M10.4 12.6 12 9.4l1.6 3.2" />
-      <path d="M20.3 3.3l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5Z" fill="currentColor" stroke="none" />
-      <path d="M3 9.5h1.4M4.1 4.6l1 1" />
+      <path d="m4.5 16 5-7.5 5.8 3 4.2-6.5M15.3 11.5l3.6 6.5H11L4.5 16" strokeWidth={1.2} />
+      <g {...TINT} fillOpacity={0.3}>
+        <circle cx="4.5" cy="16" r="2.6" />
+        <circle cx="9.5" cy="8.5" r="2.6" />
+        <circle cx="15.3" cy="11.5" r="2.6" />
+        <circle cx="19.5" cy="5" r="2.6" />
+        <circle cx="18.9" cy="18" r="2.6" />
+        <circle cx="11" cy="18" r="2.6" />
+      </g>
+      <g fill="currentColor" stroke="none">
+        <circle cx="4.5" cy="16" r="1.3" />
+        <circle cx="9.5" cy="8.5" r="1.5" />
+        <circle cx="15.3" cy="11.5" r="1.3" />
+        <circle cx="19.5" cy="5" r="1.6" />
+        <circle cx="18.9" cy="18" r="1.2" />
+        <circle cx="11" cy="18" r="1.2" />
+      </g>
     </>
   ),
 };

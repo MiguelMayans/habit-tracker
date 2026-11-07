@@ -64,7 +64,7 @@ function KindGroups({
 
   let index = 0;
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
       {WORK_KINDS.map((kind) => {
         const items = works.filter((w) => w.kind === kind);
         if (items.length === 0) return null;
@@ -332,10 +332,10 @@ export function LairPage() {
       {/* Filtering by kind only once there is more than one to tell apart:
           with a single kind, a row of chips would filter nothing. */}
       {kindsInUse.size > 1 && (
-        <div className="no-scrollbar settle -mx-5 mb-8 flex gap-2 overflow-x-auto px-5">
+        <div className="settle mb-8 flex flex-wrap gap-2">
           <button
             type="button"
-            className="chip shrink-0"
+            className="chip"
             aria-pressed={filter === null}
             onClick={() => setFilter(null)}
           >
@@ -345,7 +345,7 @@ export function LairPage() {
             <button
               key={k}
               type="button"
-              className="chip shrink-0"
+              className="chip"
               aria-pressed={filter === k}
               onClick={() => setFilter(filter === k ? null : k)}
             >
@@ -377,13 +377,12 @@ export function LairPage() {
           <KindGroups
             works={active}
             grouped={filter === null}
-            listClassName="m-0 grid list-none gap-3 p-0"
-            render={(w, i) => (
+            listClassName="poster-row"
+            render={(w) => (
               <ActiveWorkCard
                 key={w.id}
                 work={w}
                 menteId={mente?.id ?? null}
-                index={i}
                 open={sessionOpen === w.id}
                 busy={sessionBusy}
                 gain={gain?.id === w.id ? gain.xp : null}
@@ -407,12 +406,11 @@ export function LairPage() {
           <KindGroups
             works={queued}
             grouped={filter === null}
-            listClassName="m-0 grid list-none gap-2.5 p-0"
-            render={(w, i) => (
+            listClassName="m-0 grid list-none gap-2 p-0"
+            render={(w) => (
               <QueuedWorkRow
                 key={w.id}
                 work={w}
-                index={i}
                 busy={startingId === w.id}
                 onStart={() => onStart(w)}
                 onOpen={() => openSheet(w)}
@@ -425,17 +423,13 @@ export function LairPage() {
       {done.length > 0 && (
         <section>
           <SectionTitle count={done.length} className="mb-4 text-[20px]">Terminados</SectionTitle>
-          {/* The shelf stays one grid, newest first: grouped, each kind with
-              a single item left half a row empty, and every tile already
-              says its kind. */}
-          <KindGroups
-            works={done}
-            grouped={false}
-            listClassName="m-0 grid list-none grid-cols-2 gap-3 p-0"
-            render={(w, i) => (
-              <TrophyTile key={w.id} work={w} index={i} onOpen={() => openSheet(w)} />
-            )}
-          />
+          {/* One wall, newest first: every tile already says its kind by
+              colour and icon. */}
+          <ul className="tile-wall">
+            {done.map((w) => (
+              <TrophyTile key={w.id} work={w} onOpen={() => openSheet(w)} />
+            ))}
+          </ul>
         </section>
       )}
 

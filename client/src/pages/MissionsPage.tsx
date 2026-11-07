@@ -31,7 +31,7 @@ import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
 import { StaleNotice } from "../components/StaleNotice";
 import { useOnReturn } from "../lib/useOnReturn";
-import { SectionTitle } from "../components/Layout";
+import { Collapse } from "../components/Collapse";
 
 /** How long the tick shows before the row travels down to "done". */
 const COMPLETE_MS = 650;
@@ -266,14 +266,12 @@ export function MissionsPage() {
     .filter((m) => m.completedAt !== null)
     .sort((a, b) => (a.completedAt! < b.completedAt! ? 1 : -1));
   const atStake = pending.filter((m) => m.categoryId !== null).length * MISSION_XP;
-  let rowIndex = 0;
 
   const row = (m: Mission) => (
     <MissionRow
       key={m.id}
       mission={m}
       category={m.categoryId !== null ? categoryById.get(m.categoryId) : undefined}
-      index={rowIndex++}
       completing={completing.has(m.id)}
       gain={completing.get(m.id) ?? null}
       busy={busyId === m.id}
@@ -288,7 +286,7 @@ export function MissionsPage() {
 
   return (
     <div className="px-5 pt-10 pb-32">
-      <header className="settle mb-7">
+      <header className="settle mb-6">
         <h1 className="display m-0 text-[34px] leading-tight">Misiones</h1>
         <p className="mt-1 mb-0 text-[14px] text-ink-soft">
           {pending.length === 0
@@ -300,11 +298,14 @@ export function MissionsPage() {
         </p>
       </header>
 
-      <form onSubmit={onCreate} className="card settle mb-9 grid gap-4 p-4">
-        <div className="flex items-center gap-2.5">
+      {error && <StaleNotice message={error} onRetry={onRetry} />}
+      {rowError && <p className="mt-0 mb-5 text-[14px] text-warn">{rowError}</p>}
+
+      <form onSubmit={onCreate} className="settle mb-8">
+        <div className="composer">
           <input
             ref={inputRef}
-            className="field min-w-0 flex-1"
+            className="display min-w-0 flex-1 bg-transparent py-2 text-[18px] placeholder:text-ink-faint placeholder:italic focus:outline-none"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="¿Qué tienes pendiente?"
@@ -316,26 +317,18 @@ export function MissionsPage() {
             type="submit"
             disabled={creating || title.trim() === ""}
             aria-label="Apuntar misión"
-            className="btn w-12 shrink-0 px-0"
+            className="btn h-10 min-h-0 w-10 shrink-0 px-0"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2.2}
-              strokeLinecap="round"
-              className="h-5 w-5"
-              aria-hidden="true"
-            >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" className="h-4 w-4" aria-hidden="true">
               <path d="M12 5v14M5 12h14" />
             </svg>
           </button>
         </div>
 
-        {/* The options unfold once there is something to attach them to: the
-            empty state is a single line asking one question. */}
-        {title.trim() !== "" && (
-          <div className="settle grid gap-4">
+        {/* The options unfold once there is something to attach them to:
+            the empty state is a single line asking one question. */}
+        <Collapse open={title.trim() !== ""}>
+          <div className="grid gap-3.5 px-2 pt-4">
             <WhenPicker value={due} onChange={setDue} />
             <CategoryOptions
               categories={categories}
@@ -343,20 +336,17 @@ export function MissionsPage() {
               onChange={setCategoryId}
             />
           </div>
-        )}
+        </Collapse>
 
-        {formError && <p className="m-0 text-[14px] text-warn">{formError}</p>}
+        {formError && <p className="m-0 mt-2 text-[14px] text-warn">{formError}</p>}
       </form>
 
-      {error && <StaleNotice message={error} onRetry={onRetry} />}
-      {rowError && <p className="mt-0 mb-6 text-[14px] text-warn">{rowError}</p>}
-
       {pending.length === 0 ? (
-        <div className="settle mb-10 py-6 text-center">
-          <p className="m-0 text-[18px] font-semibold">Todo en orden</p>
+        <div className="settle py-10 text-center">
+          <p className="display m-0 text-[26px]">Todo hecho.</p>
           <p className="mt-1.5 mb-0 text-[15px] text-ink-soft">
             {done.length > 0
-              ? "No te queda nada pendiente."
+              ? "No te queda nada pendiente. Disfruta el hueco."
               : "Apunta arriba la primera llamada o gestión."}
           </p>
         </div>
@@ -368,41 +358,49 @@ export function MissionsPage() {
           if (list.length === 0) return null;
 
           return (
-            <section key={group} className="mb-7">
-              <SectionTitle count={list.length} className={warn ? "text-warn" : ""}>
+            <section key={group} className="mb-8">
+              <h2
+                className={`display m-0 flex items-baseline gap-2 text-[22px] ${warn ? "text-warn" : ""}`}
+              >
                 {label}
-              </SectionTitle>
-              <ul className="m-0 grid list-none gap-2.5 p-0">{list.map(row)}</ul>
+                <span className="font-sans text-[13px] font-normal text-ink-faint">
+                  {list.length}
+                </span>
+              </h2>
+              <ul className="m-0 list-none p-0">{list.map(row)}</ul>
             </section>
           );
         })
       )}
 
       {done.length > 0 && (
-        <section className="mt-2">
-          <button
-            type="button"
-            onClick={() => withViewTransition(() => setDoneOpen((o) => !o))}
-            aria-expanded={doneOpen}
-            className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-ink-soft"
-          >
-            Hechas <span className="font-normal text-ink-faint">{done.length}</span>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={`h-4 w-4 transition-transform duration-200 ${doneOpen ? "rotate-180" : ""}`}
-              aria-hidden="true"
+        <section>
+          <h2 className="m-0">
+            <button
+              type="button"
+              onClick={() => withViewTransition(() => setDoneOpen((o) => !o))}
+              aria-expanded={doneOpen}
+              className="display flex items-baseline gap-2 text-[22px] text-ink-soft"
             >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-          {doneOpen && (
-            <ul className="m-0 grid list-none gap-2.5 p-0">{done.map(row)}</ul>
-          )}
+              Hechas
+              <span className="font-sans text-[13px] font-normal text-ink-faint">
+                {done.length}
+              </span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`h-4 w-4 self-center transition-transform duration-200 ${doneOpen ? "rotate-180" : ""}`}
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+          </h2>
+          {doneOpen && <ul className="m-0 list-none p-0">{done.map(row)}</ul>}
         </section>
       )}
 
