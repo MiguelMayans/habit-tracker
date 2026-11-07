@@ -12,7 +12,6 @@ import { sinceLastActivity } from "../lib/dates";
 import { useQuickLog } from "../lib/useQuickLog";
 import { orderByLineage } from "../lib/focusLineage";
 import { ProgressRing } from "./ProgressRing";
-import { CategoryIcon } from "./CategoryIcon";
 import { LevelNumber } from "./LevelNumber";
 import { QuickIntensities } from "./QuickIntensities";
 import { ResultModal } from "./ResultModal";
@@ -20,20 +19,23 @@ import { Collapse } from "./Collapse";
 import { vtName } from "../lib/viewTransition";
 
 /**
- * A category on the home: its icon in a progress ring, the name in serif,
- * when you last did something, and the level as a figure in its colour, on a
- * soft panel tinted with that colour — between the old loud cards and bare
- * rows: present, but without a box's border or shadow. The category's icon,
- * large and faint, sits in the corner. The focuses fold out underneath.
+ * A category on the home, as an entry in a magazine's contents: its number
+ * in its colour ("01"), its icon in a progress ring, the name large in
+ * serif, when you last did something, and the level as a figure. No panel
+ * and no card — hairlines between entries, the way a printed index sets
+ * them. The focuses fold out underneath.
  *
  * The link to the detail does not wrap the focus toggle: a button inside a
  * link is not valid HTML.
  */
 export function CategoryCard({
   category: c,
+  index,
   onLogged,
 }: {
   category: Category;
+  /** Its place in the contents, 0-based: shown as "01".."05". */
+  index: number;
   /** Refreshes the home's data after logging from inside the card. */
   onLogged: () => void;
 }) {
@@ -80,19 +82,21 @@ export function CategoryCard({
   }
 
   return (
-    <li className="cat-panel" style={{ "--accent": accent } as React.CSSProperties}>
-      <CategoryIcon slug={c.slug} strokeWidth={1.3} className="cat-panel-mark" />
-      <Link to={`/categories/${c.id}`} className="press relative flex items-center gap-4">
+    <li className="cat-entry" style={{ "--accent": accent } as React.CSSProperties}>
+      <Link to={`/categories/${c.id}`} className="press relative flex items-center gap-3.5">
+        <span className="cat-entry-number" aria-hidden="true">
+          {String(index + 1).padStart(2, "0")}
+        </span>
         {/* The ring is the one thing that travels to the category's screen. */}
         <ProgressRing
           slug={c.slug}
           progress={c.progress}
-          size={56}
+          size={50}
           style={vtName(`cat-ring-${c.id}`)}
         />
         <div className="min-w-0 flex-1">
-          <h2 className="display m-0 text-[22px] leading-tight">{c.name}</h2>
-          <p className="mt-0.5 mb-0 text-[13px] text-ink-soft">
+          <h2 className="display m-0 text-[27px] leading-none">{c.name}</h2>
+          <p className="mt-1.5 mb-0 text-[13px] text-ink-soft">
             <span className={last.cold ? "font-medium text-warn" : undefined}>{last.text}</span>
             {" · "}
             {c.atMaxLevel ? "nivel máximo" : `${c.xpToNextLevel} XP para el ${c.level + 1}`}
@@ -109,7 +113,7 @@ export function CategoryCard({
       {c.focusCount === 0 ? (
         <Link
           to={`/categories/${c.id}?new=focus`}
-          className="mt-2 ml-[72px] inline-flex items-center gap-1 text-[13px] font-medium text-ink-soft"
+          className="mt-2 ml-[94px] inline-flex items-center gap-1 text-[13px] font-medium text-ink-soft"
         >
           <span className="text-[17px] leading-none">+</span> Añadir un foco
         </Link>
@@ -119,7 +123,7 @@ export function CategoryCard({
           onClick={onToggle}
           aria-expanded={isOpen}
           aria-controls={panelId}
-          className="mt-2 ml-[72px] inline-flex items-center gap-1 text-[13px] font-medium text-ink-soft"
+          className="mt-2 ml-[94px] inline-flex items-center gap-1 text-[13px] font-medium text-ink-soft"
         >
           {c.focusCount} {c.focusCount === 1 ? "foco" : "focos"}
           <svg
@@ -138,7 +142,7 @@ export function CategoryCard({
       )}
 
       <Collapse open={isOpen} id={panelId}>
-        <div className="ml-[72px] pt-2">
+        <div className="ml-[94px] pt-2">
           {loadingFocuses && (
             <div className="grid gap-3 pt-1" aria-label="Cargando focos">
               <div className="skeleton h-10 rounded-xl" />

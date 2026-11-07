@@ -16,28 +16,30 @@
 
 @theme {
   /* Surfaces. */
-  --color-sand: #f3eee5;
-  --color-paper: #fbf8f2;
-  --color-line: #e6ded1;
-  --color-mist: #ece5d9;
+  --color-sand: #f2ebe0;
+  --color-paper: #faf6ee;
+  --color-line: #e4d9c9;
+  --color-mist: #eae1d3;
 
   /* Ink: warm charcoal, and two softer steps for secondary text. */
-  --color-ink: #2e2a25;
+  --color-ink: #2b2521;
   --color-ink-soft: #6c645a;
   --color-ink-faint: #a59c90;
 
-  /* Category accents — muted, earthy. The slugs are database values, so
+  /* Category accents — deep and muted, like old jewel tones: burnt
+     terracotta, plum, rosewood, amber ochre, dark sage. Cosy and classy
+     rather than candy. The slugs are database values, so
      these names stay in Spanish. Used as dots, icons and thin bars, never as
      large fills: text always stays in ink. */
-  --color-cuerpo: #c4664a;
-  --color-mente: #7a6fc0;
-  --color-corazon: #c76b7e;
-  --color-disciplina: #c08a2e;
-  --color-ingenio: #4f9677;
+  --color-cuerpo: #b0573c;
+  --color-mente: #7d5a85;
+  --color-corazon: #a8596a;
+  --color-disciplina: #b07c2c;
+  --color-ingenio: #567a5c;
 
   /* For what needs a warning (overdue, errors), without alarm: the same
      terracotta as Cuerpo, which is the warmest thing in the palette. */
-  --color-warn: #b5573c;
+  --color-warn: #a84f36;
 
   --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
   /* For the few words that set the tone — the greeting, screen titles, the
@@ -593,32 +595,23 @@ body::after {
     translate: -50% -50%;
   }
 
-  /* A category on the home (CategoryCard.tsx): a soft panel in its own
-     colour, no border and no shadow — a band of colour on the page rather
-     than a box sitting on it. */
-  .cat-panel {
-    position: relative;
-    overflow: hidden;
-    padding: 14px 16px;
-    border-radius: 22px;
-    background: linear-gradient(
-      100deg,
-      color-mix(in oklab, var(--accent) 14%, var(--color-sand)),
-      color-mix(in oklab, var(--accent) 6%, var(--color-sand))
-    );
+  /* A category on the home (CategoryCard.tsx): an entry in a magazine's
+     contents, between hairlines. */
+  .cat-entry {
+    padding: 18px 0 16px;
+    border-bottom: 1px solid rgb(46 42 37 / 0.12);
   }
 
-  /* Its icon, large and faint, peeking out of the bottom corner. */
-  .cat-panel-mark {
-    position: absolute;
-    right: -14px;
-    bottom: -22px;
-    width: 96px;
-    height: 96px;
+  /* Its number, in its colour: small, tabular, set like a page number. */
+  .cat-entry-number {
+    width: 30px;
+    flex-shrink: 0;
     color: var(--accent);
-    opacity: 0.13;
-    rotate: -12deg;
-    pointer-events: none;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-variation-settings: "SOFT" 100;
+    font-size: 17px;
+    font-weight: 500;
   }
 
   /* How far through a work (WorkCards.tsx): ten dots that fill in its
@@ -731,21 +724,20 @@ body::after {
     position: relative;
     display: flex;
     flex-direction: column;
-    min-height: 168px;
-    padding: 16px 18px;
+    padding: 13px 15px 14px;
     overflow: hidden;
-    border-radius: 26px;
+    border-radius: 20px;
     color: var(--color-paper);
     background:
       radial-gradient(
-        120% 70% at 100% 0%,
-        color-mix(in oklab, var(--accent) 45%, var(--color-paper)),
-        transparent 62%
+        110% 80% at 100% 0%,
+        color-mix(in oklab, var(--accent) 70%, var(--color-paper)),
+        transparent 60%
       ),
       linear-gradient(
         165deg,
-        color-mix(in oklab, var(--accent) 92%, white),
-        color-mix(in oklab, var(--accent) 78%, black)
+        var(--accent),
+        color-mix(in oklab, var(--accent) 72%, black)
       );
     box-shadow: 0 20px 34px -20px color-mix(in oklab, var(--accent) 80%, black);
   }
@@ -753,9 +745,9 @@ body::after {
   .poster-motif {
     position: absolute;
     top: 50%;
-    right: -26px;
-    width: 170px;
-    height: 170px;
+    right: -18px;
+    width: 120px;
+    height: 120px;
     translate: 0 -50%;
     color: var(--color-paper);
     opacity: 0.16;
@@ -777,9 +769,21 @@ body::after {
     color: var(--color-ink);
   }
 
+  .poster .dots {
+    gap: 4px;
+  }
+
   .poster .dots > button {
+    width: 11px;
+    height: 11px;
     border-color: rgb(251 248 242 / 0.6);
     background: transparent;
+  }
+
+  .poster .chip {
+    min-height: 30px;
+    padding: 0 12px;
+    font-size: 13px;
   }
 
   .poster .dots > button[data-fill="full"] {
@@ -827,8 +831,8 @@ body::after {
     text-align: left;
     background: linear-gradient(
       160deg,
-      color-mix(in oklab, var(--accent) 88%, white),
-      color-mix(in oklab, var(--accent) 80%, black)
+      var(--accent),
+      color-mix(in oklab, var(--accent) 74%, black)
     );
     transition: transform 0.2s cubic-bezier(0.34, 1.5, 0.64, 1);
   }
@@ -873,6 +877,11 @@ body::after {
     transition:
       background-color 0.25s ease,
       border-color 0.25s ease;
+  }
+
+  /* With a category, the ring wears its colour even before it is ticked. */
+  .mission-check[data-tinted="true"] {
+    border-color: var(--accent);
   }
 
   .mission-check[aria-checked="true"] {

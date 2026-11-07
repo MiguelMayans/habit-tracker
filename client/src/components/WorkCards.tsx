@@ -60,22 +60,35 @@ export function ActiveWorkCard({
     >
       <WorkKindIcon kind={w.kind} className="poster-motif" />
 
+      {/* Finishing it, in the corner: the one action that ends its time
+          here, kept apart from the everyday ones. */}
+      <button
+        type="button"
+        onClick={onFinish}
+        disabled={finishing}
+        className="chip absolute top-2.5 right-2.5 z-10 h-8 w-8 justify-center !p-0"
+        aria-label={`Terminado: ${w.title}`}
+        title="Terminado"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+          <path d="m5.5 12.5 4 4 9-10" />
+        </svg>
+      </button>
+
       <button
         type="button"
         onClick={onOpen}
         className="relative flex flex-1 flex-col text-left"
         aria-label={`Editar ${w.title}`}
       >
-        <span className="flex items-center justify-between gap-3 text-[11px] font-semibold tracking-[0.16em] text-paper/75 uppercase">
-          {KIND_LABEL[w.kind].one}
-          <span className="font-medium tracking-normal normal-case">{last}</span>
+        <span className="pr-10 text-[10px] font-semibold tracking-[0.16em] text-paper/75 uppercase">
+          {KIND_LABEL[w.kind].one} · {last}
         </span>
-        <span className="flex-1" />
-        <h3 className="display m-0 mt-5 pr-16 text-[26px] leading-[1.05] break-words text-paper">
+        <h3 className="display m-0 mt-1.5 pr-14 text-[21px] leading-[1.1] break-words text-paper">
           {w.title}
         </h3>
         {w.progress && (
-          <span className="mt-1.5 text-[13px] text-paper/80">{w.progress}</span>
+          <span className="mt-0.5 text-[12px] text-paper/80">{w.progress}</span>
         )}
         {gain !== null && (
           <span className="gain mt-1 text-[13px] font-semibold text-paper">
@@ -84,29 +97,17 @@ export function ActiveWorkCard({
         )}
       </button>
 
-      <ProgressDots percent={w.percent} onSet={onPercent} />
-
-      <div className="relative mt-3 flex gap-2">
+      <div className="relative mt-3 flex items-center gap-2">
+        <ProgressDots percent={w.percent} onSet={onPercent} />
         <button
           type="button"
           onClick={onToggleSession}
           aria-expanded={open}
           aria-pressed={open}
           disabled={menteId === null || finishing}
-          className="chip"
+          className="chip ml-auto whitespace-nowrap"
         >
           {SESSION_VERB[w.kind]} hoy
-        </button>
-        <button
-          type="button"
-          onClick={onFinish}
-          disabled={finishing}
-          className="chip ml-auto"
-          aria-label={`Terminado: ${w.title}`}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
-            <path d="m5.5 12.5 4 4 9-10" />
-          </svg>
         </button>
       </div>
 
@@ -147,7 +148,7 @@ function ProgressDots({
   }
 
   return (
-    <div className="relative mt-4 flex items-center gap-3">
+    <div className="flex items-center gap-2">
       <div className="dots" role="group" aria-label="Cuánto llevas">
         {Array.from({ length: 10 }, (_, i) => {
           const fill =
@@ -164,7 +165,7 @@ function ProgressDots({
           );
         })}
       </div>
-      <span className="text-[13px] font-semibold tabular-nums text-paper/85">
+      <span className="text-[12px] font-semibold whitespace-nowrap tabular-nums text-paper/85">
         {percent === null ? "—" : `${value} %`}
       </span>
     </div>

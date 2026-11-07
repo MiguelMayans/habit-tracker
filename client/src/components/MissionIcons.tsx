@@ -77,3 +77,54 @@ export function MissionsGlyph({ className }: { className?: string }) {
     </Svg>
   );
 }
+
+/** The missions' sections, each with its own little drawing. */
+export function SectionGlyph({
+  group,
+  className,
+}: {
+  group: "overdue" | "today" | "upcoming" | "someday";
+  className?: string;
+}) {
+  const strokes: Record<typeof group, ReactNode> = {
+    // An hourglass, its sand run through.
+    overdue: (
+      <>
+        <path d="M6.5 3.5h11M6.5 20.5h11" />
+        <path d="M7.5 3.5c0 4.2 4.5 5.4 4.5 8.5s-4.5 4.3-4.5 8.5M16.5 3.5c0 4.2-4.5 5.4-4.5 8.5s4.5 4.3 4.5 8.5" />
+        <path d="M9.2 19.5c.8-1.6 1.8-2.4 2.8-2.4s2 .8 2.8 2.4Z" fill="currentColor" fillOpacity={0.5} stroke="none" />
+      </>
+    ),
+    // A sun.
+    today: (
+      <>
+        <circle cx="12" cy="12" r="4" fill="currentColor" fillOpacity={0.25} />
+        <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6" />
+      </>
+    ),
+    // A calendar page, with the day ahead marked.
+    upcoming: (
+      <>
+        <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
+        <path d="M3.5 9.5h17M8 3v4M16 3v4" />
+        <circle cx="15.5" cy="15" r="1.8" fill="currentColor" stroke="none" />
+      </>
+    ),
+    // A cloud: someday, whenever.
+    someday: (
+      <path
+        d="M7 18.5a4 4 0 0 1-.6-8 5.5 5.5 0 0 1 10.6-1.3A4.6 4.6 0 0 1 17 18.5Z"
+        fill="currentColor"
+        fillOpacity={0.2}
+      />
+    ),
+  };
+  return (
+    <Svg className={className} strokeWidth={1.8}>
+      {strokes[group]}
+      {group === "someday" && (
+        <path d="M7 18.5a4 4 0 0 1-.6-8 5.5 5.5 0 0 1 10.6-1.3A4.6 4.6 0 0 1 17 18.5Z" />
+      )}
+    </Svg>
+  );
+}

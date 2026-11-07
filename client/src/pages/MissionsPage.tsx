@@ -23,6 +23,8 @@ import {
 import { cue } from "../lib/sound";
 import { reducedMotion, withViewTransition } from "../lib/viewTransition";
 import { MissionRow } from "../components/MissionRow";
+import { DayPulse } from "../components/DayPulse";
+import { SectionGlyph } from "../components/MissionIcons";
 import { MissionSheet } from "../components/MissionSheet";
 import { CategoryOptions, WhenPicker } from "../components/MissionOptions";
 import { ConfirmDialog } from "../components/ConfirmDialog";
@@ -45,7 +47,7 @@ const SECTIONS: {
   { group: "overdue", label: "Vencidas", warn: true },
   { group: "today", label: "Hoy" },
   { group: "upcoming", label: "Próximas" },
-  { group: "someday", label: "Sin fecha" },
+  { group: "someday", label: "Algún día" },
 ];
 
 /** Within a section: dated ones by date, the rest in the order they came. */
@@ -161,6 +163,9 @@ export function MissionsPage() {
       return next;
     });
 
+  // Set when a tick clears the last of today's: the pulse celebrates once.
+  const [justCleared, setJustCleared] = useState(false);
+
   async function onToggle(m: Mission) {
     setRowError(null);
 
@@ -190,6 +195,14 @@ export function MissionsPage() {
       await settled;
       // The row glides to its place among the done ones (or out, if that
       // section is folded) while the rest close the gap.
+      const g = missionGroup(m);
+      const lastOfToday =
+        (g === "today" || g === "overdue") &&
+        missions.filter((x) => {
+          const xg = missionGroup(x);
+          return x.id !== m.id && (xg === "today" || xg === "overdue");
+        }).length === 0;
+      if (lastOfToday) setJustCleared(true);
       withViewTransition(() => {
         replace(res.mission);
         markCompleting(m.id, undefined);
@@ -299,6 +312,9 @@ export function MissionsPage() {
       </header>
 
       {error && <StaleNotice message={error} onRetry={onRetry} />}
+
+      <DayPulse missions={missions} justCleared={justCleared} />
+
       {rowError && <p className="mt-0 mb-5 text-[14px] text-warn">{rowError}</p>}
 
       <form onSubmit={onCreate} className="settle mb-8">
@@ -360,8 +376,12 @@ export function MissionsPage() {
           return (
             <section key={group} className="mb-8">
               <h2
-                className={`display m-0 flex items-baseline gap-2 text-[22px] ${warn ? "text-warn" : ""}`}
+                className={`display m-0 flex items-center gap-2.5 text-[22px] ${warn ? "text-warn" : ""}`}
               >
+                <SectionGlyph
+                  group={group}
+                  className={`h-5 w-5 ${warn ? "" : "text-ink-soft"}`}
+                />
                 {label}
                 <span className="font-sans text-[13px] font-normal text-ink-faint">
                   {list.length}

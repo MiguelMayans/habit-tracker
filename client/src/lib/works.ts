@@ -7,14 +7,14 @@ export const WORK_KINDS: WorkKind[] = [
 
 /**
  * Each kind's colour in the Refuge, drawn from the same earthy family as the
- * categories plus two of their own — a brick red for games and a slate blue
+ * categories plus two of their own — a burgundy for games and a petrol blue
  * for films — so a shelf of mixed things reads at a glance.
  */
 export const KIND_COLOR: Record<WorkKind, string> = {
-  game: "#c2423c",
+  game: "#8c3a44",
   book: "var(--color-disciplina)",
   series: "var(--color-corazon)",
-  movie: "#5b82ad",
+  movie: "#3f6a72",
   anime: "var(--color-mente)",
   comic: "var(--color-ingenio)",
 };
@@ -32,14 +32,14 @@ export const KIND_LABEL: Record<WorkKind, { one: string; many: string }> = {
   comic: { one: "Manga", many: "Manga" },
 };
 
-/** What a session is called, by kind: "today I played / read / watched". */
+/** What a session is called, by kind: "today I played / read / watched", short enough for a poster. */
 export const SESSION_VERB: Record<WorkKind, string> = {
-  game: "He jugado",
-  book: "He leído",
-  series: "He visto",
-  movie: "He visto",
-  anime: "He visto",
-  comic: "He leído",
+  game: "Jugué",
+  book: "Leí",
+  series: "Vi",
+  movie: "Vi",
+  anime: "Vi",
+  comic: "Leí",
 };
 
 /** An example for the progress field, so it is clear it is free text. */

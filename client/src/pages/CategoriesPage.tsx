@@ -143,9 +143,9 @@ export function CategoriesPage() {
 
       <RhythmStrip activities={recent} streak={streak} todayXp={todayXp} />
 
-      <ul className="m-0 grid list-none gap-2.5 p-0">
-        {categories.map((c) => (
-          <CategoryCard key={c.id} category={c} onLogged={load} />
+      <ul className="m-0 list-none border-t border-ink/12 p-0">
+        {categories.map((c, i) => (
+          <CategoryCard key={c.id} category={c} index={i} onLogged={load} />
         ))}
       </ul>
     </div>

@@ -68,6 +68,7 @@ export function MissionRow({
         disabled={busy || completing || locked}
         onClick={onToggle}
         className={`mission-check ${completing ? "pop" : ""}`}
+        data-tinted={accent !== null}
       >
         <svg
           viewBox="0 0 24 24"
