@@ -1,1833 +1,480 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------ *
+ * Calm.
+ *
+ * The app used to speak Persona: pure black, hard shadows, skewed panels,
+ * rays, slams. It was fun to build and too loud to live with — the one thing
+ * this app is for is a few quiet seconds a day, and it was shouting. The
+ * Persona look is archived intact in the `v1.1-persona` tag.
+ *
+ * Now: a flat, very light sand under cream paper; warm charcoal ink, never
+ * pure black; hairlines instead of shadows; one rounded modern sans in
+ * sentence case; colour only as small accents; motion as short, soft fades.
+ * See docs/DESIGN.md, "Dirección visual".
+ * ------------------------------------------------------------------ */
+
 @theme {
-  /* System colours. Pure black: maximum contrast is the whole device. */
-  --color-yellow: #ffe500;
-  --color-black: #000000;
-  --color-bone: #f5f5f0;
+  /* Surfaces. */
+  --color-sand: #f3eee5;
+  --color-paper: #fbf8f2;
+  --color-line: #e6ded1;
+  --color-mist: #ece5d9;
 
-  /* Category colours — high chroma over near-pure black. The slugs are
-   database values, so these names stay in Spanish. */
-  --color-cuerpo: #ff2036;
-  --color-disciplina: #ff8a00;
-  --color-mente: #9945ff;
-  --color-ingenio: #00f0c8;
-  --color-corazon: #ff2e88;
+  /* Ink: warm charcoal, and two softer steps for secondary text. */
+  --color-ink: #2e2a25;
+  --color-ink-soft: #6c645a;
+  --color-ink-faint: #a59c90;
 
-  /* Display face (Dela Gothic One) for headings */
-  --font-display: "Dela Gothic One", system-ui, sans-serif;
-  /* Data face: Dela Gothic is far too heavy below 14px */
-  --font-data: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
-  /* Big figures. Same weight and width as Dela Gothic, but with open
-     apertures: in Dela, under a thick outline, a 5 reads as a 6 and a 3 as
-     an 8. Only its digits are loaded, so anything else falls back to Dela. */
-  --font-figure: "Archivo Black", "Dela Gothic One", system-ui, sans-serif;
+  /* Category accents — muted, earthy. The slugs are database values, so
+     these names stay in Spanish. Used as dots, icons and thin bars, never as
+     large fills: text always stays in ink. */
+  --color-cuerpo: #b86b4f;
+  --color-mente: #7d74ae;
+  --color-corazon: #b9737e;
+  --color-disciplina: #b08637;
+  --color-ingenio: #5e8f76;
+
+  /* For what needs a warning (overdue, errors), without alarm: the same
+     terracotta as Cuerpo, which is the warmest thing in the palette. */
+  --color-warn: #b5573c;
+
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  background: var(--color-sand);
 }
 
 body {
-  background-color: var(--color-black);
-  color: var(--color-bone);
-  font-family: var(--font-data);
+  background: var(--color-sand);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ------------------------------------------------------------------ *
- * Persona visual language: hard shadows with no blur, skewed panels,
- * cut corners and textures in plain CSS (no images to maintain).
- * ------------------------------------------------------------------ */
+/* The pieces live in the components layer, so a Tailwind utility on the
+   element (h-1, min-h-9…) can still adjust them. */
+@layer components {
+  /* ---- Surfaces ---- */
 
-/* ---- The scene: the burst ---- */
-
-/*
- * The backdrop: a still stage, like a Persona menu.
- *
- * It used to be a starburst of rays turning without pause, with stars
- * blinking in it and film grain crawling over everything. Each piece was
- * fine; together the screen never sat still, and the content had to compete
- * with it. Persona's menus are loud in their shapes and quiet in their
- * motion: a few big, flat, static pieces and a lot of black.
- *
- * Three pieces, three flat inks — black, the colour of whatever you are
- * looking at (`--light`: red on the home, the category's own inside it, Mente's
- * purple in the Lair) at full strength, and bone:
- * - a torn slab of colour across the top, behind the header, so the header
- *   still reads as the loud part of the screen;
- * - a thin bone streak under it, on its own diagonal;
- * - a screentone that grows towards the bottom-right corner, in hard bands
- *   of bigger and bigger dots, so the lower half is not a dead black.
- * Everything else is black, which is where the cards stand.
- *
- * It only moves when something happens: it slams in when the app opens, and
- * flares for an instant when you earn XP (App.tsx).
- *
- * Every layer is `fixed`: the backdrop is a still stage the content travels
- * across, not a cloth that stretches to 3000px on a long history screen.
- */
-.scene {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.scene-burst {
-  --ray: var(--light, var(--color-cuerpo));
-  --ray-light: var(--color-bone);
-  transform-origin: 74% 13vh;
-  animation: burst-in 0.55s steps(4) backwards;
-}
-
-/* The slab: wide at the right, torn to a point on the left. */
-.scene-burst::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--ray);
-  clip-path: polygon(30% 0, 100% 0, 100% 41%, 64% 25%, 0 37%, 0 13%);
-}
-
-/* The streak, on a slightly different angle from the slab's lower edge. */
-.scene-burst::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--ray-light);
-  clip-path: polygon(0 40%, 100% 45%, 100% 46.6%, 0 41.4%);
-}
-
-/* The screentone corner: three bands clipped from full-screen layers, so
-   their dots share one grid, each smaller triangle with bigger dots. */
-.tone {
-  position: absolute;
-  inset: 0;
-  background-size: 9px 9px;
-}
-.tone-1 {
-  clip-path: polygon(100% 52%, 100% 100%, 20% 100%);
-  background-image: radial-gradient(
-    circle,
-    var(--light, var(--color-cuerpo)) 1px,
-    transparent 1.5px
-  );
-}
-.tone-2 {
-  clip-path: polygon(100% 66%, 100% 100%, 52% 100%);
-  background-image: radial-gradient(
-    circle,
-    var(--light, var(--color-cuerpo)) 2px,
-    transparent 2.5px
-  );
-}
-.tone-3 {
-  clip-path: polygon(100% 80%, 100% 100%, 78% 100%);
-  background-image: radial-gradient(
-    circle,
-    var(--light, var(--color-cuerpo)) 3.2px,
-    transparent 3.7px
-  );
-}
-
-/* Grain, still. It lives in an embedded SVG because real noise is not made
-   from gradients: any repeated CSS pattern reads as a grid. It used to crawl
-   like film; still, it is only a tooth on the flat inks. */
-.scene-grain {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='r'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23r)'/%3E%3C/svg%3E");
-  opacity: 0.06;
-}
-
-/* ---- The screen wipe (see ScreenTransition.tsx) ---- */
-
-/* Every entrance waits this long on top of its own delay: a new screen is
-   mounted while the slab still covers it, and without the offset the first
-   rows would play their entrance where nobody can see it. Constant, not set
-   per transition: changing an animation's delay after it has run would
-   restart it. */
-main {
-  --enter-offset: 0.16s;
-}
-
-/* Two slabs, wider than the screen and skewed, so their edges cross it on a
-   diagonal: the red edge leads, the black slab follows 40ms behind it and is
-   what actually covers. On the way out the black leaves first and the red
-   trails across the new screen — the colour flash Persona's menus make.
-   Coming back, the whole thing is mirrored. */
-.wipe {
-  position: fixed;
-  inset: 0;
-  z-index: 55;
-  overflow: hidden;
-}
-
-.wipe[data-direction="-1"] {
-  transform: scaleX(-1);
-}
-
-.wipe > i {
-  position: absolute;
-  top: -10%;
-  bottom: -10%;
-  left: -40%;
-  right: -40%;
-  transform: skewX(-16deg) translateX(-160%);
-}
-
-.wipe-edge {
-  background: var(--color-cuerpo);
-}
-
-.wipe-slab {
-  display: grid;
-  place-items: center;
-  background:
-    radial-gradient(circle, rgb(245 245 240 / 0.12) 1.2px, transparent 1.7px)
-      0 0 / 8px 8px,
-    var(--color-black);
-  /* A bone hairline along the slab's leading edge. */
-  box-shadow: inset 6px 0 0 var(--color-bone);
-}
-
-/* The logo's star, riding the slab. Counter-skewed so it stays a star. */
-.wipe-star {
-  width: 70px;
-  height: 70px;
-  background: var(--color-yellow);
-  clip-path: polygon(
-    50% 0,
-    61% 35%,
-    98% 35%,
-    68% 57%,
-    79% 91%,
-    50% 70%,
-    21% 91%,
-    32% 57%,
-    2% 35%,
-    39% 35%
-  );
-  transform: skewX(16deg) rotate(-12deg);
-}
-
-.wipe-cover > i {
-  animation: wipe-cover 0.19s cubic-bezier(0.55, 0, 0.85, 0.4) both;
-}
-.wipe-cover > .wipe-slab {
-  animation-delay: 0.04s;
-}
-
-/* Waiting for the new screen's data: the slabs stay flush and the star
-   spins, Persona's loading screen. */
-.wipe-hold > i {
-  transform: skewX(-16deg) translateX(0);
-}
-.wipe-hold .wipe-star {
-  animation: wipe-star-loading 0.7s linear infinite;
-}
-
-@keyframes wipe-star-loading {
-  from {
-    transform: skewX(16deg) rotate(-12deg);
+  /* The one container: cream paper with a hairline, softly rounded. A shadow
+     so faint it only says "this is lifted", never "look at me". */
+  .card {
+    background: var(--color-paper);
+    border: 1px solid var(--color-line);
+    border-radius: 20px;
+    box-shadow: 0 1px 2px rgb(46 42 37 / 0.03);
   }
-  to {
-    transform: skewX(16deg) rotate(348deg);
+
+  /* A tinted circle holding an icon, in the colour passed as --accent. */
+  .icon-disc {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--accent, var(--color-ink)) 13%, var(--color-paper));
+    color: var(--accent, var(--color-ink));
   }
-}
 
-.wipe-reveal > i {
-  animation: wipe-reveal 0.24s cubic-bezier(0.15, 0.6, 0.4, 1) both;
-}
-.wipe-reveal > .wipe-edge {
-  animation-delay: 0.06s;
-}
-.wipe-reveal .wipe-star {
-  animation: wipe-star-spin 0.24s ease-in both;
-}
+  /* ---- Text ---- */
 
-@keyframes wipe-cover {
-  from {
-    transform: skewX(-16deg) translateX(-160%);
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--color-ink-soft);
   }
-  to {
-    transform: skewX(-16deg) translateX(0);
+
+  /* ---- Controls ---- */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 22px;
+    border-radius: 999px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    font-size: 15px;
+    font-weight: 600;
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease,
+      background-color 0.15s ease;
   }
-}
 
-@keyframes wipe-reveal {
-  from {
-    transform: skewX(-16deg) translateX(0);
+  .btn:not(:disabled):active {
+    transform: scale(0.98);
   }
-  to {
-    transform: skewX(-16deg) translateX(160%);
+
+  .btn:disabled {
+    opacity: 0.4;
   }
-}
 
-@keyframes wipe-star-spin {
-  to {
-    transform: skewX(16deg) rotate(160deg) scale(0.4);
+  /* Secondary: paper with a hairline. */
+  .btn-soft {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    border: 1px solid var(--color-line);
   }
-}
 
-/* ---- The hit of earning XP (see lib/impact.ts) ---- */
-
-/* A zero-size anchor at the tap; everything is drawn around it. Fixed, so
-   it lives in screen coordinates and survives the chip that caused it. */
-.impact {
-  position: fixed;
-  z-index: 45;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-
-/* The shockwave: a diamond, because this app has no circles. It grows and
-   its border thins to nothing, instead of fading. */
-.impact-ring {
-  position: absolute;
-  left: -46px;
-  top: -46px;
-  width: 92px;
-  height: 92px;
-  border: 7px solid var(--color-yellow);
-  outline: 3px solid var(--impact);
-  outline-offset: 3px;
-  animation: impact-ring 0.42s cubic-bezier(0.1, 0.75, 0.3, 1) forwards;
-}
-
-@keyframes impact-ring {
-  from {
-    transform: rotate(45deg) scale(0.15);
+  /* Destructive, without shouting: terracotta text on paper. */
+  .btn-danger {
+    background: var(--color-paper);
+    color: var(--color-warn);
+    border: 1px solid color-mix(in oklab, var(--color-warn) 30%, var(--color-line));
   }
-  to {
-    transform: rotate(45deg) scale(1.5);
-    border-width: 0;
-    outline-width: 0;
+
+  /* A text link-button, for the quiet ways out (cancel, undo). */
+  .link-quiet {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-ink-soft);
+    text-decoration: underline;
+    text-decoration-color: var(--color-line);
+    text-underline-offset: 4px;
   }
-}
 
-/* The spikes: thin hard triangles shooting out and shrinking to a point,
-   alternating the system yellow with the category's colour. */
-.impact-spike {
-  position: absolute;
-  left: -3px;
-  top: -14px;
-  width: 6px;
-  height: 28px;
-  background: var(--color-yellow);
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
-  transform-origin: 50% 100%;
-  animation: impact-spike 0.5s cubic-bezier(0.05, 0.7, 0.3, 1) forwards;
-}
-
-.impact-spike:nth-child(odd) {
-  background: var(--impact);
-}
-
-@keyframes impact-spike {
-  from {
-    transform: rotate(var(--angle)) translateY(-8px) scaleY(1.6);
+  /* A toggle chip: when, kind, status, filters. Pressed, it fills with ink. */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--color-line);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-size: 14px;
+    font-weight: 500;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
   }
-  to {
-    transform: rotate(var(--angle)) translateY(calc(var(--reach) * -1))
-      scaleY(0);
+
+  .chip[aria-pressed="true"],
+  .chip[aria-checked="true"] {
+    background: var(--color-ink);
+    border-color: var(--color-ink);
+    color: var(--color-paper);
   }
-}
 
-/* ---- Textures for the result modal ---- */
-
-/* The rays turn by animating the gradient's own angle, not by rotating the
-   layer: a rotated layer would need a texture as big as the screen's
-   diagonal. Only the result modal still uses them — a celebration is the one
-   place the backdrop is allowed to move. */
-@property --spin {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
-/* The modal's screen: the same burst at full blast. Where the backdrop keeps
-   the rays dark so the cards can stand on them, a celebration has nothing to
-   protect, so the rays go to full colour. */
-.burst-blast {
-  position: absolute;
-  inset: 0;
-  --ray: var(--blast, var(--color-cuerpo));
-  --ray-light: var(--color-bone);
-  background: conic-gradient(
-    from var(--spin) at 30% 17%,
-    var(--ray) 0deg 11deg,
-    transparent 11deg 22deg,
-    var(--ray-light) 22deg 27deg,
-    transparent 27deg 40deg,
-    var(--ray) 40deg 56deg,
-    transparent 56deg 64deg,
-    var(--ray-light) 64deg 76deg,
-    transparent 76deg 90deg,
-    var(--ray) 90deg 97deg,
-    transparent 97deg 113deg,
-    var(--ray-light) 113deg 128deg,
-    transparent 128deg 137deg,
-    var(--ray) 137deg 145deg,
-    transparent 145deg 160deg,
-    var(--ray) 160deg 176deg,
-    transparent 176deg 186deg,
-    var(--ray-light) 186deg 191deg,
-    transparent 191deg 206deg,
-    var(--ray) 206deg 221deg,
-    transparent 221deg 229deg,
-    var(--ray-light) 229deg 241deg,
-    transparent 241deg 256deg,
-    var(--ray) 256deg 263deg,
-    transparent 263deg 278deg,
-    var(--ray) 278deg 294deg,
-    transparent 294deg 303deg,
-    var(--ray-light) 303deg 309deg,
-    transparent 309deg 323deg,
-    var(--ray) 323deg 339deg,
-    transparent 339deg 360deg
-  );
-  animation:
-    burst-in 0.5s steps(4) backwards,
-    ray-spin 24s linear infinite;
-}
-
-/* Over the blast, the same screentone ramp as the backdrop but lower: the
-   content sits in the dark half, the rays own the top. */
-.burst-blast-tone {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle, transparent 1.6px, #000 2.1px) 0 0 / 8px 8px;
-  clip-path: inset(40% 0 0 0);
-}
-
-/* ---- Pieces ---- */
-
-/* Light bleed band: a backing for the wordmark, whose outline is black and
-   would be lost on a black background. It does not hug the logo — it crosses
-   the whole screen edge to edge and lets the arrow poke out below, which is
-   what makes it read as a poster and not a background box. The sides are
-   clipped by the layout's `overflow-hidden`. */
-.bleed-band {
-  position: absolute;
-  left: -50vw;
-  right: -50vw;
-  background: var(--band-bg, var(--color-bone));
-  box-shadow: 0 9px 0 var(--band-edge, var(--color-cuerpo));
-  transform: rotate(var(--band-tilt, -4deg));
-  pointer-events: none;
-}
-
-.bleed-band::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(var(--color-black) 1px, transparent 1.4px);
-  background-size: 6px 6px;
-  opacity: 0.12;
-}
-
-/* Category card: skewed. The transform only, with no clipping, so the level
-   can spill over the top. The transform lives here and not in an inline
-   style, because inline styles always win and would leave :hover dead. */
-.category-card {
-  transform: rotate(var(--rotation, 0deg)) skewX(-7deg);
-  transition: transform 0.12s steps(2);
-}
-
-.category-card:hover {
-  transform: rotate(var(--rotation, 0deg)) skewX(-7deg) translate(-3px, -3px);
-}
-
-/* The corner cut goes on an inner layer, not the whole card. The hard shadow
-   is painted with drop-shadow rather than box-shadow: clip-path also clips
-   box-shadow, so on the cut silhouette it never showed at all. drop-shadow
-   does follow the clipped outline, and still has no blur. */
-.card-clip {
-  overflow: hidden;
-  clip-path: polygon(
-    0 0,
-    100% 0,
-    100% calc(100% - 12px),
-    calc(100% - 18px) 100%,
-    0 100%
-  );
-}
-
-/* Card content: counter-skewed so the text reads level while the panel stays
-   diagonal. No background: the card runs at full colour and the contrast comes
-   from the text outlines below. */
-.slam-content {
-  transform: skewX(7deg);
-}
-
-/* Hard black outline in all four directions. This is what makes light text
-   legible over ANY category colour without adding a backing plate: white on
-   Ingenio gives 1.4:1 and on Disciplina 2.3:1, unreadable without it. No
-   blur, like everything else. */
-@utility text-outline {
-  text-shadow:
-    1px 1px 0 var(--color-black),
-    -1px 1px 0 var(--color-black),
-    1px -1px 0 var(--color-black),
-    -1px -1px 0 var(--color-black);
-}
-
-/* Wordmark-style lettering. The key is `paint-order: stroke fill`: without it
-   the stroke paints OVER the fill and eats the letter from the inside; with
-   it, the stroke sits behind and thickens the silhouette, which is what makes
-   a logo. On top of that, one hard black shadow for relief.
-   It used to be a dark-yellow shadow and then a black one: over a coloured
-   band or the burst, the mustard read as dirt on the letters rather than as
-   depth. */
-@utility text-sign {
-  -webkit-text-stroke: 5px var(--color-black);
-  paint-order: stroke fill;
-  text-shadow: 6px 6px 0 var(--color-black);
-}
-
-/* The same construction at a smaller scale, for medium-sized text. */
-@utility text-sign-fine {
-  -webkit-text-stroke: 3.5px var(--color-black);
-  paint-order: stroke fill;
-  text-shadow: 4px 4px 0 var(--color-black);
-}
-
-/* The focus disclosure.
- *
- * The control and the list used to be two unrelated things: a label with an
- * arrow, and a vertical rule down the side of the list. Here they are ONE
- * object — a bracket with a head and a stem. The tab is the head; opening it
- * grows the stem down through the focuses, and each row hangs off that stem by
- * a tick. That is what the disclosure means structurally, instead of an arrow
- * standing in for it.
- *
- * Closed the tab is an outline, open it fills — the same pressed idiom as the
- * intensity chips, so the state reads without learning anything new. It fills
- * with the CATEGORY accent and not yellow: yellow stays reserved for the
- * category level and for XP.
- */
-.focus-tab {
-  display: inline-flex;
-  align-items: baseline;
-  padding: 3px 11px 4px;
-  /* Black and not transparent: on the logging screen the tabs sit on the
-     burst, and the rays showed through them. */
-  background: var(--color-black);
-  border: 2px solid var(--accent, var(--color-bone));
-  color: var(--accent, var(--color-bone));
-  transform: skewX(-10deg);
-  transition:
-    background-color 0.12s steps(2),
-    color 0.12s steps(2);
-}
-
-.focus-tab[data-open="true"] {
-  background: var(--accent, var(--color-bone));
-  color: var(--color-black);
-}
-
-/* The tab is skewed; its contents are counter-skewed so the figures read
-   level, exactly as in .slam-button. */
-.focus-tab > span {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 7px;
-  transform: skewX(10deg);
-}
-
-/* The empty slot: same shape, dashed, so it reads as a place where something
-   is missing rather than as a control that does nothing. */
-.focus-tab-empty {
-  border-style: dashed;
-  border-color: rgb(245 245 240 / 0.4);
-  color: rgb(245 245 240 / 0.55);
-}
-
-/* A cut shape and not the ▶ character: that one is painted by the system font,
-   aligns differently in every browser — sitting high or low against the
-   baseline depending on where you open it — and cannot transition as it
-   rotates, so it used to jump. Drawn, it turns with the same `steps(2)` as the
-   rest of the app. */
-.disclosure-arrow {
-  width: 7px;
-  height: 9px;
-  background: currentColor;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-  transition: transform 0.14s steps(2);
-}
-
-.focus-tab[data-open="true"] .disclosure-arrow {
-  transform: rotate(90deg);
-}
-
-/* Quick logging, inside the card.
- *
- * Tapping a focus used to leave the home for a whole form. These three chips
- * take its place: they are ephemeral —they only exist while a row is open— so
- * they do not add a permanent box to a card that already learned that lesson.
- * No fill of their own, only a 2px outline, and they fill on press.
- */
-.quick-chip {
-  flex: 1;
-  padding: 5px 4px 6px;
-  border: 2px solid rgb(245 245 240 / 0.4);
-  color: var(--color-bone);
-  font-family: var(--font-display);
-  text-transform: uppercase;
-  transform: skewX(-10deg);
-  transition:
-    background-color 0.1s steps(2),
-    border-color 0.1s steps(2),
-    color 0.1s steps(2);
-}
-
-.quick-chip > span {
-  display: block;
-  transform: skewX(10deg);
-}
-
-.quick-chip:not(:disabled):hover {
-  border-color: var(--color-yellow);
-}
-
-.quick-chip:not(:disabled):active {
-  background: var(--color-yellow);
-  border-color: var(--color-yellow);
-  color: var(--color-black);
-}
-
-.quick-chip:disabled {
-  opacity: 0.35;
-}
-
-/* The stem, hanging off the tab, and the tick that joins each focus to it.
-   The tick is what turns a list with a rule beside it into a bracket: without
-   it the rule is decoration, with it every row is visibly attached.
-
-   A child focus sits further in and its tick is longer, so the branching is
-   drawn rather than spelled out — which is why the rows no longer carry a "↳".
-   `top` is tuned to the cap height of the 13px display name, so the tick meets
-   the word and not the gap above it. */
-.focus-branch {
-  border-left: 2px solid var(--accent, var(--color-bone));
-}
-
-.focus-branch > li {
-  position: relative;
-}
-
-.focus-branch > li::before {
-  content: "";
-  position: absolute;
-  top: 5px;
-  left: -14px;
-  width: 10px;
-  height: 2px;
-  background: var(--accent, var(--color-bone));
-}
-
-/* A child does not hang from the main stem: it hangs FROM ITS PARENT. The
-   `::after` is the short stem coming down from the row above, and the tick
-   leaves from that stem rather than from the main one.
-   `left` is measured against the li's edge, which already starts 14px right
-   of the stem — which is why the old -26px drew the tick 12px OUTSIDE the
-   list, off to the left. */
-.focus-branch > li[data-child="true"]::before {
-  left: 0;
-  width: 10px;
-  opacity: 0.55;
-}
-
-.focus-branch > li[data-child="true"]::after {
-  content: "";
-  position: absolute;
-  top: -20px;
-  left: 0;
-  width: 2px;
-  height: 25px;
-  background: var(--accent, var(--color-bone));
-  opacity: 0.55;
-}
-
-/* A level (see LevelNumber.tsx). Everything is in em, so one set of rules
-   serves the small level of a focus tile and the big one of a card. */
-.level-badge {
-  position: relative;
-  display: inline-flex;
-  align-items: flex-start;
-  line-height: 1;
-}
-
-/* The figure: the calendar day's lettering, extruded. Instead of one shadow,
-   a stack of them one step apart builds a solid block behind the letters —
-   comic lettering, not a drop shadow. */
-.level-figure {
-  position: relative;
-  z-index: 1;
-  display: inline-block;
-  color: var(--color-bone);
-  font-family: var(--font-figure);
-  /* Thinner than the date's outline used to be: a thick stroke is what was
-     closing the digits' counters. */
-  -webkit-text-stroke: 0.06em var(--color-black);
-  paint-order: stroke fill;
-  text-shadow:
-    0.025em 0.025em 0 var(--color-black),
-    0.05em 0.05em 0 var(--color-black),
-    0.075em 0.075em 0 var(--color-black),
-    0.1em 0.1em 0 var(--color-black),
-    0.125em 0.125em 0 var(--color-black),
-    0.15em 0.15em 0 var(--color-black);
-  transform: rotate(-6deg) translate(-0.04em, -0.03em);
-}
-
-/* The "NV" tape, to the left of the figure at the height of its top. The
-   figure overlaps it only by a sliver: tucked fully behind, a narrow digit
-   like a 9 covered it and it stopped reading. */
-.level-tag {
-  position: relative;
-  z-index: 0;
-  flex: none;
-  order: -1;
-  margin-top: 0.12em;
-  margin-right: -0.1em;
-  padding: 0.05em 0.22em 0.04em;
-  background: var(--color-black);
-  color: var(--color-bone);
-  font-size: 0.3em;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  transform: rotate(-14deg) skewX(-10deg);
-  box-shadow: 0.12em 0.12em 0 var(--color-cuerpo);
-}
-
-.level-tag > span {
-  display: inline-block;
-  transform: skewX(10deg);
-}
-
-/* The handle on the right edge of a focus tile: the visible way into the
-   focus menu, for anyone who does not know to hold. Three diamonds rather
-   than "···", which the system font would set round and soft. */
-.focus-handle {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: 36px;
-  border-left: 2px solid rgb(245 245 240 / 0.14);
-}
-
-.focus-handle > i {
-  width: 5px;
-  height: 5px;
-  background: rgb(245 245 240 / 0.6);
-  transform: rotate(45deg);
-  transition: background-color 0.1s steps(2);
-}
-
-.focus-handle:hover > i,
-.focus-handle:focus-visible > i {
-  background: var(--color-yellow);
-}
-
-/* The XP bar and its fill. */
-.xp-bar {
-  clip-path: polygon(0 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
-}
-
-/* `backwards` and not `both`: with `both` the final keyframe would be pinned
-   forever and would block any :hover or later change.
-   The `overflow` clips the sheen to the WIDTH OF THE FILL: without it the
-   track did the clipping, and the white band kept travelling across the empty
-   part of the bar, past where progress actually reaches. */
-.xp-bar-fill {
-  overflow: hidden;
-  animation: fill 0.95s calc(var(--delay, 0s) + var(--enter-offset, 0s))
-    cubic-bezier(0.2, 0.9, 0.25, 1) backwards;
-  /* For when the XP changes WITHOUT a remount, which is what happens when
-     logging from the card itself: without this the reward just appears. */
-  transition: width 1s cubic-bezier(0.2, 0.9, 0.25, 1);
-}
-
-/* A sheen running across the bar. Hard edges, no gradient: it is a solid band
-   crossing, not a soft glow. */
-.xp-bar-fill::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    100deg,
-    transparent 0 44%,
-    var(--color-bone) 44% 56%,
-    transparent 56% 100%
-  );
-  animation: sheen 3.4s steps(24) infinite;
-}
-
-/* Side cut for pills and buttons. */
-/* ---- Form controls ---- */
-
-/* The frame is what skews; the control inside is counter-skewed. Skewing the
-   input itself would render whatever the user types on a slant — acceptable
-   in a label, irritating in a textarea. */
-.field-frame {
-  background: #111;
-  border: 2px solid rgb(245 245 240 / 0.4);
-  transform: skewX(-7deg);
-  transition:
-    border-color 0.1s steps(2),
-    box-shadow 0.1s steps(2);
-}
-
-.field-frame:focus-within {
-  border-color: var(--color-yellow);
-  box-shadow: 5px 5px 0 var(--color-yellow);
-}
-
-.field {
-  display: block;
-  width: 100%;
-  padding: 11px 14px;
-  background: transparent;
-  border: 0;
-  color: var(--color-bone);
-  font-family: var(--font-data);
-  font-weight: 600;
-  transform: skewX(7deg);
-}
-
-.field:focus {
-  outline: none;
-}
-
-/* Select options are painted by the system: an explicit dark background, or
-   some browsers render them white on white. */
-/* Same reason as the disabled button: the frame stays opaque, only what is
-   inside fades. */
-.field:disabled {
-  opacity: 0.4;
-}
-
-.field option {
-  background: #111;
-  color: var(--color-bone);
-}
-
-/* Translucent bone on black: 0.40 is the floor for a control's outline (3.4:1,
-   over the 3:1 a UI component needs) and 0.50 the floor for text (4.9:1). They
-   used to sit at 0.22 and 0.30, which is 1.5:1 and 2.3:1 — visible if you knew
-   they were there, invisible in a gym at night. */
-
-/* Field label: a solid tab sitting above the control. */
-.field-label {
-  display: inline-block;
-  padding: 2px 9px;
-  background: var(--color-bone);
-  color: var(--color-black);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  transform: skewX(-10deg);
-}
-
-/* Primary button: skewed, hard shadow, and on press it falls onto it. */
-.slam-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  min-height: 48px;
-  padding: 0 22px;
-  background: var(--color-yellow);
-  color: var(--color-black);
-  font-family: var(--font-display);
-  font-size: 13px;
-  text-transform: uppercase;
-  transform: skewX(-10deg);
-  box-shadow: 6px 6px 0 var(--color-black);
-  transition:
-    transform 0.08s steps(2),
-    box-shadow 0.08s steps(2);
-}
-
-.slam-button > * {
-  transform: skewX(10deg);
-}
-
-.slam-button:not(:disabled):hover {
-  transform: skewX(-10deg) translate(-2px, -2px);
-  box-shadow: 9px 9px 0 var(--color-black);
-}
-
-.slam-button:not(:disabled):active {
-  transform: skewX(-10deg) translate(5px, 5px);
-  box-shadow: 1px 1px 0 var(--color-black);
-}
-
-/* Disabled goes dark and stays opaque. It used to fade to 35%, which over
-   the burst let the rays show through and turned the yellow into olive. */
-.slam-button:disabled {
-  filter: grayscale(1) brightness(0.42);
-  box-shadow: 3px 3px 0 var(--color-black);
-}
-
-/* Intensity chip: chosen by tapping, not by opening a select. */
-.intensity-chip {
-  position: relative;
-  padding: 12px 8px 11px;
-  background: #111;
-  color: rgb(245 245 240 / 0.55);
-  border: 2px solid rgb(245 245 240 / 0.4);
-  font-family: var(--font-display);
-  text-transform: uppercase;
-  transform: rotate(var(--rotation, 0deg)) skewX(-7deg);
-  transition:
-    transform 0.1s steps(2),
-    box-shadow 0.1s steps(2),
-    background-color 0.1s steps(2),
-    color 0.1s steps(2);
-}
-
-.intensity-chip > * {
-  transform: skewX(7deg);
-}
-
-.intensity-chip[aria-pressed="true"] {
-  background: var(--color-yellow);
-  border-color: var(--color-yellow);
-  color: var(--color-black);
-  box-shadow: 5px 5px 0 var(--color-cuerpo);
-  transform: rotate(var(--rotation, 0deg)) skewX(-7deg) translate(-2px, -3px);
-}
-
-/* A category tile on the logging screen (CategoryPick). Dim until picked,
-   then filled with its colour and lifted onto a hard bone shadow — the same
-   pressed idiom as the intensity chips, in the category's colour instead of
-   the system yellow. */
-.category-pick {
-  position: relative;
-  display: grid;
-  place-items: center;
-  height: 66px;
-  padding: 4px 10px;
-  background: #111;
-  border: 2px solid var(--accent);
-  transform: skewX(-7deg);
-  transition:
-    transform 0.1s steps(2),
-    box-shadow 0.1s steps(2),
-    background-color 0.1s steps(2);
-}
-
-.category-pick > * {
-  transform: skewX(7deg);
-}
-
-.category-pick-mark {
-  width: auto;
-  max-width: 100%;
-  height: 54px;
-  object-fit: contain;
-  opacity: 0.82;
-}
-
-.category-pick[data-selected="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  box-shadow: 5px 5px 0 var(--color-bone);
-  transform: skewX(-7deg) translate(-2px, -3px);
-}
-
-.category-pick[data-selected="true"] .category-pick-mark {
-  opacity: 1;
-}
-
-/* ---- Missions ---- */
-
-/* The floating bar along the bottom (BottomNav): a black slab skewed like
-   everything else, with logging sticking up out of the middle in yellow and
-   still beating, as the old floating button did. */
-.bottom-nav {
-  position: fixed;
-  bottom: 12px;
-  left: 50%;
-  z-index: 40;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: end;
-  width: min(calc(100% - 28px), 420px);
-  translate: -50% 0;
-  animation: enter-nav 0.45s 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) backwards;
-}
-
-@keyframes enter-nav {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
+  .chip:disabled {
+    opacity: 0.45;
   }
-}
 
-/* Dialogs live inside <main>, whose z-index is its own stacking context, so
-   no z-index of theirs can lift them over the bar: while one is open, the
-   bar steps aside instead. */
-body:has([role="dialog"]) .bottom-nav {
-  display: none;
-}
-
-/* The slab is a fixed height along the bottom of the row: the logging
-   diamond is taller and breaks out of its top edge. */
-.bottom-nav-bar {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 58px;
-  background: var(--color-black);
-  border: 2px solid var(--color-bone);
-  transform: skewX(-10deg);
-  box-shadow: 5px 5px 0 var(--color-cuerpo);
-}
-
-.nav-tab {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  padding: 9px 4px 8px;
-  color: rgb(245 245 240 / 0.78);
-  transition: color 0.1s steps(2);
-}
-
-.nav-tab:hover {
-  color: var(--color-bone);
-}
-
-.nav-tab-label {
-  padding: 1px 5px;
-  font-size: 8.5px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  line-height: 1.2;
-  text-transform: uppercase;
-}
-
-/* Where you are: the icon goes yellow and the label sits on a red tape. */
-.nav-tab[aria-current="page"] {
-  color: var(--color-yellow);
-}
-
-.nav-tab[aria-current="page"] .nav-tab-label {
-  background: var(--color-cuerpo);
-  color: var(--color-bone);
-  transform: skewX(-10deg);
-}
-
-/* Logging: the same anatomy as the tabs either side — mark above, label
-   below — on a yellow cell of the same skewed slab, a notch taller than the
-   rest. It used to be a separate pill sitting on top of the bar, and read as
-   stuck on. Still the main action, so it is the one that beats. */
-.nav-log {
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  align-self: end;
-  align-content: center;
-  justify-items: center;
-  gap: 3px;
-  height: 58px;
-  margin: 0 2px;
-  padding: 0 20px;
-  color: var(--color-black);
-}
-
-.nav-log::before {
-  content: "";
-  position: absolute;
-  inset: -8px 0 0;
-  z-index: -1;
-  background: var(--color-yellow);
-  transform: skewX(-10deg);
-  box-shadow: 4px 4px 0 var(--color-black);
-  transition: translate 0.08s steps(2);
-  animation: cell-beat 2.8s 1.5s ease-in-out infinite;
-}
-
-@keyframes cell-beat {
-  50% {
-    box-shadow:
-      4px 4px 0 var(--color-black),
-      7px 7px 0 var(--color-cuerpo);
+  /* An option drawn as an icon in a circle (a category, a kind of work): the
+     icon in its colour on a tint, filled with the colour when picked. */
+  .icon-pick {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid var(--color-line);
+    background: var(--color-paper);
+    color: var(--accent, var(--color-ink));
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease,
+      border-color 0.15s ease;
   }
-}
 
-.nav-log-mark > b {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 30px;
-  line-height: 0.8;
-  transition: translate 0.08s steps(2);
-}
-
-.nav-log:active::before,
-.nav-log:active .nav-log-mark > b {
-  translate: 2px 2px;
-}
-
-/* On the logging screen it leads nowhere: it stays, marked as the current
-   screen like any tab, so the bar does not change shape under your thumb. */
-.nav-log[aria-current="page"] {
-  pointer-events: none;
-}
-
-.nav-log[aria-current="page"]::before {
-  animation: none;
-}
-
-.nav-log[aria-current="page"] .nav-tab-label {
-  background: var(--color-cuerpo);
-  color: var(--color-bone);
-  transform: skewX(-10deg);
-}
-
-/* What is due today, as a yellow diamond on the missions icon's corner — the
-   notification badge of a Persona phone, in the app's own shape. */
-.nav-badge {
-  position: absolute;
-  top: -9px;
-  right: -15px;
-  display: grid;
-  place-items: center;
-  width: 21px;
-  height: 21px;
-  background: var(--color-yellow);
-  border: 2px solid var(--color-black);
-  transform: rotate(45deg);
-  animation: badge-in 0.35s 0.9s cubic-bezier(0.2, 1.6, 0.4, 1) backwards;
-}
-
-.nav-badge > b {
-  color: var(--color-black);
-  font-family: var(--font-figure);
-  font-size: 11px;
-  line-height: 1;
-  transform: rotate(-45deg);
-}
-
-@keyframes badge-in {
-  from {
-    scale: 0;
+  .icon-pick[aria-pressed="true"],
+  .icon-pick[aria-checked="true"] {
+    background: var(--accent, var(--color-ink));
+    border-color: var(--accent, var(--color-ink));
+    color: var(--color-paper);
   }
-}
 
-/* Sound on/off, top right of the home: a small black plaque, the logo's
-   corner kept clear. Off, it dims. */
-.sound-toggle {
-  position: absolute;
-  top: -26px;
-  right: -4px;
-  z-index: 20;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 32px;
-  background: var(--color-black);
-  color: var(--color-bone);
-  border: 2px solid var(--color-bone);
-  transform: rotate(4deg) skewX(-10deg);
-  box-shadow: 3px 3px 0 var(--color-cuerpo);
-}
-
-.sound-toggle > svg {
-  transform: skewX(10deg);
-}
-
-.sound-toggle[aria-pressed="false"] {
-  color: rgb(245 245 240 / 0.5);
-  border-color: rgb(245 245 240 / 0.5);
-  box-shadow: 3px 3px 0 var(--color-black);
-}
-
-/* An option chip (when, on the missions): a small toggle in the intensity
-   chips' idiom. Pressed, it lifts onto a red shadow. */
-.option-chip {
-  padding: 6px 11px 7px;
-  background: #111;
-  border: 2px solid rgb(245 245 240 / 0.4);
-  color: var(--color-bone);
-  font-family: var(--font-display);
-  font-size: 11px;
-  line-height: 1;
-  text-transform: uppercase;
-  transform: skewX(-10deg);
-  transition:
-    transform 0.1s steps(2),
-    box-shadow 0.1s steps(2),
-    background-color 0.1s steps(2);
-}
-
-.option-chip > * {
-  display: inline-block;
-  transform: skewX(10deg);
-}
-
-.option-chip[aria-pressed="true"] {
-  background: var(--color-yellow);
-  border-color: var(--color-yellow);
-  color: var(--color-black);
-  box-shadow: 4px 4px 0 var(--color-cuerpo);
-  transform: skewX(-10deg) translate(-2px, -2px);
-}
-
-/* An icon as an option (a mission's category, a Lair work's kind): drawn in
-   its colour, filled when picked — the logging screen's tiles, pocket-sized. */
-.icon-pick {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 36px;
-  background: #111;
-  border: 2px solid var(--accent);
-  color: var(--accent);
-  transform: skewX(-10deg);
-  transition:
-    transform 0.1s steps(2),
-    box-shadow 0.1s steps(2),
-    background-color 0.1s steps(2);
-}
-
-.icon-pick > * {
-  transform: skewX(10deg);
-}
-
-.icon-pick[aria-pressed="true"] {
-  background: var(--accent);
-  color: var(--color-black);
-  box-shadow: 4px 4px 0 var(--color-bone);
-  transform: skewX(-10deg) translate(-2px, -2px);
-}
-
-.mission-row {
-  transform: rotate(var(--rotation, 0deg)) skewX(-6deg);
-}
-
-/* The tick: a diamond, like every bullet in the app. */
-.mission-check {
-  position: relative;
-  display: grid;
-  flex-shrink: 0;
-  place-items: center;
-  width: 54px;
-}
-
-.mission-check > i {
-  width: 20px;
-  height: 20px;
-  border: 2.5px solid var(--color-bone);
-  transform: rotate(45deg);
-  transition:
-    background-color 0.1s steps(2),
-    border-color 0.1s steps(2);
-}
-
-.mission-check:not(:disabled):hover > i {
-  border-color: var(--color-yellow);
-}
-
-.mission-check[aria-checked="true"] > i {
-  background: var(--color-yellow);
-  border-color: var(--color-yellow);
-}
-
-.mission-check > svg {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  color: var(--color-black);
-}
-
-/* Completing: a red slash tears through the title, a stamp lands, and the row
-   is flung off to the right — a calling card delivered. The stamp and the
-   fling are shared with the Lair's "¡COMPLETADO!". */
-.mission-slash {
-  position: absolute;
-  top: 56%;
-  left: -6px;
-  right: -6px;
-  height: 6px;
-  margin-top: -3px;
-  background: var(--color-cuerpo);
-  box-shadow: 2px 2px 0 var(--color-black);
-  transform-origin: left center;
-  rotate: -3deg;
-  animation: slash-draw 0.2s steps(4) backwards;
-}
-
-@keyframes slash-draw {
-  from {
-    transform: scaleX(0);
+  .icon-pick:disabled {
+    opacity: 0.45;
   }
-}
 
-.stamp-mark {
-  position: absolute;
-  top: 50%;
-  right: 16px;
-  z-index: 20;
-  padding: 2px 8px 3px;
-  background: var(--color-black);
-  border: 3px solid var(--color-cuerpo);
-  color: var(--color-cuerpo);
-  font-family: var(--font-display);
-  font-size: 16px;
-  line-height: 1;
-  pointer-events: none;
-  translate: 0 -50%;
-  rotate: -12deg;
-  animation: stamp-in 0.2s 0.14s steps(3) backwards;
-}
-
-@keyframes stamp-in {
-  from {
-    opacity: 0;
-    scale: 2.6;
+  .field {
+    display: block;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--color-line);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-size: 16px;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
   }
-}
 
-.fling-out {
-  animation: mission-out 0.24s 0.56s steps(4) forwards;
-}
-
-@keyframes mission-out {
-  to {
-    opacity: 0;
-    translate: 115% 0;
+  .field::placeholder {
+    color: var(--color-ink-faint);
   }
-}
 
-/* Done: struck through in red, like the slash that completed it. */
-.mission-done-title {
-  color: rgb(245 245 240 / 0.55);
-  text-decoration: line-through;
-  text-decoration-color: var(--color-cuerpo);
-  text-decoration-thickness: 3px;
-}
-
-/* A rating, as five diamonds: the app's bullet, filled in yellow. */
-.rating {
-  display: inline-flex;
-  gap: 5px;
-}
-
-.rating > i,
-.rating > button > i {
-  display: block;
-  width: var(--gem, 11px);
-  height: var(--gem, 11px);
-  border: 2px solid var(--color-yellow);
-  transform: rotate(45deg);
-}
-
-.rating > button {
-  padding: 4px;
-}
-
-.rating [data-on="true"] {
-  background: var(--color-yellow);
-}
-
-/* A finished work in the trophy case: a small black plaque with a yellow
-   edge, tilted like the rest of the collage. */
-.trophy {
-  transform: rotate(var(--rotation, 0deg)) skewX(-6deg);
-  filter: drop-shadow(4px 4px 0 var(--color-yellow));
-}
-
-/* ---- Small motions ---- */
-
-/* A card sinks when you press it, onto the shadow it casts: the same idiom
-   as the buttons, so a tap is felt before the screen changes. Only when the
-   press is on the card's own target (its link on the home, its tap area on
-   a focus tile): pressing an intensity chip inside it must not move the chip
-   under your finger. Declared after :hover so it wins while both apply. */
-.category-card:has(> .card-clip > a:active),
-.category-card:has(.long-pressable:active) {
-  transform: rotate(var(--rotation, 0deg)) skewX(-7deg) translate(3px, 3px);
-}
-
-/* The intensity chips pop in one after another when a focus unfolds. */
-.quick-chip {
-  animation: chip-in 0.26s calc(var(--i, 0) * 0.05s)
-    cubic-bezier(0.2, 1.5, 0.4, 1) backwards;
-}
-
-@keyframes chip-in {
-  from {
-    opacity: 0;
-    transform: skewX(-10deg) translateY(12px) scale(0.5);
+  .field:focus {
+    outline: none;
+    border-color: var(--color-ink-faint);
+    box-shadow: 0 0 0 4px rgb(46 42 37 / 0.06);
   }
-}
 
-/* The focus bracket draws itself: the stem grows down from the tab and the
-   rows appear as it reaches them. Clipped top to bottom, so the stem and
-   the rows it carries arrive together. */
-.focus-branch {
-  animation: stem-draw 0.32s cubic-bezier(0.3, 0.7, 0.3, 1) backwards;
-}
-
-@keyframes stem-draw {
-  from {
-    clip-path: inset(0 0 100% 0);
+  textarea.field {
+    resize: vertical;
   }
-  to {
-    clip-path: inset(0 0 0 0);
+
+  .field-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-ink-soft);
   }
-}
 
-/* The 30-day strip fills in on arrival, a day at a time. */
-.day-in {
-  animation: day-in 0.22s
-    calc(0.25s + var(--enter-offset, 0s) + var(--i, 0) * 0.018s)
-    cubic-bezier(0.2, 1.4, 0.4, 1) backwards;
-}
-
-@keyframes day-in {
-  from {
-    transform: scaleY(0);
+  /* Progress: a thin rounded track, filled in the accent colour. The fill
+     travels to its new width slowly enough to be noticed, never to be watched
+     for long. */
+  .progress {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--color-mist);
   }
-}
 
-/* Loose text over the backdrop gets a black strip behind it. With white
-   rays in the sky, bare bone or grey text crossed one and vanished; this is
-   the same strip "ÚLTIMOS 30 DÍAS" and the streak already wore. `clone` keeps
-   the strip whole on every line if the text wraps. */
-.on-scene {
-  background: var(--color-black);
-  padding: 2px 6px;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-}
-
-/* The "new version" tape (UpdateBanner). Skewed like every tape in the app,
-   with a hard black shadow, and it slams in from the left. */
-.update-banner-tape {
-  transform: skewX(-10deg);
-  box-shadow: 5px 5px 0 var(--color-black);
-}
-
-.update-banner-content {
-  transform: skewX(10deg);
-}
-
-.update-banner {
-  animation: update-in 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) backwards;
-}
-
-@keyframes update-in {
-  from {
-    opacity: 0;
-    transform: translateX(-60px) skewX(-14deg);
+  .progress > i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--accent, var(--color-ink));
+    transition: width 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
-}
 
-/* An element that responds to press-and-hold. Without this, holding a finger
-   selects the text and pops the system magnifier over it. Scrolling is kept:
-   `touch-action` stays automatic on purpose. */
-.long-pressable {
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-
-/* ---- Motion ---- */
-
-/* The burst arriving: it punches out from its source in four frames, the
-   single entrance the backdrop makes. */
-@keyframes burst-in {
-  from {
-    opacity: 0;
-    transform: scale(0.35);
+  /* A quiet loading block. */
+  .skeleton {
+    border-radius: 20px;
+    background: var(--color-mist);
+    animation: breathe 1.6s ease-in-out infinite alternate;
   }
-  50% {
-    opacity: 1;
-    transform: scale(1.12);
-  }
-}
 
-/* Named `ray-spin` and not `spin`: Tailwind ships its own `spin` (the one
-   behind `animate-spin`), which rotates the whole element and silently wins. */
-@keyframes ray-spin {
-  to {
-    --spin: 360deg;
+  @keyframes breathe {
+    from {
+      opacity: 0.55;
+    }
+    to {
+      opacity: 1;
+    }
   }
-}
 
-/* Jumps with no apparent order, eight per cycle. The values share no common
-   multiples, so no pattern reads. */
-@keyframes fill {
-  from {
-    width: 0;
+  /* ---- The bottom bar ---- */
+
+  .bottom-nav {
+    position: fixed;
+    bottom: 14px;
+    left: 50%;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    width: min(calc(100% - 32px), 400px);
+    padding: 6px;
+    translate: -50% 0;
+    border-radius: 999px;
+    border: 1px solid var(--color-line);
+    background: rgb(251 248 242 / 0.92);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 6px 24px rgb(46 42 37 / 0.08);
   }
-}
 
-@keyframes sheen {
-  0%,
-  74% {
-    transform: translateX(-100%);
+  /* Dialogs live inside <main>, whose stacking context caps their z-index:
+     while one is open, the bar steps aside instead. */
+  body:has([role="dialog"]) .bottom-nav {
+    display: none;
   }
-  92%,
-  100% {
-    transform: translateX(220%);
+
+  .nav-tab {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    padding: 6px 4px;
+    border-radius: 999px;
+    color: var(--color-ink-faint);
+    font-size: 11px;
+    font-weight: 600;
+    transition: color 0.15s ease;
   }
-}
 
-/* The wordmark already carries its own drawn skew, so it enters on scale
-   alone: any added skew would deform it. */
-@keyframes enter-logo {
-  from {
-    opacity: 0;
-    transform: scale(1.55);
+  .nav-tab[aria-current="page"] {
+    color: var(--color-ink);
   }
-}
 
-@keyframes enter-ribbon {
-  from {
-    opacity: 0;
-    transform: skewX(-10deg) translateX(-30px);
+  .nav-log {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    margin: 0 10px;
+    border-radius: 999px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    transition: transform 0.15s ease;
   }
-}
 
-@keyframes enter-card {
-  from {
-    opacity: 0;
-    transform: rotate(var(--rotation, 0deg)) skewX(-18deg) translateX(-70px);
+  .nav-log:active {
+    transform: scale(0.95);
   }
-}
 
-.anim-logo {
-  animation: enter-logo 0.5s calc(0.06s + var(--enter-offset, 0s))
-    cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
-}
-.anim-ribbon {
-  animation: enter-ribbon 0.4s calc(0.16s + var(--enter-offset, 0s))
-    cubic-bezier(0.2, 1.35, 0.4, 1) backwards;
-}
-.anim-card {
-  animation: enter-card 0.5s calc(var(--delay, 0s) + var(--enter-offset, 0s))
-    cubic-bezier(0.2, 1.35, 0.35, 1) backwards;
-}
-
-/* Generic staggered entrance, for form rows and lists. The component passes
-   the offset through --delay. */
-@keyframes enter-row {
-  from {
-    opacity: 0;
-    transform: translateX(-26px) skewX(-12deg);
-  }
-}
-.anim-row {
-  animation: enter-row 0.4s calc(var(--delay, 0s) + var(--enter-offset, 0s))
-    cubic-bezier(0.2, 1.3, 0.4, 1) backwards;
-}
-
-/* Loading block: it pulses instead of showing a dead grey. It never claims
-   what shape the real content will take — that would be lying about data that
-   has not arrived — only that something is on its way. */
-@keyframes loading-pulse {
-  from {
+  .nav-log[aria-current="page"] {
     opacity: 0.35;
+    pointer-events: none;
   }
-  to {
-    opacity: 0.7;
-  }
-}
-/* Black with an edge, like a card about to arrive: the old flat #1c1c1c
-   vanished against the rays, and a screen revealed by the wipe looked empty
-   until its data landed. */
-.skeleton {
-  background: var(--color-black);
-  box-shadow: inset 0 0 0 2px rgb(245 245 240 / 0.16);
-  animation: loading-pulse 1.1s ease-in-out infinite alternate;
-}
 
-/* The result landing: it enters large and settles. */
-@keyframes slam {
-  from {
-    opacity: 0;
-    transform: scale(1.5) rotate(-5deg);
+  .nav-badge {
+    position: absolute;
+    top: -4px;
+    right: -10px;
+    display: grid;
+    place-items: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--color-warn);
+    color: var(--color-paper);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
   }
-}
-.anim-slam {
-  animation: slam 0.42s cubic-bezier(0.16, 1.45, 0.4, 1) backwards;
-}
 
-/* ---- Level up ---- */
+  /* ---- Rating: five small dots ---- */
 
-/* A burst of rays coming out from behind the number. */
-@keyframes burst {
-  from {
-    opacity: 0;
-    transform: rotate(-40deg) scale(0.2);
+  .rating {
+    display: inline-flex;
+    gap: 4px;
   }
-  55% {
-    opacity: 1;
-  }
-  to {
-    opacity: 0.55;
-    transform: rotate(0deg) scale(1);
-  }
-}
-/* Same reason: the burst's resting state is declared on the class. */
-.anim-burst {
-  opacity: 0.55;
-  animation: burst 0.7s cubic-bezier(0.16, 1.3, 0.4, 1) backwards;
-}
 
-/* The bar topping out, in two beats.
- *
- * First the wind-up: it goes white and swells a little while nothing else
- * moves. Then the hit. An impact with no anticipation reads as an accident;
- * the held beat before it is what makes the landing feel earned.
- *
- * Steps, never a smooth curve: this whole app lands on hard cuts.
- */
-@keyframes bar-charge {
-  from {
-    transform: scaleY(1);
-    background-color: #242424;
+  .rating i {
+    display: block;
+    width: var(--gem, 8px);
+    height: var(--gem, 8px);
+    border-radius: 999px;
+    background: var(--color-mist);
   }
-  to {
-    transform: scaleY(1.7);
-    background-color: var(--color-bone);
+
+  .rating [data-on="true"] {
+    background: var(--color-disciplina);
   }
-}
 
-.anim-bar-charge {
-  animation: bar-charge 0.11s steps(2) forwards;
-}
-
-@keyframes bar-hit {
-  0% {
-    transform: scaleY(1.7);
-    background-color: var(--color-bone);
+  .rating > button {
+    padding: 5px;
   }
-  35% {
-    transform: scaleY(3.2);
-    background-color: var(--color-bone);
+
+  /* ---- Motion: soft, short, and only on arrival ---- */
+
+  /* Things settle in: a fade and a few pixels of travel. Lists stagger by
+     passing --delay. */
+  @keyframes settle {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
   }
-  70% {
-    transform: scaleY(1.6);
-    background-color: var(--color-yellow);
+
+  .settle {
+    animation: settle 0.35s calc(var(--delay, 0s)) cubic-bezier(0.2, 0.7, 0.2, 1)
+      backwards;
   }
-  100% {
-    transform: scaleY(1);
-    background-color: #242424;
+
+  /* A screen arriving: a plain fade, no travel, so changing screens feels
+     like turning a page rather than being thrown somewhere. */
+  @keyframes screen-in {
+    from {
+      opacity: 0;
+    }
   }
-}
 
-.anim-bar-hit {
-  animation: bar-hit 0.46s steps(4) 1;
-}
-
-/* The level-up banner (LevelUpBanner in ResultModal.tsx). A yellow band
-   wider than the screen, tilted, with black rails top and bottom and speed
-   stripes running through it. In from the left fast, a slow drift while it
-   holds, out to the right fast. */
-.levelup {
-  position: fixed;
-  inset: 0;
-  z-index: 62;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/* Wider than the screen by a quarter on each side, so its tilted ends never
-   show, and centred on it so the words land in the middle. */
-.levelup-band {
-  position: absolute;
-  top: 38%;
-  left: -25vw;
-  right: -25vw;
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  padding: 16px 0 20px;
-  background:
-    repeating-linear-gradient(
-        -60deg,
-        transparent 0 22px,
-        rgb(0 0 0 / 0.07) 22px 34px
-      )
-      0 0 / 200% 100%,
-    var(--color-yellow);
-  border-block: 7px solid var(--color-black);
-  box-shadow: 0 12px 0 var(--color-cuerpo);
-  animation:
-    levelup-band 1.3s cubic-bezier(0.3, 0, 0.2, 1) both,
-    levelup-stripes 0.6s linear infinite;
-}
-
-.levelup-title {
-  display: inline-block;
-  padding: 3px 12px;
-  background: var(--color-black);
-  color: var(--color-bone);
-  font-family: var(--font-display);
-  font-size: 14px;
-  text-transform: uppercase;
-  transform: skewX(-10deg);
-}
-
-.levelup-title > span {
-  display: inline-block;
-  transform: skewX(10deg);
-}
-
-.levelup-text {
-  color: var(--color-black);
-  font-family: var(--font-display);
-  font-size: 48px;
-  font-weight: 400;
-  line-height: 1;
-  transform: skewX(-8deg);
-  animation: levelup-text 1.3s cubic-bezier(0.2, 1.3, 0.4, 1) both;
-}
-
-.levelup-text .level-figure {
-  font-size: 1.25em;
-}
-
-@keyframes levelup-band {
-  0% {
-    transform: rotate(-8deg) translateX(-110%);
+  .screen-in {
+    animation: screen-in 0.25s ease-out;
   }
-  12% {
-    transform: rotate(-8deg) translateX(0);
+
+  /* A dialog: the veil fades, the sheet rises a little. */
+  @keyframes veil-in {
+    from {
+      opacity: 0;
+    }
   }
-  84% {
-    transform: rotate(-8deg) translateX(4%);
+
+  .veil-in {
+    animation: veil-in 0.2s ease-out;
   }
-  100% {
-    transform: rotate(-8deg) translateX(110%);
+
+  @keyframes sheet-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+  }
+
+  .sheet-in {
+    animation: sheet-in 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  /* XP just earned: appears, holds, gone. */
+  @keyframes gain {
+    0% {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    15%,
+    80% {
+      opacity: 1;
+      transform: none;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .gain {
+    animation: gain 1.8s ease-out forwards;
+  }
+
+  /* A done item leaving the list: it fades and folds away. */
+  @keyframes leave {
+    to {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+  }
+
+  .leaving {
+    animation: leave 0.35s 0.45s ease-in forwards;
+  }
+
+  /* Marks whatever was just created, so a new row at the end of a list is
+     noticed: a soft glow that fades. */
+  @keyframes highlight {
+    from {
+      box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-disciplina) 35%, transparent);
+    }
+  }
+
+  .highlight {
+    animation: highlight 1.6s ease-out;
+  }
+
+  /* Press-and-hold targets: no text selection or magnifier while holding. */
+  .long-pressable {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 }
 
-@keyframes levelup-stripes {
-  to {
-    background-position:
-      -68px 0,
-      0 0;
-  }
-}
-
-/* The words land a beat after the band, big, and settle. */
-@keyframes levelup-text {
-  0%,
-  10% {
-    transform: skewX(-8deg) scale(2.2);
-    opacity: 0;
-  }
-  22% {
-    transform: skewX(-8deg) scale(0.92);
-    opacity: 1;
-  }
-  30%,
-  100% {
-    transform: skewX(-8deg) scale(1);
-    opacity: 1;
-  }
-}
-
-/* Full-screen flash. Dry cuts, no fading. */
-@keyframes flash {
-  0%,
-  100% {
-    opacity: 0;
-  }
-  4%,
-  9% {
-    opacity: 0.92;
-  }
-  14%,
-  19% {
-    opacity: 0;
-  }
-  24%,
-  29% {
-    opacity: 0.7;
-  }
-}
-/* The resting opacity goes here, not only in the keyframes: when it ends, the
-   animation returns the element to ITS base style. Without this 0, the white
-   veil stayed at opacity 1 and left the screen blank forever. */
-.anim-flash {
-  opacity: 0;
-  animation: flash 0.9s steps(1) 1;
-}
-
-/* The new level number enters huge and slams into place. */
-@keyframes level-drop {
-  0% {
-    opacity: 0;
-    transform: scale(3.2) rotate(-14deg);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(0.88) rotate(3deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(-6deg);
-  }
-}
-.anim-level-drop {
-  animation: level-drop 0.5s cubic-bezier(0.2, 1.2, 0.35, 1) backwards;
-}
-
-/* A short shake of the panel on impact. */
-@keyframes shake {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  20% {
-    transform: translate(-5px, 3px);
-  }
-  40% {
-    transform: translate(4px, -3px);
-  }
-  60% {
-    transform: translate(-3px, -2px);
-  }
-  80% {
-    transform: translate(3px, 2px);
-  }
-}
-.anim-shake {
-  animation: shake 0.36s steps(2) 2;
-}
-
-/* Marks whatever just appeared in a list: without this, creating something at
-   the very bottom is indistinguishable from nothing happening. */
-@keyframes highlight {
-  0%,
-  20%,
-  40% {
-    outline-color: var(--color-yellow);
-  }
-  10%,
-  30%,
-  50%,
-  100% {
-    outline-color: transparent;
-  }
-}
-.anim-highlight {
-  outline: 3px solid transparent;
-  outline-offset: 4px;
-  animation: highlight 1.6s steps(1) 1;
-}
-
-/* Nobody should get motion sick from an XP bar. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

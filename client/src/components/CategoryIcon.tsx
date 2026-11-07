@@ -15,33 +15,14 @@ import type { CSSProperties, ReactNode } from "react";
  * The keys are category slugs, which are database values and stay in Spanish.
  */
 const STROKES: Record<string, ReactNode> = {
-  // Cuerpo → a dumbbell lifted on the diagonal, with motion trails.
+  // Cuerpo → a dumbbell, level: two plates on each side of a short bar.
+  // Strokes only, in the same line weight as the rest of the set.
   cuerpo: (
     <>
-      <g transform="rotate(-24 12 12)">
-        {/* The plates are filled rather than stroked: a dumbbell drawn with
-            lines alone reads as an "H". The mass is what identifies it. */}
-        <rect
-          x="5.2"
-          y="6.6"
-          width="3.8"
-          height="10.8"
-          rx="1.6"
-          fill="currentColor"
-          stroke="none"
-        />
-        <rect
-          x="15"
-          y="6.6"
-          width="3.8"
-          height="10.8"
-          rx="1.6"
-          fill="currentColor"
-          stroke="none"
-        />
-        <path d="M9 12h6" />
-      </g>
-      <path d="M2.4 5.4l3.2-1.3M3.2 9l2.6-1" />
+      <path d="M8 12h8" />
+      <rect x="4.5" y="7" width="3.5" height="10" rx="1.4" />
+      <rect x="16" y="7" width="3.5" height="10" rx="1.4" />
+      <path d="M2.5 10v4M21.5 10v4" />
     </>
   ),
 

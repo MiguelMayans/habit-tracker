@@ -1,23 +1,21 @@
 import { useEffect, type ReactNode } from "react";
 
 /**
- * The frame every dialog in the app shares: the dimmed backdrop that closes
- * on tap, Escape to close, and a black panel under a coloured title band.
+ * The frame every dialog shares: a soft veil that closes on tap, Escape to
+ * close, and a paper sheet. On a phone the sheet rises from the bottom, where
+ * the thumb already is; on a wide screen it sits centred.
  *
- * It does not use the browser's `confirm()`: that would break the app's tone,
- * and in an installed PWA it shows up as a box that belongs to someone else.
+ * It does not use the browser's `confirm()`: in an installed PWA that shows up
+ * as a box that belongs to someone else.
  */
 export function DialogFrame({
   titleId,
-  bandTitle,
-  band = "var(--color-cuerpo)",
+  title,
   onCancel,
   children,
 }: {
   titleId: string;
-  bandTitle: string;
-  /** Band and shadow colour. Red by default: most dialogs are destructive. */
-  band?: string;
+  title: string;
   onCancel: () => void;
   children: ReactNode;
 }) {
@@ -31,7 +29,7 @@ export function DialogFrame({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-6"
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:px-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -40,23 +38,16 @@ export function DialogFrame({
         type="button"
         aria-label="Cancelar"
         onClick={onCancel}
-        className="absolute inset-0 bg-black/80"
+        className="veil-in absolute inset-0 bg-ink/25"
       />
 
-      <div
-        className="anim-slam relative w-full max-w-sm bg-black"
-        style={{ boxShadow: `9px 9px 0 ${band}` }}
-      >
-        <div className="px-4 py-2.5" style={{ background: band }}>
-          <h2
-            id={titleId}
-            className="text-outline m-0 font-display text-[16px] text-bone uppercase"
-          >
-            {bandTitle}
-          </h2>
-        </div>
-
-        <div className="px-4 py-4">{children}</div>
+      <div className="sheet-in relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-[28px] bg-paper px-6 pt-3 pb-8 shadow-[0_-8px_40px_rgb(46_42_37/0.12)] sm:rounded-[28px] sm:pt-6">
+        {/* The grab handle: says "this is a sheet" without words. */}
+        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-line sm:hidden" />
+        <h2 id={titleId} className="m-0 mb-5 text-[20px] font-semibold">
+          {title}
+        </h2>
+        {children}
       </div>
     </div>
   );

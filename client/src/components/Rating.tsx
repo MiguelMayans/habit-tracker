@@ -1,12 +1,12 @@
 /**
- * A rating as five diamonds. Read-only without `onChange`; with it, each
- * diamond is a button, and tapping the one already set clears the rating —
+ * A rating as five small dots. Read-only without `onChange`; with it, each
+ * dot is a button, and tapping the one already set clears the rating —
  * not rating something is a valid answer.
  */
 export function Rating({
   value,
   onChange,
-  size = 11,
+  size = 8,
 }: {
   value: number | null;
   onChange?: (value: number | null) => void;

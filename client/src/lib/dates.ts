@@ -53,15 +53,15 @@ export function sinceLastActivity(iso: string | null): {
   text: string;
   cold: boolean;
 } {
-  if (!iso) return { text: "SIN ACTIVIDAD", cold: false };
+  if (!iso) return { text: "Sin actividad", cold: false };
 
   const days = calendarDaysBetween(new Date(iso), new Date());
 
-  if (days <= 0) return { text: "HOY", cold: false };
-  if (days === 1) return { text: "AYER", cold: false };
+  if (days <= 0) return { text: "Hoy", cold: false };
+  if (days === 1) return { text: "Ayer", cold: false };
 
-  // Past a week it turns red: still a fact, not a warning.
-  return { text: `HACE ${days} DÍAS`, cold: days >= 7 };
+  // Past a week it is marked as cold: still a fact, not a warning.
+  return { text: `Hace ${days} días`, cold: days >= 7 };
 }
 
 // Interface copy stays in Spanish: these strings are rendered to the user.
@@ -74,17 +74,17 @@ const WEEKDAYS = [
   "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado",
 ];
 
-/** The pieces of a date as the home's calendar shows them. */
-export function calendarParts(d: Date): {
-  day: number;
-  weekday: string;
-  month: string;
-} {
-  return {
-    day: d.getDate(),
-    weekday: WEEKDAYS[d.getDay()].toUpperCase(),
-    month: MONTHS[d.getMonth()].toUpperCase(),
-  };
+/** The date as the home says it: "Sábado, 7 de noviembre". */
+export function longDate(d: Date): string {
+  return `${WEEKDAYS[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()].toLowerCase()}`;
+}
+
+/** A greeting for the time of day. */
+export function greeting(d: Date): string {
+  const h = d.getHours();
+  if (h >= 6 && h < 13) return "Buenos días";
+  if (h >= 13 && h < 21) return "Buenas tardes";
+  return "Buenas noches";
 }
 
 /**
@@ -96,9 +96,9 @@ export function shortRelativeDate(iso: string): string {
   const d = new Date(iso);
   const days = calendarDaysBetween(d, new Date());
 
-  if (days <= 0) return "HOY";
-  if (days === 1) return "AYER";
-  if (days < 7) return `HACE ${days} DÍAS`;
+  if (days <= 0) return "Hoy";
+  if (days === 1) return "Ayer";
+  if (days < 7) return `Hace ${days} días`;
 
-  return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3).toUpperCase()}`;
+  return `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3).toLowerCase()}`;
 }

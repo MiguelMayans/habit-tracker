@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { useScreenReady } from "../lib/screenReady";
 import {
   createFocus,
   deleteActivity,
@@ -16,10 +15,8 @@ import {
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { orderByLineage } from "../lib/focusLineage";
-import { useLight } from "../lib/useLight";
 import { CategoryIcon } from "../components/CategoryIcon";
 import { LevelNumber } from "../components/LevelNumber";
-import { categoryWordmark } from "../lib/categoryWordmark";
 import { isToday, shortRelativeDate } from "../lib/dates";
 import { XP_BY_INTENSITY } from "../lib/intensity";
 import { useLongPress } from "../lib/useLongPress";
@@ -31,31 +28,25 @@ import { useQuickLog } from "../lib/useQuickLog";
 import { ActivityRow } from "../components/ActivityRow";
 import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
+import { BackLink, SectionTitle } from "../components/Layout";
 
 /** How many activities are listed before cutting off. */
 const VISIBLE_HISTORY = 8;
-
-/** Alternating tilt on the focus tiles, for the collage effect. */
-const TILTS = ["-0.9deg", "0.7deg", "-0.5deg", "1deg", "-0.7deg"];
 
 /**
  * A focus on the category detail.
  *
  * Tapping it does the same as on the home: an active focus unfolds its three
- * intensities and logs in place; a frozen one — mastered or called done, so
- * the backend would refuse activity — starts its child focus instead, which is
- * the one thing it does accept. It used to navigate to the full form, so the
- * same tap meant "log now" on one screen and "take me somewhere" on the other.
+ * intensities and logs in place; a frozen one — mastered or called done —
+ * starts its child focus instead, the one thing it accepts.
  *
- * Holding it, or its "···" handle, opens the focus menu: renaming, closing,
- * deleting. The handle exists because a long press cannot be discovered by
+ * Holding it, or its "···" button, opens the focus menu: renaming, closing,
+ * deleting. The button exists because a long press cannot be discovered by
  * looking, nor reached with a keyboard.
  */
 function FocusTile({
   focus: f,
   parent,
-  categoryId,
-  accent,
   index,
   highlighted,
   expanded,
@@ -64,147 +55,97 @@ function FocusTile({
   onTap,
   onMenu,
   onPick,
+  categoryId,
 }: {
   focus: Focus;
   parent: Focus | undefined;
   categoryId: number;
-  accent: string;
   index: number;
   highlighted: boolean;
   expanded: boolean;
   busy: boolean;
-  /** XP just earned on this focus, shown for a moment and then withdrawn. */
+  /** XP just earned on this focus, shown for a moment. */
   gain: number | null;
   onTap: () => void;
   onMenu: () => void;
-  onPick: (intensity: Intensity, chip: HTMLElement) => void;
+  onPick: (intensity: Intensity) => void;
 }) {
   const press = useLongPress(onMenu);
 
   return (
     <li
-      className={`category-card anim-card relative ${
-        highlighted ? "anim-highlight" : ""
-      } ${parent ? "ml-7" : ""}`}
-      style={
-        {
-          "--rotation": TILTS[index % TILTS.length],
-          "--delay": `${0.22 + index * 0.06}s`,
-          "--accent": accent,
-        } as React.CSSProperties
-      }
+      className={`card settle ${highlighted ? "highlight" : ""} ${parent ? "ml-6" : ""}`}
+      style={{ "--delay": `${0.08 + index * 0.04}s` } as React.CSSProperties}
     >
-      <div style={{ filter: `drop-shadow(6px 6px 0 ${accent})` }}>
-        <div className="card-clip bg-black">
-          <div className="flex">
-            <button
-              type="button"
-              className="long-pressable block min-w-0 flex-1 text-left"
-              aria-expanded={f.frozen ? undefined : expanded}
-              {...press}
-              onClick={(e) => {
-                // The hook swallows the click that ends a long press (it calls
-                // preventDefault): if it got this far, it was a short tap.
-                press.onClick(e);
-                if (!e.defaultPrevented) onTap();
-              }}
-            >
-              <div className="slam-content pt-4 pr-2 pb-3 pl-3.5">
-                <h3 className="m-0 pr-10 font-display text-[16px] leading-tight text-bone uppercase">
-                  {f.name}
-                </h3>
-
-                {parent && (
-                  <p className="mt-1 text-[9.5px] font-bold tracking-[0.1em] text-bone/60">
-                    ↳ DE {parent.name.toUpperCase()}
-                  </p>
-                )}
-
-                <div className="xp-bar relative mt-2.5 h-3 overflow-hidden bg-[#242424]">
-                  <div
-                    className="xp-bar-fill relative h-full"
-                    style={
-                      {
-                        width: `${Math.round(f.progress * 100)}%`,
-                        background: f.frozen ? accent : "var(--color-yellow)",
-                        "--delay": `${0.42 + index * 0.06}s`,
-                      } as React.CSSProperties
-                    }
-                  />
-                </div>
-
-                <div className="mt-2 flex items-center gap-2 text-[9.5px] font-semibold tracking-[0.06em] text-bone/70">
-                  <span>{f.currentXp} XP</span>
-                  <i className="h-[3px] w-[3px] rotate-45 bg-bone/50" />
-                  {f.atMaxLevel ? (
-                    <b className="text-yellow">MAESTRÍA</b>
-                  ) : f.frozen ? (
-                    <b className="text-bone/60">TERMINADO</b>
-                  ) : (
-                    <span>
-                      <b className="text-yellow">{f.xpToNextLevel}</b> AL NV{" "}
-                      {f.level + 1}
-                    </span>
-                  )}
-                </div>
-
-                {/* What a tap does on a frozen focus, said on the focus itself
-                    rather than in a line of instructions above the list. */}
-                {f.frozen && (
-                  <span
-                    className="mt-2.5 inline-block bg-yellow px-2 py-0.5 text-[9px] font-bold tracking-[0.14em] text-black"
-                    style={{ transform: "skewX(-10deg)" }}
-                  >
-                    <span
-                      className="inline-block"
-                      style={{ transform: "skewX(10deg)" }}
-                    >
-                      + ENGENDRAR HIJO
-                    </span>
-                  </span>
-                )}
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={onMenu}
-              aria-label={`Opciones de ${f.name}`}
-              className="focus-handle"
-            >
-              <i />
-              <i />
-              <i />
-            </button>
+      <div className="flex items-start">
+        <button
+          type="button"
+          className="long-pressable block min-w-0 flex-1 py-4 pl-5 text-left"
+          aria-expanded={f.frozen ? undefined : expanded}
+          {...press}
+          onClick={(e) => {
+            // The hook swallows the click that ends a long press: if it got
+            // this far, it was a short tap.
+            press.onClick(e);
+            if (!e.defaultPrevented) onTap();
+          }}
+        >
+          <div className="flex items-baseline gap-2">
+            <h3 className="m-0 truncate text-[16px] font-semibold">{f.name}</h3>
+            {gain !== null && (
+              <span className="gain text-[13px] font-semibold" style={{ color: "var(--accent)" }}>
+                +{gain}
+              </span>
+            )}
+            <span className="ml-auto shrink-0">
+              {f.atMaxLevel ? (
+                <span className="text-[13px] text-ink-soft">Maestría</span>
+              ) : f.frozen ? (
+                <span className="text-[13px] text-ink-soft">Terminado</span>
+              ) : (
+                <LevelNumber value={f.level} />
+              )}
+            </span>
           </div>
 
-          {expanded && !f.frozen && (
-            <div className="slam-content px-3.5 pb-4">
-              <QuickIntensities
-                categoryId={categoryId}
-                focusId={f.id}
-                busy={busy}
-                onPick={onPick}
-              />
-            </div>
+          {parent && (
+            <p className="mt-0.5 mb-0 text-[12px] text-ink-faint">De {parent.name}</p>
           )}
-        </div>
+
+          <div className="progress mt-3 h-1">
+            <i style={{ width: `${Math.round(f.progress * 100)}%` }} />
+          </div>
+
+          <p className="mt-2 mb-0 text-[12px] text-ink-faint">
+            {f.frozen
+              ? "+ Crear un foco hijo"
+              : `${f.currentXp} XP · ${f.xpToNextLevel} para el nivel ${f.level + 1}`}
+          </p>
+        </button>
+
+        <button
+          type="button"
+          onClick={onMenu}
+          aria-label={`Opciones de ${f.name}`}
+          className="grid h-12 w-12 shrink-0 place-items-center text-ink-faint"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5" aria-hidden="true">
+            <circle cx="5.5" cy="12" r="1.6" />
+            <circle cx="12" cy="12" r="1.6" />
+            <circle cx="18.5" cy="12" r="1.6" />
+          </svg>
+        </button>
       </div>
 
-      {/* The level spills over the top edge, like on the home cards. */}
-      <span className="slam-content pointer-events-none absolute top-1 right-10 z-20">
-        <LevelNumber value={f.level} size={25} tag={false} />
-      </span>
-
-      {gain !== null && (
-        <span
-          className="anim-slam pointer-events-none absolute right-10 bottom-3 z-20 bg-yellow px-1.5 py-0.5 font-display text-[11px] leading-none text-black"
-          style={{ transform: "skewX(-10deg)" }}
-        >
-          <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-            +{gain} XP
-          </span>
-        </span>
+      {expanded && !f.frozen && (
+        <div className="px-5 pb-3">
+          <QuickIntensities
+            categoryId={categoryId}
+            focusId={f.id}
+            busy={busy}
+            onPick={onPick}
+          />
+        </div>
       )}
     </li>
   );
@@ -217,8 +158,6 @@ export function CategoryDetailPage() {
   const [category, setCategory] = useState<Category | null>(null);
   const [focuses, setFocuses] = useState<Focus[]>([]);
   const [loading, setLoading] = useState(true);
-  // The screen wipe holds until this screen has its data.
-  useScreenReady(!loading);
   const [error, setError] = useState<string | null>(null);
 
   // From the creation form, kept apart from the loading error so a failure to
@@ -389,11 +328,6 @@ export function CategoryDetailPage() {
   // there.
   const quick = useQuickLog({ categoryId, onAfterChange: () => load() });
 
-  // The backdrop's rays take the colour of the category you are looking at:
-  // entering Mente turns the sky purple. It goes before the early returns for
-  // loading and error, because hooks cannot be skipped.
-  useLight(category ? categoryColorVar(category.slug) : null);
-
   // Resetting loading/error lives in the event that causes it (the button),
   // not inside the effect.
   function onRetry() {
@@ -475,160 +409,67 @@ export function CategoryDetailPage() {
 
   if (!validId)
     return (
-      <p className="px-6 py-10 text-cuerpo">El id de la categoría no es válido</p>
+      <p className="px-5 py-10 text-warn">El id de la categoría no es válido</p>
     );
   if (loading)
     return (
-      <div className="px-4 pt-8 pb-32">
+      <div className="px-5 pt-16 pb-32">
+        <div className="skeleton mb-8 h-24" />
         <SkeletonCards n={3} height="96px" />
       </div>
     );
   if (error)
     return (
-      <div className="px-4 pt-8 pb-32">
+      <div className="px-5 pt-16 pb-32">
         <ErrorPanel message={error} onRetry={onRetry} />
       </div>
     );
   if (!category) return null;
 
   const accent = categoryColorVar(category.slug);
-  const wordmark = categoryWordmark(category.slug);
 
   return (
-    <div className="px-4 pt-6 pb-32">
-      {/* The level shares a row with the back link, in the opposite corner.
-          It is the only free space on the screen: the category wordmarks bleed
-          to all four edges, so placing it over the header — where it would ask
-          to be — would land it on top of the artwork.
+    <div
+      className="px-5 pt-6 pb-32"
+      style={{ "--accent": accent } as React.CSSProperties}
+    >
+      <BackLink />
 
-          No plaque: the rank badge is its own backing, and at this size it is
-          the loudest thing at the top of the screen, as it should be. */}
-      <div className="flex items-start justify-between gap-4">
-        <Link
-          to="/"
-          className="anim-row inline-block bg-bone px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-black"
-          style={{ transform: "skewX(-10deg)" }}
-        >
-          <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-            ← CATEGORÍAS
+      <header className="settle mt-6 mb-8">
+        <div className="flex items-center gap-4">
+          <span className="icon-disc h-14 w-14">
+            <CategoryIcon slug={category.slug} strokeWidth={1.7} className="h-7 w-7" />
           </span>
-        </Link>
-
-        <LevelNumber
-          value={category.level}
-          size={56}
-          className="anim-ribbon mt-1 mr-1 shrink-0"
-        />
-      </div>
-
-      {/* Header: the same bleed band as the home, but in the category's
-          colour, so it is obvious which one you are in. */}
-      <header className="relative mt-5 mb-7">
-        <div className="relative">
-          {/* The band is centred on the title with top + a negative margin
-              (half its height): it cannot use translate, because the tilt
-              already occupies the transform. This works the same for a tall
-              wordmark as for a short one. */}
-          <div
-            className="bleed-band anim-logo top-1/2 -mt-14 z-0 h-[112px]"
-            style={
-              {
-                "--band-bg": accent,
-                "--band-edge": "var(--color-black)",
-              } as React.CSSProperties
-            }
-          />
-
-          {wordmark ? (
-            <h1 className="relative z-10 m-0">
-              {/* Full width: the wordmark owns this screen and spills out of
-                  the band top and bottom, the same as on the home. */}
-              <img
-                src={wordmark.src}
-                alt={category.name}
-                width={wordmark.width}
-                height={wordmark.height}
-                className="block h-auto w-full"
-              />
-            </h1>
-          ) : (
-            <div className="relative z-10 flex items-center gap-3 py-6">
-              <CategoryIcon
-                slug={category.slug}
-                strokeWidth={2.4}
-                className="h-9 w-9 shrink-0 text-black"
-              />
-              <h1 className="text-sign m-0 font-display text-[38px] leading-[0.9] text-bone uppercase">
-                {category.name}
-              </h1>
-            </div>
-          )}
+          <h1 className="m-0 flex-1 text-[30px] leading-tight font-semibold">
+            {category.name}
+          </h1>
+          <LevelNumber value={category.level} size="lg" />
         </div>
+
+        <div className="progress mt-6">
+          <i style={{ width: `${Math.round(category.progress * 100)}%` }} />
+        </div>
+        <p className="mt-2 mb-0 text-[13px] text-ink-soft">
+          {category.currentXp} XP ·{" "}
+          {category.atMaxLevel
+            ? "nivel máximo"
+            : `${category.xpToNextLevel} para el nivel ${category.level + 1}`}
+        </p>
       </header>
 
-      {/* Full-width progress: the level no longer steals half the row from
-          the left, so the bar takes the whole width of the screen. */}
-      <div
-        className="anim-row relative"
-        style={{ "--delay": "0.1s" } as React.CSSProperties}
-      >
-        <div className="xp-bar relative h-4 overflow-hidden bg-[#242424]">
-          <div
-            className="xp-bar-fill relative h-full bg-yellow"
-            style={
-              {
-                width: `${Math.round(category.progress * 100)}%`,
-                "--delay": "0.3s",
-              } as React.CSSProperties
-            }
-          />
-        </div>
-        <div className="on-scene mt-2.5 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-semibold tracking-[0.06em] text-bone/75">
-          <span>{category.currentXp} XP</span>
-          <i className="h-[3px] w-[3px] rotate-45 bg-bone/55" />
-          <span>
-            {category.atMaxLevel ? (
-              <b className="text-yellow">NIVEL MÁXIMO</b>
-            ) : (
-              <>
-                <b className="text-yellow">{category.xpToNextLevel}</b> AL NV{" "}
-                {category.level + 1}
-              </>
-            )}
-          </span>
-        </div>
-      </div>
-
       {/* ---- Focuses ---- */}
-      <h2
-        className="anim-row mt-10 inline-block bg-yellow px-3 py-1 font-display text-[13px] text-black uppercase"
-        style={
-          {
-            transform: "skewX(-10deg)",
-            "--delay": "0.16s",
-          } as React.CSSProperties
-        }
-      >
-        <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-          Focos · {focuses.length}
-        </span>
-      </h2>
+      <SectionTitle>Focos</SectionTitle>
 
       {quick.error && (
-        <p className="anim-slam mt-4 bg-cuerpo px-3 py-2 text-[11px] font-bold text-bone">
-          {quick.error}
-        </p>
+        <p className="mt-0 mb-4 text-[14px] text-warn">{quick.error}</p>
       )}
 
       {focuses.length === 0 ? (
-        <p
-          className="anim-row on-scene mt-4 w-fit text-sm text-bone/70"
-          style={{ "--delay": "0.2s" } as React.CSSProperties}
-        >
+        <p className="settle m-0 text-[15px] text-ink-soft">
           Esta categoría todavía no tiene focos.
         </p>
       ) : (
-        <ul className="mt-6 grid gap-5">
+        <ul className="m-0 grid list-none gap-3 p-0">
           {orderByLineage(focuses).map((f, i) => {
             const parent =
               f.parentFocusId !== null
@@ -637,60 +478,36 @@ export function CategoryDetailPage() {
 
             if (focusBeingEdited?.id === f.id)
               return (
-                // The edit panel REPLACES the tile rather than sitting inside
+                // The edit panel replaces the tile rather than sitting inside
                 // it: inside the tile's button, every tap on the input would
                 // also start the long-press timer.
-                <li
-                  key={f.id}
-                  className={`category-card relative ${parent ? "ml-7" : ""}`}
-                  style={
-                    {
-                      "--rotation": TILTS[i % TILTS.length],
-                    } as React.CSSProperties
-                  }
-                >
-                  <div style={{ filter: `drop-shadow(6px 6px 0 ${accent})` }}>
-                    <div className="card-clip bg-black">
-                      <div className="slam-content px-3.5 py-3.5">
-                        <div className="field-frame">
-                          <input
-                            value={editedName}
-                            onChange={(e) => setEditedName(e.target.value)}
-                            autoFocus
-                            aria-label="Nuevo nombre del foco"
-                            className="field"
-                          />
-                        </div>
-                        {renameError && (
-                          <p className="mt-2 text-[10px] font-bold text-cuerpo">
-                            {renameError}
-                          </p>
-                        )}
-                        <div className="mt-3 flex gap-2">
-                          <button
-                            type="button"
-                            onClick={onSaveRename}
-                            disabled={renaming || editedName.trim() === ""}
-                            className="slam-button flex-1"
-                          >
-                            <span>{renaming ? "Guardando…" : "Guardar"}</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setFocusBeingEdited(null)}
-                            className="slam-button flex-1"
-                            style={{
-                              background: "transparent",
-                              color: "var(--color-bone)",
-                              boxShadow: "none",
-                              border: "2px solid var(--color-bone)",
-                            }}
-                          >
-                            <span>Cancelar</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                <li key={f.id} className={`card px-5 py-4 ${parent ? "ml-6" : ""}`}>
+                  <input
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    autoFocus
+                    aria-label="Nuevo nombre del foco"
+                    className="field"
+                  />
+                  {renameError && (
+                    <p className="mt-2 mb-0 text-[14px] text-warn">{renameError}</p>
+                  )}
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={onSaveRename}
+                      disabled={renaming || editedName.trim() === ""}
+                      className="btn flex-1"
+                    >
+                      {renaming ? "Guardando…" : "Guardar"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFocusBeingEdited(null)}
+                      className="btn btn-soft flex-1"
+                    >
+                      Cancelar
+                    </button>
                   </div>
                 </li>
               );
@@ -701,7 +518,6 @@ export function CategoryDetailPage() {
                 focus={f}
                 parent={parent}
                 categoryId={categoryId}
-                accent={accent}
                 index={i}
                 highlighted={f.id === newFocusId}
                 expanded={quick.openFocusId === f.id}
@@ -720,7 +536,7 @@ export function CategoryDetailPage() {
                   setCloseError(null);
                   setMenuFocus(f);
                 }}
-                onPick={(intensity, chip) => quick.log(f.id, intensity, chip)}
+                onPick={(intensity) => quick.log(f.id, intensity)}
               />
             );
           })}
@@ -728,63 +544,44 @@ export function CategoryDetailPage() {
       )}
 
       {/* ---- New focus ---- */}
-      <form onSubmit={onCreateFocus} className="mt-11" ref={formRef}>
-        {/* The heading is the control: the same tab as always, but now it
-            opens and closes. Closed it carries a "+", open a "×". */}
-        <h2 className="m-0">
+      <form onSubmit={onCreateFocus} className="mt-5" ref={formRef}>
+        {!formOpen ? (
           <button
             type="button"
             onClick={() => {
-              const next = !formOpen;
-              setFormOpen(next);
-              if (!next) setParentToSpawn(null);
-              if (next) window.setTimeout(() => nameInputRef.current?.focus(), 60);
+              setFormOpen(true);
+              window.setTimeout(() => nameInputRef.current?.focus(), 60);
             }}
-            aria-expanded={formOpen}
+            aria-expanded={false}
             aria-controls="new-focus"
-            className="anim-row inline-block bg-bone px-3 py-1 font-display text-[13px] text-black uppercase"
-            style={
-              {
-                transform: "skewX(-10deg)",
-                "--delay": "0.3s",
-              } as React.CSSProperties
-            }
+            className="btn btn-soft w-full"
           >
-            <span
-              className="inline-flex items-baseline gap-2"
-              style={{ transform: "skewX(10deg)" }}
-            >
-              <b className="text-[15px] leading-none">{formOpen ? "×" : "+"}</b>
-              {parentToSpawn ? "Nuevo foco especializado" : "Nuevo foco"}
-            </span>
+            + Nuevo foco
           </button>
-        </h2>
+        ) : (
+          <div id="new-focus" className="card settle px-5 py-5">
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <h3 className="m-0 text-[16px] font-semibold">
+                {parentToSpawn ? "Nuevo foco especializado" : "Nuevo foco"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormOpen(false);
+                  setParentToSpawn(null);
+                }}
+                className="link-quiet"
+              >
+                Cancelar
+              </button>
+            </div>
 
-        {formOpen && parentToSpawn && (
-          <p className="anim-slam mt-3 flex items-center gap-2 text-[11px] font-semibold text-bone/70">
-            <span
-              className="bg-yellow px-2 py-0.5 text-[9px] font-bold tracking-[0.14em] text-black"
-              style={{ transform: "skewX(-10deg)" }}
-            >
-              HIJO DE {parentToSpawn.name.toUpperCase()}
-            </span>
-            <button
-              type="button"
-              onClick={() => setParentToSpawn(null)}
-              className="on-scene text-[9.5px] font-bold tracking-[0.16em] text-bone/70 underline"
-            >
-              CANCELAR
-            </button>
-          </p>
-        )}
+            {parentToSpawn && (
+              <p className="mt-0 mb-3 text-[13px] text-ink-soft">
+                Hijo de <b className="font-semibold text-ink">{parentToSpawn.name}</b>
+              </p>
+            )}
 
-        <div
-          id="new-focus"
-          hidden={!formOpen}
-          className="anim-row mt-4 flex items-stretch gap-3"
-          style={{ "--delay": "0.34s" } as React.CSSProperties}
-        >
-          <div className="field-frame flex-1">
             <input
               ref={nameInputRef}
               value={newName}
@@ -792,80 +589,48 @@ export function CategoryDetailPage() {
               placeholder={
                 parentToSpawn
                   ? `Especialización de "${parentToSpawn.name}"…`
-                  : "Arduino, Inglés, Pareja…"
+                  : "Arduino, inglés, pareja…"
               }
               required
+              aria-label="Nombre del foco"
               className="field"
             />
-          </div>
-          <button
-            type="submit"
-            disabled={creating || newName.trim() === ""}
-            className="slam-button shrink-0"
-          >
-            <span>
-              {creating
-                ? "Creando…"
-                : parentToSpawn
-                  ? "Engendrar"
-                  : "Crear"}
-            </span>
-          </button>
-        </div>
 
-        {formOpen && errorForm && (
-          <p className="anim-slam mt-4 bg-cuerpo px-3 py-2 text-[11px] font-bold text-bone">
-            {errorForm}
-          </p>
+            {errorForm && (
+              <p className="mt-3 mb-0 text-[14px] text-warn">{errorForm}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={creating || newName.trim() === ""}
+              className="btn mt-4 w-full"
+            >
+              {creating ? "Creando…" : "Crear foco"}
+            </button>
+          </div>
         )}
       </form>
 
       {/* ---- History ---- */}
-      <h2
-        className="anim-row mt-11 inline-block bg-bone px-3 py-1 font-display text-[13px] text-black uppercase"
-        style={
-          {
-            transform: "skewX(-10deg)",
-            "--delay": "0.38s",
-          } as React.CSSProperties
-        }
-      >
-        <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-          Historial · {activities.length}
-        </span>
-      </h2>
-
-      {activities.some((a) => isToday(a.date)) && (
-        <p
-          className="anim-row mt-2 text-[9px] font-bold tracking-[0.16em] text-bone/55"
-          style={{ "--delay": "0.4s" } as React.CSSProperties}
-        >
-          MANTÉN PULSADA UNA ACTIVIDAD DE HOY PARA DESHACERLA
-        </p>
-      )}
+      <SectionTitle className="mt-11">Historial</SectionTitle>
 
       {activities.length === 0 ? (
-        <p
-          className="anim-row on-scene mt-4 w-fit text-sm text-bone/70"
-          style={{ "--delay": "0.42s" } as React.CSSProperties}
-        >
+        <p className="settle m-0 text-[15px] text-ink-soft">
           Todavía no has registrado nada en esta categoría.
         </p>
       ) : (
         <>
-          <ul className="mt-4 grid gap-2.5">
-            {activities.slice(0, VISIBLE_HISTORY).map((a, i) => (
+          <ul className="card m-0 list-none divide-y divide-line p-0">
+            {activities.slice(0, VISIBLE_HISTORY).map((a) => (
               <ActivityRow
                 key={a.id}
                 activity={a}
-                accent={accent}
                 focusName={
                   a.focusId !== null
                     ? (focuses.find((f) => f.id === a.focusId)?.name ??
                       "foco borrado")
                     : null
                 }
-                delay={0.44 + i * 0.04}
                 onHold={() => {
                   setUndoError(null);
                   setActivityToUndo(a);
@@ -874,12 +639,18 @@ export function CategoryDetailPage() {
             ))}
           </ul>
 
+          {activities.some((a) => isToday(a.date)) && (
+            <p className="mt-3 mb-0 text-[12px] text-ink-faint">
+              Mantén pulsada una actividad de hoy para deshacerla.
+            </p>
+          )}
+
           {activities.length > VISIBLE_HISTORY && (
             <Link
               to={`/categories/${categoryId}/history`}
-              className="on-scene mt-3 inline-block text-[10px] font-bold tracking-[0.16em] text-yellow underline"
+              className="btn btn-soft mt-4 w-full"
             >
-              VER HISTORIAL COMPLETO · Y {activities.length - VISIBLE_HISTORY} MÁS
+              Ver todo el historial ({activities.length})
             </Link>
           )}
         </>
@@ -888,7 +659,6 @@ export function CategoryDetailPage() {
       {menuFocus && (
         <FocusMenu
           focus={menuFocus}
-          accent={accent}
           busy={closing}
           error={closeError}
           onRename={() => {
@@ -912,14 +682,11 @@ export function CategoryDetailPage() {
         />
       )}
 
-      {/* Only when a quick log raised a level: see useQuickLog. Rendered at
-          page level and not inside the tile, whose drop-shadow filter would
-          turn the modal's `position: fixed` into `absolute`. */}
+      {/* Only when a quick log raised a level: see useQuickLog. */}
       {quick.result && (
         <ResultModal
           result={quick.result}
           category={category}
-          backTo={null}
           onClose={quick.dismissResult}
           onUndo={quick.undo}
         />
@@ -931,33 +698,23 @@ export function CategoryDetailPage() {
           titleId="close-focus-title"
           busy={closing}
           error={closeError}
-          confirmLabel="Cerrar"
+          confirmLabel="Darlo por terminado"
           busyLabel="Cerrando…"
           onConfirm={() => onToggleClosed(focusToClose, true)}
           onCancel={() => setFocusToClose(null)}
         >
-          <p className="m-0 font-display text-[20px] leading-tight text-bone uppercase">
-            {focusToClose.name}
-          </p>
-          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-bone/55">
-            NIVEL {focusToClose.level} · {focusToClose.currentXp} XP
-          </p>
-
-          <p className="mt-4 text-[11.5px] leading-relaxed text-bone/75">
-            Dejará de aceptar actividad y podrás{" "}
-            <b className="text-yellow">engendrar un hijo</b> desde él, igual
-            que si hubiera llegado al nivel 20. Su XP se queda donde está: no
-            se pierde nada.
-          </p>
-          <p className="mt-2 text-[11.5px] leading-relaxed text-bone/55">
-            Se puede reabrir cuando quieras.
+          <p className="m-0 text-[17px] font-semibold">{focusToClose.name}</p>
+          <p className="mt-3 mb-0 text-[15px] leading-relaxed text-ink-soft">
+            Dejará de aceptar actividad y podrás crear un foco hijo desde él,
+            igual que si hubiera llegado al nivel 20. Su XP se queda donde
+            está. Se puede reabrir cuando quieras.
           </p>
         </ConfirmDialog>
       )}
 
       {focusToDelete && (
         <ConfirmDialog
-          bandTitle="¿Borrar foco?"
+          bandTitle="¿Borrar este foco?"
           titleId="delete-focus-title"
           busy={deleting}
           error={deleteError}
@@ -966,29 +723,16 @@ export function CategoryDetailPage() {
           onConfirm={onDeleteFocus}
           onCancel={() => setFocusToDelete(null)}
         >
-          <p className="m-0 font-display text-[20px] leading-tight text-bone uppercase">
-            {focusToDelete.name}
-          </p>
-          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-bone/55">
-            NIVEL {focusToDelete.level} · {focusToDelete.currentXp} XP
-          </p>
-
-          <p className="mt-4 text-[11.5px] leading-relaxed text-bone/75">
+          <p className="m-0 text-[17px] font-semibold">{focusToDelete.name}</p>
+          <p className="mt-3 mb-0 text-[15px] leading-relaxed text-ink-soft">
             {(() => {
               const n = activities.filter(
                 (a) => a.focusId === focusToDelete.id,
               ).length;
               if (n === 0) return "No tiene actividades registradas.";
-              return (
-                <>
-                  Sus <b className="text-yellow">{n}</b>{" "}
-                  {n === 1 ? "actividad" : "actividades"} no se{" "}
-                  {n === 1 ? "borra" : "borran"}: se{" "}
-                  {n === 1 ? "queda" : "quedan"} en la categoría sin foco. La
-                  XP que {n === 1 ? "te dio sigue" : "te dieron siguen"}{" "}
-                  contando.
-                </>
-              );
+              return n === 1
+                ? "Su actividad no se borra: se queda en la categoría sin foco, y la XP que te dio sigue contando."
+                : `Sus ${n} actividades no se borran: se quedan en la categoría sin foco, y la XP que te dieron sigue contando.`;
             })()}
           </p>
         </ConfirmDialog>
@@ -996,7 +740,7 @@ export function CategoryDetailPage() {
 
       {activityToUndo && (
         <ConfirmDialog
-          bandTitle="¿Deshacer registro?"
+          bandTitle="¿Deshacer el registro?"
           titleId="undo-activity-title"
           busy={undoing}
           error={undoError}
@@ -1005,20 +749,18 @@ export function CategoryDetailPage() {
           onConfirm={onUndoActivity}
           onCancel={() => setActivityToUndo(null)}
         >
-          <p className="m-0 font-display text-[18px] leading-tight text-bone uppercase">
+          <p className="m-0 text-[17px] font-semibold">
             {activityToUndo.description === ""
               ? "Sin descripción"
               : activityToUndo.description}
           </p>
-          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-bone/55">
+          <p className="mt-1 mb-0 text-[13px] text-ink-soft">
             +{XP_BY_INTENSITY[activityToUndo.intensity]} XP ·{" "}
             {shortRelativeDate(activityToUndo.date)}
           </p>
-
-          <p className="mt-4 text-[11.5px] leading-relaxed text-bone/75">
-            Se le resta esa XP al foco (si la tenía) y a la categoría, y el
-            nivel puede bajar si corresponde. Solo puede deshacerse un
-            registro de hoy.
+          <p className="mt-3 mb-0 text-[15px] leading-relaxed text-ink-soft">
+            Se resta esa XP al foco (si lo tenía) y a la categoría, y el nivel
+            vuelve a donde estaba si hace falta.
           </p>
         </ConfirmDialog>
       )}

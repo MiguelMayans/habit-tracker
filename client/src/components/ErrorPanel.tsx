@@ -1,7 +1,6 @@
 /**
- * Shared error state for the screens that load data on mount. It carries a
- * retry button: a network blip should not force a full page reload just to
- * try again.
+ * Shared error state for the screens that load data on mount, with a retry:
+ * a network blip should not force a full reload just to try again.
  */
 export function ErrorPanel({
   message,
@@ -11,21 +10,13 @@ export function ErrorPanel({
   onRetry: () => void;
 }) {
   return (
-    <div
-      className="anim-slam bg-black px-4 py-4"
-      style={{ boxShadow: "6px 6px 0 var(--color-cuerpo)" }}
-    >
-      <p className="m-0 font-display text-[16px] leading-tight text-bone uppercase">
-        Algo ha fallado
+    <div className="card settle px-5 py-6 text-center">
+      <p className="m-0 text-[17px] font-semibold">No se ha podido cargar</p>
+      <p className="mt-2 mb-0 text-[14px] leading-relaxed text-ink-soft">
+        {message}
       </p>
-      <p className="mt-2 text-[12px] leading-relaxed text-bone/70">{message}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="slam-button mt-4 w-full"
-        style={{ background: "var(--color-cuerpo)", color: "var(--color-bone)" }}
-      >
-        <span>Reintentar</span>
+      <button type="button" onClick={onRetry} className="btn btn-soft mt-5">
+        Reintentar
       </button>
     </div>
   );

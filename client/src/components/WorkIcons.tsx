@@ -60,7 +60,7 @@ const KIND_STROKES: Record<WorkKind, ReactNode> = {
 function Svg({
   children,
   className,
-  strokeWidth = 2.1,
+  strokeWidth = 1.8,
 }: {
   children: ReactNode;
   className?: string;
@@ -92,20 +92,12 @@ export function WorkKindIcon({
   return <Svg className={className}>{KIND_STROKES[kind]}</Svg>;
 }
 
-/** The Lair in the nav: the Phantom Thieves' domino mask. */
+/** The Lair in the nav: a cosy den — a house with a rounded doorway. */
 export function LairGlyph({ className }: { className?: string }) {
   return (
-    <Svg className={className} strokeWidth={2.2}>
-      <path
-        d="M2 8.5c3-1.6 6.6-1.8 10 .4 3.4-2.2 7-2 10-.4-.2 4.5-2.4 8-6 8-2 0-3.2-1.4-4-3-.8 1.6-2 3-4 3-3.6 0-5.8-3.5-6-8Z"
-        fill="currentColor"
-        stroke="none"
-      />
-      <path
-        d="M5.4 11.2c1.3-.8 2.8-.8 4 .2-1 1.3-2.8 1.5-4-.2ZM18.6 11.2c-1.3-.8-2.8-.8-4 .2 1 1.3 2.8 1.5 4-.2Z"
-        fill="var(--color-black)"
-        stroke="none"
-      />
+    <Svg className={className} strokeWidth={1.8}>
+      <path d="M4 10.5 12 4l8 6.5V20H4Z" />
+      <path d="M9.5 20v-4.5a2.5 2.5 0 0 1 5 0V20" />
     </Svg>
   );
 }

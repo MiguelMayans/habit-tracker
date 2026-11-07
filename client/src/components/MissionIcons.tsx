@@ -8,7 +8,7 @@ import type { MissionKind } from "../lib/missions";
 function Svg({
   children,
   className,
-  strokeWidth = 2.2,
+  strokeWidth = 1.8,
 }: {
   children: ReactNode;
   className?: string;
@@ -66,19 +66,14 @@ export function MissionKindIcon({
   return <Svg className={className}>{KIND_STROKES[kind]}</Svg>;
 }
 
-/**
- * The missions button on the home: a list whose bullets are the app's
- * diamonds, with the top one ticked.
- */
+/** The missions in the nav: a list with the top item ticked. */
 export function MissionsGlyph({ className }: { className?: string }) {
   return (
-    <Svg className={className} strokeWidth={2.4}>
-      <path d="m2.8 6.2 1.9 1.9L8.2 4" />
-      <path d="M11 6h10.2" />
-      <path d="m5.5 10.3 2 2-2 2-2-2Z" fill="currentColor" />
-      <path d="M11 12.3h10.2" />
-      <path d="m5.5 16.6 2 2-2 2-2-2Z" fill="currentColor" />
-      <path d="M11 18.6h7" />
+    <Svg className={className} strokeWidth={1.8}>
+      <path d="m3.5 6.5 1.6 1.6 3-3.2" />
+      <path d="M11 7h9.5M11 12h9.5M11 17h9.5" />
+      <circle cx="5.5" cy="12" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="5.5" cy="17" r="1.1" fill="currentColor" stroke="none" />
     </Svg>
   );
 }

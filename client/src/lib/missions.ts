@@ -32,10 +32,11 @@ function daysBetween(from: string, to: string): number {
   );
 }
 
-const WEEKDAYS = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
+// Whole words: "mar 10" could just as well be March.
+const WEEKDAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 const MONTHS = [
-  "ENE", "FEB", "MAR", "ABR", "MAY", "JUN",
-  "JUL", "AGO", "SEP", "OCT", "NOV", "DIC",
+  "ene", "feb", "mar", "abr", "may", "jun",
+  "jul", "ago", "sep", "oct", "nov", "dic",
 ];
 
 /**
@@ -47,11 +48,14 @@ export function dueLabel(day: string, today = localDay()): string {
   const [y, m, d] = day.split("-").map(Number);
   const date = new Date(y, m - 1, d);
 
-  if (diff === 0) return "HOY";
-  if (diff === 1) return "MAÑANA";
-  if (diff === -1) return "AYER";
-  if (diff < 0) return `HACE ${-diff} DÍAS`;
-  if (diff < 7) return `${WEEKDAYS[date.getDay()]} ${d}`;
+  if (diff === 0) return "Hoy";
+  if (diff === 1) return "Mañana";
+  if (diff === -1) return "Ayer";
+  if (diff < 0) return `Hace ${-diff} días`;
+  if (diff < 7) {
+    const w = WEEKDAYS[date.getDay()];
+    return `${w[0].toUpperCase()}${w.slice(1)} ${d}`;
+  }
   return `${d} ${MONTHS[m - 1]}`;
 }
 

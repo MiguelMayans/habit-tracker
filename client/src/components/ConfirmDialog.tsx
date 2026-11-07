@@ -38,36 +38,31 @@ export function ConfirmDialog({
   }, []);
 
   return (
-    <DialogFrame titleId={titleId} bandTitle={bandTitle} onCancel={onCancel}>
+    <DialogFrame titleId={titleId} title={bandTitle} onCancel={onCancel}>
       {children}
 
       {error && (
-        <p className="anim-slam mt-4 bg-cuerpo px-3 py-2 text-[11px] font-bold text-bone">
+        <p className="mt-4 mb-0 rounded-xl bg-warn/10 px-3 py-2 text-[14px] text-warn">
           {error}
         </p>
       )}
 
-      <div className="mt-6 flex gap-3">
-        <button
-          ref={cancelRef}
-          type="button"
-          onClick={onCancel}
-          className="slam-button flex-1"
-          style={{ background: "var(--color-bone)" }}
-        >
-          <span>Cancelar</span>
-        </button>
+      <div className="mt-7 grid gap-3">
         <button
           type="button"
           onClick={onConfirm}
           disabled={busy}
-          className="slam-button flex-1"
-          style={{
-            background: "var(--color-cuerpo)",
-            color: "var(--color-bone)",
-          }}
+          className="btn btn-danger w-full"
         >
-          <span>{busy ? busyLabel : confirmLabel}</span>
+          {busy ? busyLabel : confirmLabel}
+        </button>
+        <button
+          ref={cancelRef}
+          type="button"
+          onClick={onCancel}
+          className="btn btn-soft w-full"
+        >
+          Cancelar
         </button>
       </div>
     </DialogFrame>

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { useScreenReady } from "../lib/screenReady";
+import { useParams } from "react-router-dom";
 import {
   deleteActivity,
   getActivitiesByCategory,
@@ -17,11 +16,11 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { XP_BY_INTENSITY } from "../lib/intensity";
 import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
+import { BackLink, SectionTitle } from "../components/Layout";
 
 /**
  * A category's full history, grouped by day. The category detail only shows
- * the last VISIBLE_HISTORY entries; this screen is where "Y N MÁS" leads to
- * see the rest.
+ * the last VISIBLE_HISTORY entries; this screen shows the rest.
  */
 export function CategoryHistoryPage() {
   const { id } = useParams();
@@ -32,8 +31,6 @@ export function CategoryHistoryPage() {
   const [focuses, setFocuses] = useState<Focus[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
-  // The screen wipe holds until this screen has its data.
-  useScreenReady(!loading);
   const [error, setError] = useState<string | null>(null);
 
   // Undo by long press, the same as in the category detail.
@@ -90,17 +87,17 @@ export function CategoryHistoryPage() {
 
   if (!validId)
     return (
-      <p className="px-6 py-10 text-cuerpo">El id de la categoría no es válido</p>
+      <p className="px-5 py-10 text-warn">El id de la categoría no es válido</p>
     );
   if (loading)
     return (
-      <div className="px-4 pt-8 pb-32">
-        <SkeletonCards n={4} height="72px" />
+      <div className="px-5 pt-16 pb-32">
+        <SkeletonCards n={3} height="160px" />
       </div>
     );
   if (error)
     return (
-      <div className="px-4 pt-8 pb-32">
+      <div className="px-5 pt-16 pb-32">
         <ErrorPanel message={error} onRetry={onRetry} />
       </div>
     );
@@ -123,67 +120,41 @@ export function CategoryHistoryPage() {
   }
 
   return (
-    <div className="px-4 pt-6 pb-32">
-      <Link
-        to={`/categories/${categoryId}`}
-        className="anim-row inline-block bg-bone px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-black"
-        style={{ transform: "skewX(-10deg)" }}
-      >
-        <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-          ← {category.name.toUpperCase()}
-        </span>
-      </Link>
+    <div
+      className="px-5 pt-6 pb-32"
+      style={{ "--accent": accent } as React.CSSProperties}
+    >
+      <BackLink to={`/categories/${categoryId}`} label={category.name} />
 
-      <h1
-        className="text-sign anim-row mt-6 mb-1 font-display text-[28px] leading-[0.95] text-bone uppercase"
-        style={{ "--delay": "0.05s" } as React.CSSProperties}
-      >
+      <h1 className="settle mt-6 mb-1 text-[30px] leading-tight font-semibold">
         Historial
       </h1>
-      <p
-        className="anim-row on-scene mb-8 w-fit text-[10px] font-bold tracking-[0.16em] text-bone/70"
-        style={{ "--delay": "0.08s" } as React.CSSProperties}
-      >
-        {activities.length} {activities.length === 1 ? "ACTIVIDAD" : "ACTIVIDADES"} EN
-        TOTAL
+      <p className="settle mt-0 mb-8 text-[14px] text-ink-soft">
+        {activities.length} {activities.length === 1 ? "actividad" : "actividades"} en total
       </p>
 
       {activities.length === 0 ? (
-        <p className="on-scene w-fit text-sm text-bone/70">
+        <p className="m-0 text-[15px] text-ink-soft">
           Todavía no has registrado nada en esta categoría.
         </p>
       ) : (
         groups.map((g, gi) => (
-          <div key={`${g.label}-${gi}`} className="mb-8">
-            <p
-              className="anim-row mb-2.5 inline-block bg-yellow px-2.5 py-1 text-[10px] font-bold tracking-[0.14em] text-black"
-              style={
-                {
-                  transform: "skewX(-10deg)",
-                  "--delay": `${0.1 + gi * 0.03}s`,
-                } as React.CSSProperties
-              }
+          <section key={`${g.label}-${gi}`} className="mb-7">
+            <SectionTitle>{g.label}</SectionTitle>
+            <ul
+              className="card settle m-0 list-none divide-y divide-line p-0"
+              style={{ "--delay": `${gi * 0.04}s` } as React.CSSProperties}
             >
-              <span
-                className="inline-block"
-                style={{ transform: "skewX(10deg)" }}
-              >
-                {g.label}
-              </span>
-            </p>
-            <ul className="grid gap-2.5">
-              {g.items.map((a, i) => (
+              {g.items.map((a) => (
                 <ActivityRow
                   key={a.id}
                   activity={a}
-                  accent={accent}
                   focusName={
                     a.focusId !== null
                       ? (focuses.find((f) => f.id === a.focusId)?.name ??
                         "foco borrado")
                       : null
                   }
-                  delay={0.12 + gi * 0.03 + i * 0.02}
                   showDate={false}
                   onHold={() => {
                     setUndoError(null);
@@ -192,13 +163,13 @@ export function CategoryHistoryPage() {
                 />
               ))}
             </ul>
-          </div>
+          </section>
         ))
       )}
 
       {activityToUndo && (
         <ConfirmDialog
-          bandTitle="¿Deshacer registro?"
+          bandTitle="¿Deshacer el registro?"
           titleId="undo-history-title"
           busy={undoing}
           error={undoError}
@@ -207,20 +178,18 @@ export function CategoryHistoryPage() {
           onConfirm={onUndoActivity}
           onCancel={() => setActivityToUndo(null)}
         >
-          <p className="m-0 font-display text-[18px] leading-tight text-bone uppercase">
+          <p className="m-0 text-[17px] font-semibold">
             {activityToUndo.description === ""
               ? "Sin descripción"
               : activityToUndo.description}
           </p>
-          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-bone/55">
+          <p className="mt-1 mb-0 text-[13px] text-ink-soft">
             +{XP_BY_INTENSITY[activityToUndo.intensity]} XP ·{" "}
             {shortRelativeDate(activityToUndo.date)}
           </p>
-
-          <p className="mt-4 text-[11.5px] leading-relaxed text-bone/75">
-            Se le resta esa XP al foco (si la tenía) y a la categoría, y el
-            nivel puede bajar si corresponde. Solo puede deshacerse un
-            registro de hoy.
+          <p className="mt-3 mb-0 text-[15px] leading-relaxed text-ink-soft">
+            Se resta esa XP al foco (si lo tenía) y a la categoría, y el nivel
+            vuelve a donde estaba si hace falta.
           </p>
         </ConfirmDialog>
       )}

@@ -1,89 +1,65 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Category, RegisterActivityResult, XpOutcome } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { isToday } from "../lib/dates";
-import { useCountUp } from "../lib/useCountUp";
+import { playSound } from "../lib/sound";
 import { CategoryIcon } from "./CategoryIcon";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { DialogFrame } from "./DialogFrame";
 import { LevelNumber } from "./LevelNumber";
-import { playSound } from "../lib/sound";
 
-/** Beats of the sequence, in ms from the moment the modal opens. */
-const T_START = 380;
-const T_FILL = 1250;
-/** The held beat between topping out and the level landing. */
-const T_HOLD = 110;
-const T_BURST = 420;
+/** Beats of the bar, in ms from the moment the sheet opens. */
+const T_START = 300;
+const T_FILL = 800;
 
 /**
- * What you see when you log something. The bar is not painted in its final
- * state: it starts where it was and climbs. If the level goes up it reaches
- * the top, bursts and starts again from zero — which is the moment this whole
- * screen exists for.
+ * What you see after logging from the full form, or whenever a log raises a
+ * level: what it was worth, and each bar moving from where it was to where it
+ * is now. A level up is said in words and the bar simply starts again — no
+ * flash, no banner. Quiet, but it is still the moment the screen is for.
  */
 export function ResultModal({
   result,
   category,
-  backTo,
+  backTo = null,
   onClose,
   onUndo,
 }: {
   result: RegisterActivityResult;
   category: Category | undefined;
   /**
-   * Where the trip ends. The id of the category you came from, "" for the
-   * home, or `null` when you are already looking at the screen underneath —
-   * logging from a card on the home— and there is nowhere to go back to.
+   * Where "Volver" goes: the id of the category you came from, "" for the
+   * home, or `null` when the screen underneath is already the right one and
+   * closing is enough.
    */
-  backTo: string | null;
+  backTo?: string | null;
   onClose: () => void;
   /** Calls DELETE /activities/:id. Throws on failure — the dialog shows it. */
   onUndo: () => Promise<void>;
 }) {
-  const accent = category
-    ? categoryColorVar(category.slug)
-    : "var(--color-yellow)";
+  const accent = category ? categoryColorVar(category.slug) : "var(--color-ink)";
+  const leveled = result.category.leveledUp || result.focus?.leveledUp;
 
-  // This is the exact moment you realise you got it wrong, so the gesture
-  // lives right here and not only buried in the history. It is offered only
-  // for a log from today: the server would refuse any other.
+  // Offered only for a log from today: the server would refuse any other.
   const canUndo = isToday(result.activity.date);
-  const countedXp = useCountUp(result.xpGained, { from: 0, ms: 900 });
   const [confirming, setConfirming] = useState(false);
-  // The level-up banner, for whichever block hits first. Only once: when the
-  // category and the focus both level up, two banners 180ms apart would
-  // trip over each other.
-  const [banner, setBanner] = useState<{ title: string; level: number } | null>(
-    null,
-  );
-  const bannerShown = useRef(false);
-  const onHit = useCallback((title: string, level: number) => {
-    if (bannerShown.current) return;
-    bannerShown.current = true;
-    playSound("levelUp");
-    setBanner({ title, level });
-  }, []);
-  const hideBanner = useCallback(() => setBanner(null), []);
   const [undoing, setUndoing] = useState(false);
   const [undoError, setUndoError] = useState<string | null>(null);
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  // One sound for the level up, even if the category and the focus both rise.
+  const sounded = useRef(false);
+  const onHit = () => {
+    if (sounded.current) return;
+    sounded.current = true;
+    playSound("levelUp");
+  };
 
   async function confirmUndo() {
     setUndoError(null);
     setUndoing(true);
-
     try {
       await onUndo();
-      // Genuinely undone: there is nothing left to look at in this modal.
       onClose();
     } catch (err) {
       setUndoError((err as Error).message);
@@ -92,108 +68,47 @@ export function ResultModal({
     }
   }
 
+  const title = leveled
+    ? result.category.leveledUp
+      ? `${category?.name ?? "La categoría"} sube a nivel ${result.category.levelAfter}`
+      : `Tu foco sube a nivel ${result.focus!.levelAfter}`
+    : "Registrado";
+
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="result-title"
-    >
-      {/* The backdrop's burst at full blast, in the category's colour. */}
-      <div
-        className="burst-blast"
-        style={{ "--blast": accent } as React.CSSProperties}
-      />
-      <div className="burst-blast-tone" />
-
-      <div className="relative z-10 mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-5 py-10">
-        {/* A bone tape, like every other label that has to sit over the
-            burst: grey text on the rays was crossed out by them. */}
-        <p
-          id="result-title"
-          className="anim-row m-0 self-start bg-bone px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-black"
-          style={{ transform: "skewX(-10deg)" }}
-        >
-          <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-            ACTIVIDAD REGISTRADA
-          </span>
+    <>
+      <DialogFrame titleId="result-title" title={title} onCancel={onClose}>
+        <p className="m-0 -mt-3 text-[15px] text-ink-soft">
+          +{result.xpGained} XP
+          {result.focus?.frozen && result.focus.leveledUp && " · el foco alcanza la maestría"}
         </p>
 
-        {/* The figure counts up from zero instead of already being there. It
-            is the number this screen exists for: watching it arrive is the
-            reward, finding it already there is a statistic. */}
-        <p
-          className="anim-slam text-sign m-0 mt-3 font-display text-[64px] leading-none text-yellow"
-          style={{ transform: "skewX(-8deg)" }}
-        >
-          +{countedXp}
-          <span className="text-[26px]"> XP</span>
-        </p>
-
-        {/* The bars sit on a black panel of their own, like every card in the
-            app: over the burst, bare text would be crossed by rays. */}
-        <div
-          className="anim-row mt-8"
-          style={
-            {
-              "--delay": "0.12s",
-              filter: `drop-shadow(8px 8px 0 ${accent})`,
-            } as React.CSSProperties
-          }
-        >
-          <div className="card-clip grid gap-7 bg-black px-4 pt-5 pb-6">
+        <div className="mt-6 grid gap-5" style={{ "--accent": accent } as React.CSSProperties}>
           <XpBlock
             title={category?.name ?? "Categoría"}
             slug={category?.slug}
-            accent={accent}
             data={result.category}
             onHit={onHit}
           />
           {result.focus && (
-            <XpBlock
-              title="Foco"
-              accent={accent}
-              data={result.focus}
-              delay={180}
-              onHit={onHit}
-            />
+            <XpBlock title="Foco" data={result.focus} delay={150} onHit={onHit} />
           )}
-          </div>
         </div>
 
-        {/* Logged from the home there is no trip to close: the screen you
-            want is already behind. The link said "Ver categorías" and did
-            nothing visible —it navigated to "/" while on "/"— and left the
-            modal open, because the card rendering it does not unmount. There,
-            a single button that closes. */}
-        <div
-          className="anim-row mt-10 grid gap-3"
-          style={{ "--delay": "0.9s" } as React.CSSProperties}
-        >
+        <div className="mt-8 grid gap-3">
           {backTo === null ? (
-            <button type="button" onClick={onClose} className="slam-button w-full">
-              <span>Seguir</span>
+            <button type="button" onClick={onClose} className="btn w-full">
+              Hecho
             </button>
           ) : (
             <>
               <Link
                 to={backTo === "" ? "/" : `/categories/${backTo}`}
-                className="slam-button w-full"
+                className="btn w-full"
               >
-                <span>{backTo === "" ? "Ver categorías" : "Volver"}</span>
+                Hecho
               </Link>
-              <button
-                type="button"
-                onClick={onClose}
-                className="slam-button w-full"
-                style={{
-                  background: "transparent",
-                  color: "var(--color-yellow)",
-                  boxShadow: "none",
-                  border: "2px solid var(--color-yellow)",
-                }}
-              >
-                <span>Registrar otra</span>
+              <button type="button" onClick={onClose} className="btn btn-soft w-full">
+                Registrar otra
               </button>
             </>
           )}
@@ -202,25 +117,17 @@ export function ResultModal({
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="on-scene mt-1 justify-self-center text-[10px] font-bold tracking-[0.16em] text-bone/75 underline"
+              className="link-quiet mt-1 justify-self-center"
             >
-              ME HE EQUIVOCADO · DESHACER
+              Me he equivocado, deshacer
             </button>
           )}
         </div>
-      </div>
-
-      {banner && (
-        <LevelUpBanner
-          title={banner.title}
-          level={banner.level}
-          onDone={hideBanner}
-        />
-      )}
+      </DialogFrame>
 
       {confirming && (
         <ConfirmDialog
-          bandTitle="¿Deshacer registro?"
+          bandTitle="¿Deshacer el registro?"
           titleId="undo-modal-title"
           busy={undoing}
           error={undoError}
@@ -229,51 +136,41 @@ export function ResultModal({
           onConfirm={confirmUndo}
           onCancel={() => setConfirming(false)}
         >
-          <p className="m-0 font-display text-[20px] leading-tight text-bone uppercase">
-            +{result.xpGained} XP
-          </p>
-          <p className="mt-4 text-[11.5px] leading-relaxed text-bone/75">
-            Se le resta esa XP al foco (si lo tenía) y a la categoría, y el
-            nivel puede bajar si corresponde.
+          <p className="m-0 text-[15px] leading-relaxed text-ink-soft">
+            Se restan esos {result.xpGained} XP al foco (si lo tenía) y a la
+            categoría, y el nivel vuelve a donde estaba si hace falta.
           </p>
         </ConfirmDialog>
       )}
-    </div>
+    </>
   );
 }
 
 function XpBlock({
   title,
   slug,
-  accent,
   data,
   delay = 0,
   onHit,
 }: {
   title: string;
   slug?: string;
-  accent: string;
   data: XpOutcome;
   delay?: number;
-  /** Fired at the moment of the hit, for the level-up banner. */
-  onHit: (title: string, level: number) => void;
+  /** Fired when the level changes, for the sound. */
+  onHit: () => void;
 }) {
-  // Read through a ref so the timeline below does not restart if the
-  // callback's identity changes.
   const hitRef = useRef(onHit);
   useEffect(() => {
     hitRef.current = onHit;
   }, [onHit]);
 
-  // Current bar width, and whether it should animate: when restarting after a
-  // level-up it has to snap to zero with no transition, or you would watch it
-  // travel backwards.
+  // The bar starts where it was and travels. On a level up it fills to the
+  // end, then starts again from zero with no transition (or you would watch
+  // it go backwards) and fills to where it is now.
   const [width, setWidth] = useState(data.progressBefore);
-  const [animated, setAnimated] = useState(false);
+  const [animated, setAnimated] = useState(true);
   const [shownLevel, setShownLevel] = useState(data.levelBefore);
-  const [celebrating, setCelebrating] = useState(false);
-  // The wind-up: the bar has topped out and is holding, just before the hit.
-  const [charging, setCharging] = useState(false);
 
   useEffect(() => {
     const timers: number[] = [];
@@ -281,179 +178,55 @@ function XpBlock({
       timers.push(window.setTimeout(fn, delay + ms));
 
     if (!data.leveledUp) {
-      t(T_START, () => {
-        setAnimated(true);
-        setWidth(data.progressAfter);
-      });
+      t(T_START, () => setWidth(data.progressAfter));
     } else {
-      // 1. Climb all the way to the top. It accelerates into the ceiling
-      //    instead of easing out: a bar that slows down as it arrives reads
-      //    as running out of steam, which is the opposite of what is about
-      //    to happen.
-      t(T_START, () => {
-        setAnimated(true);
-        setWidth(1);
-      });
-      // 2. Wind-up: topped out, white, swollen, and nothing else moving.
-      t(T_START + T_FILL, () => setCharging(true));
-      // 3. The hit: flash, new number, shake, and the bar blowing out.
-      t(T_START + T_FILL + T_HOLD, () => {
-        setCelebrating(true);
+      t(T_START, () => setWidth(1));
+      t(T_START + T_FILL, () => {
         setShownLevel(data.levelAfter);
-        hitRef.current(title, data.levelAfter);
-      });
-      // 4. The bar snaps back to zero, with no transition.
-      t(T_START + T_FILL + T_HOLD + 120, () => {
+        hitRef.current();
         setAnimated(false);
         setWidth(0);
-        setCharging(false);
       });
-      // 5. And the new level starts filling.
-      t(T_START + T_FILL + T_HOLD + T_BURST, () => {
+      t(T_START + T_FILL + 60, () => {
         setAnimated(true);
         setWidth(data.progressAfter);
       });
     }
 
     return () => timers.forEach(window.clearTimeout);
-  }, [data, delay, title]);
+  }, [data, delay]);
 
   return (
-    <div className={celebrating ? "anim-shake relative" : "relative"}>
-      {/* Through a portal to the body: this block carries `anim-shake` right
-          when the flash appears, and an ancestor with a `transform` turns
-          `position: fixed` into `absolute` relative to it. The "full-screen"
-          flash had always been trapped inside the shaking block. */}
-      {celebrating &&
-        createPortal(
-          <div
-            className="anim-flash pointer-events-none fixed inset-0 z-[60]"
-            style={{ background: "var(--color-bone)" }}
-          />,
-          document.body,
-        )}
-
-      <div className="flex items-end gap-2.5">
+    <div>
+      <div className="flex items-center gap-2.5">
         {slug && (
-          <CategoryIcon
-            slug={slug}
-            strokeWidth={2.4}
-            className="mb-1 h-6 w-6 shrink-0"
-            style={{ color: accent }}
-          />
+          <span className="icon-disc h-8 w-8">
+            <CategoryIcon slug={slug} strokeWidth={1.8} className="h-4 w-4" />
+          </span>
         )}
-        <h2
-          className="m-0 font-display text-[19px] leading-none uppercase"
-          style={{ color: accent }}
-        >
-          {title}
-        </h2>
-
-        <span className="relative ml-auto flex items-baseline gap-1.5">
-          {celebrating && (
-            <span
-              className="anim-burst pointer-events-none absolute -inset-10 -z-10"
-              style={{
-                background:
-                  "repeating-conic-gradient(from 0deg at 50% 50%, var(--color-yellow) 0deg 5deg, transparent 5deg 13deg)",
-                WebkitMaskImage:
-                  "radial-gradient(circle at 50% 50%, #000 10%, transparent 62%)",
-                maskImage:
-                  "radial-gradient(circle at 50% 50%, #000 10%, transparent 62%)",
-              }}
-            />
-          )}
-          <LevelNumber
-            // The key remounts the number on level-up, which is what fires
-            // its slam.
-            key={shownLevel}
-            value={shownLevel}
-            size={42}
-            slam={celebrating}
-          />
-        </span>
+        <span className="text-[15px] font-medium">{title}</span>
+        <LevelNumber
+          value={shownLevel}
+          className={`ml-auto transition-colors ${shownLevel > data.levelBefore ? "text-ink" : ""}`}
+        />
       </div>
 
-      <div
-        className={`xp-bar relative mt-3 h-5 overflow-hidden bg-[#242424] ${
-          celebrating ? "anim-bar-hit" : charging ? "anim-bar-charge" : ""
-        }`}
-      >
-        <div
-          className="relative h-full bg-yellow"
+      <div className="progress mt-3">
+        <i
           style={{
             width: `${Math.round(width * 100)}%`,
-            // Climbing to the top it accelerates; settling into the new level it brakes.
-            transition: animated
-              ? data.leveledUp && width === 1
-                ? "width 1.25s cubic-bezier(.4,0,.9,.5)"
-                : "width 1s cubic-bezier(.2,.9,.25,1)"
-              : "none",
+            transition: animated ? undefined : "none",
           }}
         />
       </div>
 
-      <div className="mt-2.5 flex items-center gap-2 text-[10px] font-semibold tracking-[0.06em] text-bone/70">
-        <span>{data.totalXp} XP</span>
-        <i className="h-[3px] w-[3px] rotate-45 bg-bone/50" />
-        <span>
-          {data.atMaxLevel ? (
-            <b className="text-yellow">
-              {data.frozen ? "CONGELADO" : "NIVEL MÁXIMO"}
-            </b>
-          ) : (
-            <>
-              <b className="text-yellow">{data.xpToNextLevel}</b> AL NV{" "}
-              {data.levelAfter + 1}
-            </>
-          )}
-        </span>
-        {data.leveledUp && celebrating && (
-          <span
-            className="ml-auto bg-yellow px-2 py-0.5 text-[9px] font-bold tracking-[0.16em] text-black"
-            style={{ transform: "skewX(-10deg)" }}
-          >
-            {data.frozen ? "¡MAESTRÍA!" : `¡SUBES A ${data.levelAfter}!`}
-          </span>
-        )}
-      </div>
+      <p className="mt-2 mb-0 text-[12px] text-ink-faint">
+        {data.atMaxLevel
+          ? data.frozen
+            ? "Maestría"
+            : "Nivel máximo"
+          : `${data.xpToNextLevel} XP para el nivel ${data.levelAfter + 1}`}
+      </p>
     </div>
-  );
-}
-
-/**
- * The big moment's headline: a yellow band slashes across the whole screen
- * at the instant of the hit, with the new level on it, holds for a beat and
- * carries on out the other side — the "RANK UP" of a Persona Confidant.
- *
- * Through a portal, above the white flash: the modal's own blocks carry
- * transforms at that moment, which would trap anything fixed inside them.
- */
-function LevelUpBanner({
-  title,
-  level,
-  onDone,
-}: {
-  title: string;
-  level: number;
-  onDone: () => void;
-}) {
-  useEffect(() => {
-    const t = window.setTimeout(onDone, 1300);
-    return () => window.clearTimeout(t);
-  }, [onDone]);
-
-  return createPortal(
-    <div className="levelup" aria-hidden="true">
-      <div className="levelup-band">
-        <span className="levelup-title">
-          <span>{title}</span>
-        </span>
-        <b className="levelup-text">
-          ¡NIVEL <span className="level-figure">{level}</span>!
-        </b>
-      </div>
-    </div>,
-    document.body,
   );
 }

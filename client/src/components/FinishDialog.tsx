@@ -3,7 +3,7 @@ import type { Work } from "../api/client";
 import { DialogFrame } from "./DialogFrame";
 import { Rating } from "./Rating";
 
-/** Calling something finished: one last question, the rating, and done. */
+/** Calling something finished: one last, optional question — the rating. */
 export function FinishDialog({
   work,
   onConfirm,
@@ -16,34 +16,16 @@ export function FinishDialog({
   const [rating, setRating] = useState<number | null>(null);
 
   return (
-    <DialogFrame
-      titleId="finish-title"
-      bandTitle="¿Completado?"
-      band="var(--color-yellow)"
-      onCancel={onCancel}
-    >
-      <p className="m-0 font-display text-[20px] leading-tight text-bone uppercase">
-        {work.title}
-      </p>
-      <p className="mt-4 mb-2 text-[10px] font-bold tracking-[0.14em] text-bone/75">
-        ¿QUÉ NOTA LE DAS? (OPCIONAL)
-      </p>
-      <Rating value={rating} onChange={setRating} size={18} />
+    <DialogFrame titleId="finish-title" title={`¿Has terminado ${work.title}?`} onCancel={onCancel}>
+      <p className="m-0 mb-3 text-[15px] text-ink-soft">¿Qué nota le das? (opcional)</p>
+      <Rating value={rating} onChange={setRating} size={16} />
 
-      <div className="mt-6 grid gap-3">
-        <button
-          type="button"
-          onClick={() => onConfirm(rating)}
-          className="slam-button w-full"
-        >
-          <span>A la vitrina</span>
+      <div className="mt-8 grid gap-3">
+        <button type="button" onClick={() => onConfirm(rating)} className="btn w-full">
+          Marcar como terminado
         </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="mt-1 text-[10px] font-bold tracking-[0.16em] text-bone/60 underline"
-        >
-          CANCELAR
+        <button type="button" onClick={onCancel} className="link-quiet mt-1 justify-self-center">
+          Cancelar
         </button>
       </div>
     </DialogFrame>

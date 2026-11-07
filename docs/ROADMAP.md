@@ -67,3 +67,7 @@ para volver a publicarla, un sitio de Netlify apuntando a la rama `persona`.
 El rediseño es solo de interfaz: mismas reglas de juego, mismo servidor y
 misma base de Turso. Cambian `client/` y la sección «Dirección visual» de
 docs/DESIGN.md.
+
+- [x] Rediseño «calma»: arena y crema, tinta cálida, una sola tipografía
+  (Figtree), acentos terrosos, movimiento suave y sonido apagado por defecto.
+  Mismas pantallas, mismas reglas. Ver «Dirección visual» en docs/DESIGN.md.

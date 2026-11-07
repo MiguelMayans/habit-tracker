@@ -2,49 +2,41 @@ import { useState } from "react";
 import type { RecentActivity } from "../api/client";
 import { dayKey, shortRelativeDate } from "../lib/dates";
 import { XP_BY_INTENSITY } from "../lib/intensity";
-import { useCountUp } from "../lib/useCountUp";
 
 const DAYS = 30;
 
 /**
- * How strongly a day is tinted, based on the XP earned in it. The thresholds
- * come from what the intensities cost (10 / 20 / 35): under 20 is a single
- * gesture, 70 or more is a day with several things in it.
- *
- * Empty is not black but very faint bone: a gap has to read as a day that
- * existed and went unused, not as a hole in the strip.
+ * How filled a day's dot is, from the XP earned in it. The thresholds come
+ * from what the intensities cost (10 / 20 / 35): under 20 is a single
+ * gesture, 70 or more is a full day. Ink at growing strength, never a bright
+ * colour: this is a glance at your rhythm, not a scoreboard.
  */
-function tone(xp: number): string {
-  if (xp === 0) return "rgb(245 245 240 / 0.12)";
-  if (xp < 20) return "rgb(255 229 0 / 0.34)";
-  if (xp < 40) return "rgb(255 229 0 / 0.58)";
-  if (xp < 70) return "rgb(255 229 0 / 0.8)";
-  return "var(--color-yellow)";
+function fill(xp: number): string {
+  if (xp === 0) return "var(--color-mist)";
+  if (xp < 20) return "rgb(46 42 37 / 0.22)";
+  if (xp < 40) return "rgb(46 42 37 / 0.42)";
+  if (xp < 70) return "rgb(46 42 37 / 0.65)";
+  return "var(--color-ink)";
 }
 
 /**
- * The last 30 days, one square per day, brighter the more XP it holds.
+ * Today at a glance: what today is worth, the streak, and the last 30 days
+ * as a row of dots. Tapping a dot says what happened that day, in the card's
+ * own header line.
  *
- * Every square is a button. Its only affordance used to be a `title`, which on
- * a phone never appears — so on the device this app is actually used on, the
- * thirty squares were decoration: you could see the shape but could not ask
- * what happened on a given day. Tapping one answers that in the strip's own
- * header, so nothing new is drawn on screen to say it.
- *
- * The bucketing happens here and not on the server for the same reason as the
- * streak: which calendar day a timestamp belongs to depends on the time zone,
- * which the browser knows and the server does not.
+ * Days are bucketed here and not on the server: which calendar day a
+ * timestamp belongs to depends on the time zone, which only the browser knows.
  */
 export function RhythmStrip({
   activities,
   streak,
+  todayXp,
 }: {
   activities: RecentActivity[];
   streak: number;
+  todayXp: number;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
-  // The streak counts up from zero on arrival, like the XP does.
-  const shownStreak = useCountUp(streak, { from: 0, ms: 900 });
 
   const xpByDay = new Map<string, number>();
   const countByDay = new Map<string, number>();
@@ -71,94 +63,57 @@ export function RhythmStrip({
   });
 
   const open = days.find((d) => d.key === selected);
-  // The label reuses the history's own wording, so a day is named the same
-  // here as it is there: HOY, AYER or "12 SEP".
-  const headline = open
+  const caption = open
     ? `${shortRelativeDate(open.date.toISOString())} · ${
         open.count === 0
-          ? "SIN ACTIVIDAD"
-          : `${open.count} ${open.count === 1 ? "ACTIVIDAD" : "ACTIVIDADES"} · +${open.xp} XP`
+          ? "sin actividad"
+          : `${open.count} ${open.count === 1 ? "actividad" : "actividades"}, +${open.xp} XP`
       }`
-    : "ÚLTIMOS 30 DÍAS";
+    : "Últimos 30 días";
 
   return (
-    <div
-      className="anim-row mb-10"
-      style={{ "--delay": "0.12s" } as React.CSSProperties}
-    >
-      <div className="mb-2 flex items-end gap-2 px-1">
-        {/* On a black strip of its own for the same reason as the streak:
-            grey text straight on the rays did not read. */}
-        <span
-          aria-live="polite"
-          className={`bg-black px-1.5 py-0.5 text-[9px] font-bold tracking-[0.2em] ${
-            open ? "text-bone" : "text-bone/70"
-          }`}
-        >
-          {headline}
-        </span>
+    <section className="card settle mb-8 px-5 py-5">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="eyebrow m-0">Hoy</p>
+          <p className="mt-1 mb-0 text-[24px] leading-tight font-semibold">
+            {todayXp > 0 ? `+${todayXp} XP` : "Aún nada"}
+          </p>
+        </div>
         {streak > 0 && (
-          // The streak used to live in its own ribbon up top, next to the
-          // date. It moved here because it talks about exactly this strip:
-          // keeping them apart said the same thing twice, in two visual
-          // languages.
-          // A black plaque with a yellow hard shadow: a run of 52 days is the
-          // proudest figure on the home, and loose over the burst's rays it
-          // got lost among them.
-          <span
-            className="ml-auto inline-block bg-black px-2.5 py-1"
-            style={{
-              transform: "rotate(-2deg) skewX(-10deg)",
-              boxShadow: "4px 4px 0 var(--color-yellow)",
-            }}
-          >
-            <span
-              className="flex items-baseline gap-1.5 text-[9px] font-bold tracking-[0.16em] text-bone"
-              style={{ transform: "skewX(10deg)" }}
-            >
-              RACHA
-              <b className="font-figure text-[20px] leading-none tracking-normal text-yellow">
-                {shownStreak}
-              </b>
-              {streak === 1 ? "DÍA" : "DÍAS"}
-            </span>
-          </span>
+          <p className="m-0 text-right text-[13px] text-ink-soft">
+            <b className="block text-[24px] leading-tight font-semibold text-ink">
+              {streak}
+            </b>
+            {streak === 1 ? "día seguido" : "días seguidos"}
+          </p>
         )}
       </div>
 
-      {/* On a black film strip: over the white rays, the empty days (a
-          faint bone) disappeared. */}
-      <ul className="flex gap-[3px] bg-black p-[3px]">
-        {days.map((d, i) => {
-          const label = `${shortRelativeDate(d.date.toISOString())} · ${d.xp} XP`;
+      <p aria-live="polite" className="mt-5 mb-2.5 text-[12px] text-ink-soft">
+        {caption}
+      </p>
+      <ul className="m-0 flex list-none gap-[3px] p-0">
+        {days.map((d) => {
+          const label = `${shortRelativeDate(d.date.toISOString())}: ${d.xp} XP`;
           return (
-            // The month fills in left to right on arrival, one day after
-            // another, ending on today.
-            <li
-              key={d.key}
-              className="day-in flex-1"
-              style={{ "--i": i } as React.CSSProperties}
-            >
+            <li key={d.key} className="flex-1">
               <button
                 type="button"
                 title={label}
                 aria-label={label}
                 aria-pressed={d.key === selected}
-                onClick={() =>
-                  setSelected(d.key === selected ? null : d.key)
-                }
-                className="block aspect-square w-full"
+                onClick={() => setSelected(d.key === selected ? null : d.key)}
+                className="block aspect-square w-full rounded-full"
                 style={{
-                  background: tone(d.xp),
-                  // Today is marked even while still empty: it is the day you
-                  // can still change, and without the mark it is lost among
-                  // the gaps. The day you are inspecting gets a thicker ring
-                  // of the same kind, so both marks read as one idea.
+                  background: fill(d.xp),
+                  // Today is marked even while empty: it is the day you can
+                  // still change. The inspected day gets a stronger ring.
                   boxShadow:
                     d.key === selected
-                      ? "inset 0 0 0 2.5px var(--color-yellow)"
+                      ? "0 0 0 2px var(--color-paper), 0 0 0 3.5px var(--color-ink)"
                       : d.isToday
-                        ? "inset 0 0 0 1.5px var(--color-bone)"
+                        ? "inset 0 0 0 1.5px var(--color-ink-faint)"
                         : undefined,
                 }}
               />
@@ -166,6 +121,6 @@ export function RhythmStrip({
           );
         })}
       </ul>
-    </div>
+    </section>
   );
 }

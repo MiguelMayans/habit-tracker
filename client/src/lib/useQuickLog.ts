@@ -5,7 +5,7 @@ import {
   type Intensity,
   type RegisterActivityResult,
 } from "../api/client";
-import { impactAt, impactOrigin } from "./impact";
+import { playSound } from "./sound";
 
 /**
  * Logging in two taps, wherever a list of focuses is shown.
@@ -54,14 +54,13 @@ export function useQuickLog({
    * counts is that it happened and at what intensity — and a form is exactly
    * what this path exists to avoid.
    */
-  async function log(focusId: number, intensity: Intensity, chip: HTMLElement) {
+  async function log(focusId: number, intensity: Intensity) {
     setError(null);
     setBusy(true);
-    const origin = impactOrigin(chip);
 
     try {
       const res = await createActivity({ categoryId, focusId, intensity });
-      impactAt(origin);
+      playSound("earn");
       setOpenFocusId(null);
       setGain({ focusId, xp: res.xpGained });
 

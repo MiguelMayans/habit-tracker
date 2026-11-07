@@ -7,10 +7,7 @@ const INTENSITIES: Intensity[] = ["chispa", "impulso", "all_out"];
 
 /**
  * What unfolds under a focus when you tap it: the three intensities, and the
- * way out to the full screen.
- *
- * The chips are ephemeral — they only exist while a row is open — so they do
- * not add a permanent box to a card that already learned that lesson.
+ * way to the full form. They only exist while a row is open.
  */
 export function QuickIntensities({
   categoryId,
@@ -19,47 +16,35 @@ export function QuickIntensities({
   onPick,
 }: {
   categoryId: number;
-  /** Without one (a Lair session) there is no menu to go to. */
+  /** Without one (a Lair session) there is no form to go to. */
   focusId?: number;
   busy: boolean;
-  /** The chip itself goes along, so the hit can be drawn where it was. */
-  onPick: (intensity: Intensity, chip: HTMLElement) => void;
+  onPick: (intensity: Intensity) => void;
 }) {
   return (
-    <div
-      className="anim-row mt-2.5"
-      style={{ "--delay": "0s" } as React.CSSProperties}
-    >
-      <div className="flex gap-2">
-        {INTENSITIES.map((i, n) => (
+    <div className="settle pt-1 pb-2">
+      <div className="grid grid-cols-3 gap-2">
+        {INTENSITIES.map((i) => (
           <button
             key={i}
-            style={{ "--i": n } as React.CSSProperties}
             type="button"
             disabled={busy}
-            onClick={(e) => onPick(i, e.currentTarget)}
-            className="quick-chip"
+            onClick={() => onPick(i)}
+            className="grid gap-0.5 rounded-2xl border border-line bg-sand/60 px-2 py-2.5 transition-colors active:bg-mist disabled:opacity-50"
           >
-            <span className="text-[10px] leading-tight">
-              {INTENSITY_LABEL[i]}
-            </span>
-            <span className="mt-0.5 text-[12px] leading-none">
-              +{XP_BY_INTENSITY[i]}
-            </span>
+            <span className="text-[14px] font-medium">{INTENSITY_LABEL[i]}</span>
+            <span className="text-[12px] text-ink-soft">+{XP_BY_INTENSITY[i]} XP</span>
           </button>
         ))}
       </div>
 
-      {/* Closing a focus, renaming it and the date live in the menu, not here:
-          from a list what you do is log, and an action that changes the focus
-          itself should not sit a finger away from the intensities. */}
       {focusId !== undefined && (
-      <Link
-        to={`/log-activity?category=${categoryId}&focus=${focusId}`}
-        className="mt-2.5 inline-block text-[9px] font-bold tracking-[0.16em] text-bone/55 underline"
-      >
-        IR AL MENÚ
-      </Link>
+        <Link
+          to={`/log-activity?category=${categoryId}&focus=${focusId}`}
+          className="link-quiet mt-3 inline-block text-[13px]"
+        >
+          Con nota u otra fecha
+        </Link>
       )}
     </div>
   );

@@ -31,29 +31,22 @@ export function MissionSheet({
   const done = m.completedAt !== null;
 
   return (
-    <DialogFrame
-      titleId="mission-sheet-title"
-      bandTitle="Misión"
-      band="var(--color-yellow)"
-      onCancel={onCancel}
-    >
+    <DialogFrame titleId="mission-sheet-title" title="Editar misión" onCancel={onCancel}>
       <form
-        className="grid gap-4"
+        className="grid gap-5"
         onSubmit={(e) => {
           e.preventDefault();
           onSave({ title, dueDate: due, categoryId });
         }}
       >
-        <div className="field-frame">
-          <input
-            className="field"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            aria-label="Título"
-            maxLength={200}
-            autoFocus
-          />
-        </div>
+        <input
+          className="field"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          aria-label="Título"
+          maxLength={200}
+          autoFocus
+        />
 
         <WhenPicker value={due} onChange={setDue} />
 
@@ -66,39 +59,27 @@ export function MissionSheet({
           disabled={done}
         />
 
-        {error && (
-          <p className="anim-slam m-0 bg-cuerpo px-3 py-2 text-[11px] font-bold text-bone">
-            {error}
-          </p>
-        )}
+        {error && <p className="m-0 text-[14px] text-warn">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={busy || title.trim() === ""}
-          className="slam-button mt-1 w-full"
-        >
-          <span>{busy ? "Guardando…" : "Guardar"}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onDelete}
-          className="slam-button w-full"
-          style={{
-            background: "var(--color-cuerpo)",
-            color: "var(--color-bone)",
-          }}
-        >
-          <span>Borrar</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onCancel}
-          className="mt-1 text-[10px] font-bold tracking-[0.16em] text-bone/60 underline"
-        >
-          CANCELAR
-        </button>
+        <div className="mt-2 grid gap-3">
+          <button
+            type="submit"
+            disabled={busy || title.trim() === ""}
+            className="btn w-full"
+          >
+            {busy ? "Guardando…" : "Guardar"}
+          </button>
+          <button type="button" onClick={onDelete} className="btn btn-danger w-full">
+            Borrar
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="link-quiet mt-1 justify-self-center"
+          >
+            Cancelar
+          </button>
+        </div>
       </form>
     </DialogFrame>
   );

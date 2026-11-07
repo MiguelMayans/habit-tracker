@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { useScreenReady } from "../lib/screenReady";
 import {
   completeMission,
   createMission,
@@ -19,7 +17,6 @@ import {
   MISSION_XP,
   type MissionGroup,
 } from "../lib/missions";
-import { impactAt, impactOrigin } from "../lib/impact";
 import { playSound } from "../lib/sound";
 import { MissionRow } from "../components/MissionRow";
 import { MissionSheet } from "../components/MissionSheet";
@@ -28,27 +25,24 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ResultModal } from "../components/ResultModal";
 import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
+import { SectionTitle } from "../components/Layout";
 
-/** How long the slash, the stamp and the fling take before the row moves. */
-const STAMP_MS = 800;
+/** How long the tick and the fade take before the row moves to "done". */
+const COMPLETE_MS = 800;
 
 const reducedMotion = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/**
- * The open sections, in order of urgency, with each one's tape: late in red,
- * today in the system yellow, the rest in bone.
- */
+/** The open sections, in order of urgency. Late ones say so in terracotta. */
 const SECTIONS: {
   group: Exclude<MissionGroup, "done">;
   label: string;
-  tape: string;
-  ink: string;
+  warn?: boolean;
 }[] = [
-  { group: "overdue", label: "Vencidas", tape: "var(--color-cuerpo)", ink: "var(--color-bone)" },
-  { group: "today", label: "Hoy", tape: "var(--color-yellow)", ink: "var(--color-black)" },
-  { group: "upcoming", label: "Próximas", tape: "var(--color-bone)", ink: "var(--color-black)" },
-  { group: "someday", label: "Sin fecha", tape: "var(--color-bone)", ink: "var(--color-black)" },
+  { group: "overdue", label: "Vencidas", warn: true },
+  { group: "today", label: "Hoy" },
+  { group: "upcoming", label: "Próximas" },
+  { group: "someday", label: "Sin fecha" },
 ];
 
 /** Within a section: dated ones by date, the rest in the order they came. */
@@ -61,7 +55,7 @@ function byDueThenCreated(a: Mission, b: Mission): number {
 
 /**
  * The missions: calls and errands, jotted down in two seconds and ticked off
- * with a slash. Apart from the activities — which are logged after the fact —
+ * with a tap. Apart from the activities — which are logged after the fact —
  * but connected to them: give one a category and completing it lands a Chispa
  * there (docs/DESIGN.md).
  */
@@ -69,8 +63,6 @@ export function MissionsPage() {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  // The screen wipe holds until this screen has its data.
-  useScreenReady(!loading);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -128,9 +120,9 @@ export function MissionsPage() {
     }
   }
 
-  // Ticking off. The stamp starts on the tap, not on the response: the
+  // Ticking off. The tick starts on the tap, not on the response: the
   // gesture should feel like it landed, and the request runs underneath it.
-  const [stamping, setStamping] = useState<Map<number, number | null>>(
+  const [completing, setCompleting] = useState<Map<number, number | null>>(
     new Map(),
   );
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -140,15 +132,15 @@ export function MissionsPage() {
     missionId: number;
   } | null>(null);
 
-  const setStamp = (id: number, xp: number | null | undefined) =>
-    setStamping((prev) => {
+  const markCompleting = (id: number, xp: number | null | undefined) =>
+    setCompleting((prev) => {
       const next = new Map(prev);
       if (xp === undefined) next.delete(id);
       else next.set(id, xp);
       return next;
     });
 
-  async function onToggle(m: Mission, el: HTMLElement) {
+  async function onToggle(m: Mission) {
     setRowError(null);
 
     if (m.completedAt !== null) {
@@ -163,20 +155,17 @@ export function MissionsPage() {
       return;
     }
 
-    const origin = impactOrigin(el);
-    setStamp(m.id, null);
-    playSound("stamp");
-    const stamped = new Promise((r) =>
-      window.setTimeout(r, reducedMotion() ? 0 : STAMP_MS),
+    markCompleting(m.id, null);
+    // One soft note on the tap, XP or not: the tick is the moment.
+    playSound("done");
+    const settled = new Promise((r) =>
+      window.setTimeout(r, reducedMotion() ? 0 : COMPLETE_MS),
     );
 
     try {
       const res = await completeMission(m.id);
-      if (res.activity) {
-        impactAt(origin);
-        setStamp(m.id, res.activity.xpGained);
-      }
-      await stamped;
+      if (res.activity) markCompleting(m.id, res.activity.xpGained);
+      await settled;
       replace(res.mission);
       // The celebration only where it is earned, as with any quick log.
       if (res.activity?.category.leveledUp) {
@@ -185,7 +174,7 @@ export function MissionsPage() {
     } catch (err) {
       setRowError((err as Error).message);
     } finally {
-      setStamp(m.id, undefined);
+      markCompleting(m.id, undefined);
     }
   }
 
@@ -231,13 +220,13 @@ export function MissionsPage() {
 
   if (loading)
     return (
-      <div className="px-4 pt-6 pb-32">
-        <SkeletonCards n={4} />
+      <div className="px-5 pt-16 pb-32">
+        <SkeletonCards n={4} height="72px" />
       </div>
     );
   if (error)
     return (
-      <div className="px-4 pt-6 pb-32">
+      <div className="px-5 pt-16 pb-32">
         <ErrorPanel message={error} onRetry={onRetry} />
       </div>
     );
@@ -256,11 +245,11 @@ export function MissionsPage() {
       mission={m}
       category={m.categoryId !== null ? categoryById.get(m.categoryId) : undefined}
       index={rowIndex++}
-      stamping={stamping.has(m.id)}
-      gain={stamping.get(m.id) ?? null}
+      completing={completing.has(m.id)}
+      gain={completing.get(m.id) ?? null}
       busy={busyId === m.id}
       highlighted={newId === m.id}
-      onToggle={(el) => onToggle(m, el)}
+      onToggle={() => onToggle(m)}
       onOpen={() => {
         setSaveError(null);
         setEditing(m);
@@ -269,82 +258,55 @@ export function MissionsPage() {
   );
 
   return (
-    <div className="px-4 pt-6 pb-32">
-      <Link
-        to="/"
-        className="anim-row inline-block bg-bone px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-black"
-        style={{ transform: "skewX(-10deg)" }}
-      >
-        <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-          ← CATEGORÍAS
-        </span>
-      </Link>
-
-      <header className="relative mt-7 mb-8">
-        <div
-          className="bleed-band anim-logo top-[-18px] z-0 h-[96px]"
-          style={
-            {
-              "--band-bg": "var(--color-yellow)",
-              "--band-edge": "var(--color-black)",
-              "--band-tilt": "-3deg",
-            } as React.CSSProperties
-          }
-        />
-        <h1 className="text-sign relative z-10 m-0 font-display text-[34px] leading-[0.92] text-bone uppercase">
-          Misiones
-        </h1>
-        <p className="anim-ribbon relative z-10 mt-5 mb-0 flex flex-wrap items-center gap-2.5">
-          <span className="on-scene text-[10px] font-bold tracking-[0.2em] text-bone">
-            {pending.length === 1 ? "1 PENDIENTE" : `${pending.length} PENDIENTES`}
-          </span>
-          {atStake > 0 && (
-            <span
-              className="bg-yellow px-2 py-0.5 font-display text-[11px] text-black"
-              style={{
-                transform: "skewX(-10deg)",
-                boxShadow: "3px 3px 0 var(--color-black)",
-              }}
-            >
-              <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-                +{atStake} XP EN JUEGO
-              </span>
-            </span>
-          )}
+    <div className="px-5 pt-10 pb-32">
+      <header className="settle mb-7">
+        <h1 className="m-0 text-[30px] leading-tight font-semibold">Misiones</h1>
+        <p className="mt-1 mb-0 text-[14px] text-ink-soft">
+          {pending.length === 0
+            ? "Nada pendiente"
+            : pending.length === 1
+              ? "1 pendiente"
+              : `${pending.length} pendientes`}
+          {atStake > 0 && ` · +${atStake} XP si las cumples`}
         </p>
       </header>
 
-      <form
-        onSubmit={onCreate}
-        className="anim-row mb-9 grid gap-3.5"
-        style={{ "--delay": "0.08s" } as React.CSSProperties}
-      >
-        <div className="flex items-stretch gap-3">
-          <div className="field-frame min-w-0 flex-1">
-            <input
-              ref={inputRef}
-              className="field"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="¿Qué tienes pendiente?"
-              aria-label="Nueva misión"
-              maxLength={200}
-              enterKeyHint="done"
-            />
-          </div>
+      <form onSubmit={onCreate} className="card settle mb-9 grid gap-4 p-4">
+        <div className="flex items-center gap-2.5">
+          <input
+            ref={inputRef}
+            className="field min-w-0 flex-1"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="¿Qué tienes pendiente?"
+            aria-label="Nueva misión"
+            maxLength={200}
+            enterKeyHint="done"
+          />
           <button
             type="submit"
             disabled={creating || title.trim() === ""}
             aria-label="Apuntar misión"
-            className="slam-button"
-            style={{ padding: "0 18px", fontSize: 24 }}
+            className="btn w-12 shrink-0 px-0"
           >
-            <span>+</span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.2}
+              strokeLinecap="round"
+              className="h-5 w-5"
+              aria-hidden="true"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
           </button>
         </div>
 
+        {/* The options unfold once there is something to attach them to: the
+            empty state is a single line asking one question. */}
         {title.trim() !== "" && (
-          <div className="anim-row grid gap-3">
+          <div className="settle grid gap-4">
             <WhenPicker value={due} onChange={setDue} />
             <CategoryOptions
               categories={categories}
@@ -354,76 +316,62 @@ export function MissionsPage() {
           </div>
         )}
 
-        {formError && (
-          <p className="anim-slam m-0 bg-cuerpo px-3 py-2 text-[11px] font-bold text-bone">
-            {formError}
-          </p>
-        )}
+        {formError && <p className="m-0 text-[14px] text-warn">{formError}</p>}
       </form>
 
-      {rowError && (
-        <p className="anim-slam mb-6 bg-cuerpo px-3 py-2 text-[11px] font-bold text-bone">
-          {rowError}
-        </p>
-      )}
+      {rowError && <p className="mt-0 mb-6 text-[14px] text-warn">{rowError}</p>}
 
       {pending.length === 0 ? (
-        <div className="anim-row mb-10">
-          <p className="text-sign m-0 font-display text-[26px] leading-none text-bone uppercase">
-            ¡Vía libre!
-          </p>
-          <p className="on-scene mt-3 w-fit text-[11.5px] text-bone/80">
+        <div className="settle mb-10 py-6 text-center">
+          <p className="m-0 text-[18px] font-semibold">Todo en orden</p>
+          <p className="mt-1.5 mb-0 text-[15px] text-ink-soft">
             {done.length > 0
               ? "No te queda nada pendiente."
               : "Apunta arriba la primera llamada o gestión."}
           </p>
         </div>
       ) : (
-        SECTIONS.map(({ group, label, tape, ink }) => {
+        SECTIONS.map(({ group, label, warn }) => {
           const list = pending
             .filter((m) => missionGroup(m) === group)
             .sort(byDueThenCreated);
           if (list.length === 0) return null;
 
           return (
-            <section key={group} className="mb-8">
-              <h2
-                className="anim-row m-0 mb-4 inline-block px-2.5 py-0.5 font-display text-[12px] uppercase"
-                style={{
-                  background: tape,
-                  color: ink,
-                  transform: "skewX(-10deg)",
-                  boxShadow: "3px 3px 0 var(--color-black)",
-                }}
-              >
-                <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-                  {label} · {list.length}
-                </span>
-              </h2>
-              <ul className="m-0 grid list-none gap-4 p-0">{list.map(row)}</ul>
+            <section key={group} className="mb-7">
+              <SectionTitle count={list.length} className={warn ? "text-warn" : ""}>
+                {label}
+              </SectionTitle>
+              <ul className="m-0 grid list-none gap-2.5 p-0">{list.map(row)}</ul>
             </section>
           );
         })
       )}
 
       {done.length > 0 && (
-        <section>
+        <section className="mt-2">
           <button
             type="button"
             onClick={() => setDoneOpen((o) => !o)}
             aria-expanded={doneOpen}
-            className="on-scene mb-4 flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-bone/80"
+            className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-ink-soft"
           >
-            HECHAS · {done.length}
-            <span
-              className="inline-block transition-transform"
-              style={{ transform: doneOpen ? "rotate(180deg)" : "none" }}
+            Hechas <span className="font-normal text-ink-faint">{done.length}</span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`h-4 w-4 transition-transform duration-200 ${doneOpen ? "rotate-180" : ""}`}
+              aria-hidden="true"
             >
-              ▾
-            </span>
+              <path d="m6 9 6 6 6-6" />
+            </svg>
           </button>
           {doneOpen && (
-            <ul className="m-0 grid list-none gap-4 p-0">{done.map(row)}</ul>
+            <ul className="m-0 grid list-none gap-2.5 p-0">{done.map(row)}</ul>
           )}
         </section>
       )}
@@ -445,7 +393,7 @@ export function MissionsPage() {
 
       {toDelete && (
         <ConfirmDialog
-          bandTitle="¿Borrar misión?"
+          bandTitle="¿Borrar esta misión?"
           titleId="delete-mission-title"
           busy={deleting}
           error={deleteError}
@@ -454,11 +402,9 @@ export function MissionsPage() {
           onConfirm={onConfirmDelete}
           onCancel={() => setToDelete(null)}
         >
-          <p className="m-0 font-display text-[18px] leading-tight text-bone uppercase">
-            {toDelete.title}
-          </p>
+          <p className="m-0 text-[17px] font-semibold">{toDelete.title}</p>
           {toDelete.activityId !== null && (
-            <p className="mt-4 text-[11.5px] leading-relaxed text-bone/75">
+            <p className="mt-3 mb-0 text-[15px] leading-relaxed text-ink-soft">
               La XP que te dio al cumplirla se queda: eso ya pasó.
             </p>
           )}
@@ -469,7 +415,6 @@ export function MissionsPage() {
         <ResultModal
           result={result.res}
           category={categoryById.get(result.res.category.id)}
-          backTo={null}
           onClose={() => setResult(null)}
           onUndo={async () => {
             replace((await reopenMission(result.missionId)).mission);

@@ -2,9 +2,9 @@ import { useState } from "react";
 import { isSoundOn, playSound, setSoundOn } from "../lib/sound";
 
 /**
- * Sound on or off, top right of the home. Remembered on this device only:
- * whether the phone should make noise is a question about where you are, not
- * about your data.
+ * Sound on or off, on the home. Off by default, and remembered on this device
+ * only: whether the phone should make noise is about where you are, not about
+ * your data.
  */
 export function SoundToggle() {
   const [on, setOn] = useState(isSoundOn);
@@ -14,7 +14,7 @@ export function SoundToggle() {
     setSoundOn(next);
     setOn(next);
     // Turning it on answers with a sound, so you know it worked.
-    if (next) playSound("hit");
+    if (next) playSound("earn");
   }
 
   return (
@@ -23,19 +23,19 @@ export function SoundToggle() {
       onClick={toggle}
       aria-pressed={on}
       aria-label={on ? "Silenciar sonidos" : "Activar sonidos"}
-      className="sound-toggle anim-ribbon"
+      className="grid h-10 w-10 place-items-center rounded-full border border-line bg-paper text-ink-soft"
     >
       <svg
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
-        strokeWidth={2.3}
+        strokeWidth={1.8}
         strokeLinecap="round"
         strokeLinejoin="round"
         className="h-[18px] w-[18px]"
         aria-hidden="true"
       >
-        <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" fill="currentColor" />
+        <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" />
         {on ? (
           <>
             <path d="M15.5 9a4 4 0 0 1 0 6" />

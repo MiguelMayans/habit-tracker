@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
-import { useScreenReady } from "../lib/screenReady";
 import {
   createWork,
   deleteActivity,
@@ -16,9 +14,7 @@ import {
   type WorkFields,
   type WorkKind,
 } from "../api/client";
-import { impactAt, impactOrigin } from "../lib/impact";
 import { playSound } from "../lib/sound";
-import { useLight } from "../lib/useLight";
 import { KIND_LABEL, WORK_KINDS } from "../lib/works";
 import {
   ActiveWorkCard,
@@ -32,8 +28,9 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ResultModal } from "../components/ResultModal";
 import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
+import { SectionTitle } from "../components/Layout";
 
-/** How long the stamp and the fling take before the card moves to the case. */
+/** How long the finish takes to settle before the card moves to the shelf. */
 const FINISH_MS = 800;
 const MENTE = "var(--color-mente)";
 
@@ -44,39 +41,10 @@ const reducedMotion = () =>
 const desc = (a: string | null, b: string | null) =>
   a === b ? 0 : a === null ? 1 : b === null ? -1 : a < b ? 1 : -1;
 
-/** A section's tape, in the same idiom as the missions. */
-function SectionTape({
-  label,
-  count,
-  tape,
-  ink,
-}: {
-  label: string;
-  count: number;
-  tape: string;
-  ink: string;
-}) {
-  return (
-    <h2
-      className="anim-row m-0 mb-4 inline-block px-2.5 py-0.5 font-display text-[12px] uppercase"
-      style={{
-        background: tape,
-        color: ink,
-        transform: "skewX(-10deg)",
-        boxShadow: "3px 3px 0 var(--color-black)",
-      }}
-    >
-      <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-        {label} · {count}
-      </span>
-    </h2>
-  );
-}
-
 /**
  * A section's works, grouped by kind — books with books, games with games —
- * in the filter chips' order, each group under a small label. With a filter
- * on there is only one kind, and the labels would only repeat it.
+ * in the filter chips' order, each under a clear heading. With a filter on
+ * there is only one kind, and the headings would only repeat it.
  */
 function KindGroups({
   works,
@@ -87,7 +55,7 @@ function KindGroups({
   works: Work[];
   grouped: boolean;
   listClassName: string;
-  /** `index` runs across the whole section, for the collage's tilts. */
+  /** `index` runs across the whole section, for the staggered entrance. */
   render: (work: Work, index: number) => ReactNode;
 }) {
   if (!grouped) {
@@ -96,34 +64,19 @@ function KindGroups({
 
   let index = 0;
   return (
-    <div className="grid gap-9">
+    <div className="grid gap-6">
       {WORK_KINDS.map((kind) => {
         const items = works.filter((w) => w.kind === kind);
         if (items.length === 0) return null;
         return (
           <div key={kind}>
-            {/* A heading with weight, not a caption: it is what sorts the
-                screen. The icon on a bone tag, the word in the display face
-                with the signs' outline, and the count in the figures'. */}
-            <h3 className="anim-row m-0 mb-4 flex items-center gap-3">
-              <span
-                className="grid h-9 w-10 shrink-0 place-items-center bg-bone text-black"
-                style={{
-                  transform: "skewX(-10deg)",
-                  boxShadow: "4px 4px 0 var(--color-black)",
-                }}
-              >
-                <WorkKindIcon
-                  kind={kind}
-                  className="h-[22px] w-[22px]"
-                />
+            {/* A real heading, not a caption: it is what sorts the screen. */}
+            <h3 className="settle m-0 mb-2.5 flex items-center gap-2">
+              <span className="icon-disc h-7 w-7">
+                <WorkKindIcon kind={kind} className="h-4 w-4" />
               </span>
-              <span className="text-sign font-display text-[26px] leading-none text-bone uppercase">
-                {KIND_LABEL[kind].many}
-              </span>
-              <b className="text-sign font-figure text-[22px] leading-none text-yellow">
-                {items.length}
-              </b>
+              <span className="text-[15px] font-semibold">{KIND_LABEL[kind].many}</span>
+              <span className="text-[14px] text-ink-faint">{items.length}</span>
             </h3>
             <ul className={listClassName}>
               {items.map((w) => render(w, index++))}
@@ -137,19 +90,16 @@ function KindGroups({
 
 /**
  * The Lair: the games, books, series, films, anime and comics you have going,
- * the ones waiting their turn, and a trophy case of the finished. Its sessions
- * are Mente's XP — conscious leisure (docs/DESIGN.md) — so the sky here is
- * Mente's purple.
+ * the ones waiting their turn, and a shelf of the finished. Its sessions are
+ * Mente's XP — conscious leisure (docs/DESIGN.md) — so Mente's lavender is
+ * this screen's accent.
  */
 export function LairPage() {
   const [works, setWorks] = useState<Work[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  // The screen wipe holds until this screen has its data.
-  useScreenReady(!loading);
   const [error, setError] = useState<string | null>(null);
 
-  useLight(MENTE);
 
   const load = useCallback(() => {
     Promise.all([getWorks(), getCategories()])
@@ -190,13 +140,12 @@ export function LairPage() {
     return () => window.clearTimeout(t);
   }, [gain]);
 
-  async function onSession(w: Work, intensity: Intensity, chip: HTMLElement) {
+  async function onSession(w: Work, intensity: Intensity) {
     setRowError(null);
     setSessionBusy(true);
-    const origin = impactOrigin(chip);
     try {
       const res = await logWorkSession(w.id, intensity);
-      impactAt(origin);
+      playSound("earn");
       replace(res.work);
       setSessionOpen(null);
       setGain({ id: w.id, xp: res.activity.xpGained });
@@ -217,7 +166,7 @@ export function LairPage() {
     setRowError(null);
     setSessionOpen(null);
     setFinishing(w.id);
-    playSound("stamp");
+    playSound("done");
     const stamped = new Promise((r) =>
       window.setTimeout(r, reducedMotion() ? 0 : FINISH_MS),
     );
@@ -295,13 +244,13 @@ export function LairPage() {
 
   if (loading)
     return (
-      <div className="px-4 pt-6 pb-32">
-        <SkeletonCards n={3} />
+      <div className="px-5 pt-16 pb-32">
+        <SkeletonCards n={3} height="150px" />
       </div>
     );
   if (error)
     return (
-      <div className="px-4 pt-6 pb-32">
+      <div className="px-5 pt-16 pb-32">
         <ErrorPanel message={error} onRetry={onRetry} />
       </div>
     );
@@ -321,119 +270,85 @@ export function LairPage() {
   const kindsInUse = new Set(works.map((w) => w.kind));
 
   return (
-    <div className="px-4 pt-6 pb-32">
-      <Link
-        to="/"
-        className="anim-row inline-block bg-bone px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-black"
-        style={{ transform: "skewX(-10deg)" }}
-      >
-        <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-          ← CATEGORÍAS
-        </span>
-      </Link>
-
-      <header className="relative mt-7 mb-7">
-        <div
-          className="bleed-band anim-logo top-[-18px] z-0 h-[96px]"
-          style={
-            {
-              "--band-bg": MENTE,
-              "--band-edge": "var(--color-black)",
-              "--band-tilt": "3deg",
-            } as React.CSSProperties
-          }
-        />
-        <h1 className="text-sign relative z-10 m-0 font-display text-[34px] leading-[0.92] text-bone uppercase">
-          Guarida
-        </h1>
-        <p className="anim-ribbon relative z-10 mt-5 mb-0 flex flex-wrap items-center gap-2.5">
-          <span className="on-scene text-[10px] font-bold tracking-[0.2em] text-bone">
-            {works.filter((w) => w.status === "active").length} EN CURSO
-          </span>
-          <span className="on-scene text-[10px] font-bold tracking-[0.14em] text-bone/75">
-            CADA SESIÓN SUMA EN{" "}
-            <b style={{ color: MENTE }}>MENTE</b>
-          </span>
-        </p>
+    <div
+      className="px-5 pt-10 pb-32"
+      style={{ "--accent": MENTE } as React.CSSProperties}
+    >
+      <header className="settle mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="m-0 text-[30px] leading-tight font-semibold">Guarida</h1>
+          <p className="mt-1 mb-0 text-[14px] text-ink-soft">
+            Lo que juegas, lees y ves. Cada sesión suma en Mente.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => openSheet(null)}
+          aria-label="Añadir a la guarida"
+          className="btn h-11 min-h-0 w-11 shrink-0 px-0"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.2}
+            strokeLinecap="round"
+            className="h-5 w-5"
+            aria-hidden="true"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
       </header>
 
       {/* Filtering by kind only once there is more than one to tell apart:
           with a single kind, a row of chips would filter nothing. */}
       {kindsInUse.size > 1 && (
-        <div
-          className="anim-row mb-6 flex flex-wrap gap-2.5"
-          style={{ "--delay": "0.06s" } as React.CSSProperties}
-        >
+        <div className="settle -mx-5 mb-8 flex gap-2 overflow-x-auto px-5 pb-1">
           <button
             type="button"
-            className="option-chip"
+            className="chip shrink-0"
             aria-pressed={filter === null}
             onClick={() => setFilter(null)}
           >
-            <span>Todo</span>
+            Todo
           </button>
           {WORK_KINDS.filter((k) => kindsInUse.has(k)).map((k) => (
             <button
               key={k}
               type="button"
-              className="option-chip"
+              className="chip shrink-0"
               aria-pressed={filter === k}
               onClick={() => setFilter(filter === k ? null : k)}
             >
-              <span>
-                <span className="inline-flex items-center gap-1.5">
-                  <WorkKindIcon kind={k} className="h-3.5 w-3.5" />
-                  {KIND_LABEL[k].many}
-                </span>
-              </span>
+              <WorkKindIcon kind={k} className="h-4 w-4" />
+              {KIND_LABEL[k].many}
             </button>
           ))}
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => openSheet(null)}
-        className="slam-button anim-row mb-9 w-full"
-        style={
-          {
-            "--delay": "0.1s",
-            background: "var(--color-bone)",
-          } as React.CSSProperties
-        }
-      >
-        <span>+ Añadir a la guarida</span>
-      </button>
-
-      {rowError && (
-        <p className="anim-slam mb-6 bg-cuerpo px-3 py-2 text-[11px] font-bold text-bone">
-          {rowError}
-        </p>
-      )}
+      {rowError && <p className="mt-0 mb-6 text-[14px] text-warn">{rowError}</p>}
 
       {works.length === 0 && (
-        <div className="anim-row mb-10">
-          <p className="text-sign m-0 font-display text-[26px] leading-none text-bone uppercase">
-            La guarida está vacía
-          </p>
-          <p className="on-scene mt-3 w-fit text-[11.5px] text-bone/80">
+        <div className="settle py-8 text-center">
+          <p className="m-0 text-[18px] font-semibold">La guarida está vacía</p>
+          <p className="mt-1.5 mb-5 text-[15px] text-ink-soft">
             Añade lo que estés jugando, leyendo o viendo.
           </p>
+          <button type="button" onClick={() => openSheet(null)} className="btn btn-soft">
+            Añadir algo
+          </button>
         </div>
       )}
 
       {active.length > 0 && (
-        <section className="mb-10">
-          <SectionTape
-            label="En curso"
-            count={active.length}
-            tape={MENTE}
-            ink="var(--color-bone)"
-          />
+        <section className="mb-9">
+          <SectionTitle count={active.length} className="mb-4 text-[20px]">En curso</SectionTitle>
           <KindGroups
             works={active}
             grouped={filter === null}
-            listClassName="m-0 grid list-none gap-6 p-0"
+            listClassName="m-0 grid list-none gap-3 p-0"
             render={(w, i) => (
               <ActiveWorkCard
                 key={w.id}
@@ -447,7 +362,7 @@ export function LairPage() {
                 onToggleSession={() =>
                   setSessionOpen((o) => (o === w.id ? null : w.id))
                 }
-                onPick={(intensity, chip) => onSession(w, intensity, chip)}
+                onPick={(intensity) => onSession(w, intensity)}
                 onFinish={() => setToFinish(w)}
                 onOpen={() => openSheet(w)}
               />
@@ -457,17 +372,12 @@ export function LairPage() {
       )}
 
       {queued.length > 0 && (
-        <section className="mb-10">
-          <SectionTape
-            label="En la recámara"
-            count={queued.length}
-            tape="var(--color-bone)"
-            ink="var(--color-black)"
-          />
+        <section className="mb-9">
+          <SectionTitle count={queued.length} className="mb-4 text-[20px]">Para después</SectionTitle>
           <KindGroups
             works={queued}
             grouped={filter === null}
-            listClassName="m-0 grid list-none gap-3.5 p-0"
+            listClassName="m-0 grid list-none gap-2.5 p-0"
             render={(w, i) => (
               <QueuedWorkRow
                 key={w.id}
@@ -484,19 +394,14 @@ export function LairPage() {
 
       {done.length > 0 && (
         <section>
-          <SectionTape
-            label="Vitrina"
-            count={done.length}
-            tape="var(--color-yellow)"
-            ink="var(--color-black)"
-          />
-          {/* The case stays one grid, newest first: grouped, each kind
-              with a single trophy left half a row empty, and every tile
-              already says its kind. */}
+          <SectionTitle count={done.length} className="mb-4 text-[20px]">Terminados</SectionTitle>
+          {/* The shelf stays one grid, newest first: grouped, each kind with
+              a single item left half a row empty, and every tile already
+              says its kind. */}
           <KindGroups
             works={done}
             grouped={false}
-            listClassName="m-0 grid list-none grid-cols-2 gap-4 p-0"
+            listClassName="m-0 grid list-none grid-cols-2 gap-3 p-0"
             render={(w, i) => (
               <TrophyTile key={w.id} work={w} index={i} onOpen={() => openSheet(w)} />
             )}
@@ -525,7 +430,7 @@ export function LairPage() {
 
       {toDelete && (
         <ConfirmDialog
-          bandTitle="¿Sacar de la guarida?"
+          bandTitle="¿Quitar de la guarida?"
           titleId="delete-work-title"
           busy={deleting}
           error={deleteError}
@@ -534,10 +439,8 @@ export function LairPage() {
           onConfirm={onConfirmDelete}
           onCancel={() => setToDelete(null)}
         >
-          <p className="m-0 font-display text-[18px] leading-tight text-bone uppercase">
-            {toDelete.title}
-          </p>
-          <p className="mt-4 text-[11.5px] leading-relaxed text-bone/75">
+          <p className="m-0 text-[17px] font-semibold">{toDelete.title}</p>
+          <p className="mt-3 mb-0 text-[15px] leading-relaxed text-ink-soft">
             Las sesiones que registraste se quedan en Mente: eso ya pasó.
           </p>
         </ConfirmDialog>
@@ -555,7 +458,6 @@ export function LairPage() {
         <ResultModal
           result={result}
           category={mente ?? undefined}
-          backTo={null}
           onClose={() => setResult(null)}
           onUndo={async () => {
             await deleteActivity(result.activity.id);

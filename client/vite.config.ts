@@ -77,8 +77,8 @@ export default defineConfig({
         scope: "/",
         // Status bar and task switcher colour, and the splash screen behind
         // the icon while the app boots: black, like the app.
-        theme_color: "#000000",
-        background_color: "#000000",
+        theme_color: "#f3eee5",
+        background_color: "#f3eee5",
         icons: [
           { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },

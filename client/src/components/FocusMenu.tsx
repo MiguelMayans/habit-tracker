@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { Focus } from "../api/client";
 import { DialogFrame } from "./DialogFrame";
-import { LevelNumber } from "./LevelNumber";
 
 /**
  * Everything you can do TO a focus, as opposed to logging on it.
@@ -17,7 +16,6 @@ import { LevelNumber } from "./LevelNumber";
  */
 export function FocusMenu({
   focus: f,
-  accent,
   busy,
   error,
   onRename,
@@ -27,7 +25,6 @@ export function FocusMenu({
   onCancel,
 }: {
   focus: Focus;
-  accent: string;
   busy: boolean;
   error: string | null;
   onRename: () => void;
@@ -43,28 +40,19 @@ export function FocusMenu({
   }, []);
 
   return (
-    <DialogFrame
-      titleId="focus-menu-title"
-      bandTitle={f.name}
-      band={accent}
-      onCancel={onCancel}
-    >
-      <div className="mb-5 flex items-center gap-3">
-        <LevelNumber value={f.level} size={34} />
-        <span className="ml-auto text-[10px] font-bold tracking-[0.14em] text-bone/60">
-          {f.currentXp} XP
-        </span>
-      </div>
+    <DialogFrame titleId="focus-menu-title" title={f.name} onCancel={onCancel}>
+      <p className="m-0 -mt-3 mb-6 text-[14px] text-ink-soft">
+        Nivel {f.level} · {f.currentXp} XP
+      </p>
 
       <div className="grid gap-3">
         <button
           ref={firstRef}
           type="button"
           onClick={onRename}
-          className="slam-button w-full"
-          style={{ background: "var(--color-bone)" }}
+          className="btn btn-soft w-full"
         >
-          <span>Renombrar</span>
+          Renombrar
         </button>
 
         {/* Mastery does not reopen: it was earned. A manual close does,
@@ -75,45 +63,24 @@ export function FocusMenu({
               type="button"
               onClick={onReopen}
               disabled={busy}
-              className="slam-button w-full"
+              className="btn btn-soft w-full"
             >
-              <span>{busy ? "Reabriendo…" : "Reabrir"}</span>
+              {busy ? "Reabriendo…" : "Reabrir"}
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={onClose}
-              className="slam-button w-full"
-              style={{ background: "var(--color-bone)" }}
-            >
-              <span>Dar por terminado</span>
+            <button type="button" onClick={onClose} className="btn btn-soft w-full">
+              Dar por terminado
             </button>
           ))}
 
-        <button
-          type="button"
-          onClick={onDelete}
-          className="slam-button w-full"
-          style={{
-            background: "var(--color-cuerpo)",
-            color: "var(--color-bone)",
-          }}
-        >
-          <span>Borrar</span>
+        <button type="button" onClick={onDelete} className="btn btn-danger w-full">
+          Borrar
         </button>
 
-        {error && (
-          <p className="anim-slam m-0 bg-cuerpo px-3 py-2 text-[11px] font-bold text-bone">
-            {error}
-          </p>
-        )}
+        {error && <p className="m-0 text-[14px] text-warn">{error}</p>}
 
-        <button
-          type="button"
-          onClick={onCancel}
-          className="mt-1 text-[10px] font-bold tracking-[0.16em] text-bone/60 underline"
-        >
-          CANCELAR
+        <button type="button" onClick={onCancel} className="link-quiet mt-1 justify-self-center">
+          Cancelar
         </button>
       </div>
     </DialogFrame>

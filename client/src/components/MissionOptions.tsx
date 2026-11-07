@@ -40,31 +40,31 @@ export function WhenPicker({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2.5">
+    <div className="flex flex-wrap items-center gap-2">
       <button
         type="button"
-        className="option-chip"
+        className="chip"
         aria-pressed={value === today}
         onClick={() => toggle(today)}
       >
-        <span>Hoy</span>
+        Hoy
       </button>
       <button
         type="button"
-        className="option-chip"
+        className="chip"
         aria-pressed={value === tomorrow}
         onClick={() => toggle(tomorrow)}
       >
-        <span>Mañana</span>
+        Mañana
       </button>
       <span className="relative">
         <button
           type="button"
-          className="option-chip"
+          className="chip"
           aria-pressed={custom}
           onClick={openCalendar}
         >
-          <span>{custom ? dueLabel(value) : "Fecha…"}</span>
+          {custom ? dueLabel(value) : "Otra fecha"}
         </button>
         <input
           ref={dateRef}
@@ -107,7 +107,7 @@ export function CategoryOptions({
           <button
             key={c.id}
             type="button"
-            className="icon-pick disabled:opacity-40"
+            className="icon-pick"
             aria-pressed={value === c.id}
             aria-label={c.name}
             disabled={disabled}
@@ -116,21 +116,14 @@ export function CategoryOptions({
               { "--accent": categoryColorVar(c.slug) } as React.CSSProperties
             }
           >
-            <CategoryIcon slug={c.slug} strokeWidth={2.4} className="h-5 w-5" />
+            <CategoryIcon slug={c.slug} strokeWidth={1.8} className="h-5 w-5" />
           </button>
         ))}
       </div>
-      <p className="on-scene m-0 w-fit text-[10px] font-bold tracking-[0.12em] text-bone/75">
-        {picked ? (
-          <>
-            AL CUMPLIRLA:{" "}
-            <b style={{ color: categoryColorVar(picked.slug) }}>
-              +{MISSION_XP} XP EN {picked.name.toUpperCase()}
-            </b>
-          </>
-        ) : (
-          `CON CATEGORÍA, +${MISSION_XP} XP AL CUMPLIRLA`
-        )}
+      <p className="m-0 text-[13px] text-ink-soft">
+        {picked
+          ? `Al cumplirla: +${MISSION_XP} XP en ${picked.name}`
+          : `Con categoría, +${MISSION_XP} XP al cumplirla (opcional)`}
       </p>
     </div>
   );

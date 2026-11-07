@@ -8,14 +8,10 @@ import {
   missionKind,
   MISSION_XP,
 } from "../lib/missions";
-import { CategoryIcon } from "./CategoryIcon";
 import { MissionKindIcon } from "./MissionIcons";
 
-/** Alternating tilt, for the same collage as the cards. */
-const TILTS = ["-0.6deg", "0.5deg", "-0.3deg", "0.7deg", "-0.5deg"];
-
 /**
- * One mission. Two targets, two jobs: the diamond on the left ticks it off,
+ * One mission. Two targets, two jobs: the circle on the left ticks it off,
  * the rest of the row opens it for editing. Ticking is the thing you do every
  * day, so it gets its own target instead of a gesture to discover.
  */
@@ -23,7 +19,7 @@ export function MissionRow({
   mission: m,
   category,
   index,
-  stamping,
+  completing,
   gain,
   busy,
   highlighted,
@@ -33,108 +29,75 @@ export function MissionRow({
   mission: Mission;
   category: Category | undefined;
   index: number;
-  /** Mid-completion: the slash and the stamp are playing. */
-  stamping: boolean;
-  /** XP just earned, shown on the stamp's beat. */
+  /** Being ticked off: the circle fills, the title crosses out, it leaves. */
+  completing: boolean;
+  /** XP just earned, shown for a moment. */
   gain: number | null;
   busy: boolean;
   highlighted: boolean;
-  onToggle: (el: HTMLElement) => void;
+  onToggle: () => void;
   onOpen: () => void;
 }) {
   const done = m.completedAt !== null;
-  const group = missionGroup(m);
+  const checked = done || completing;
   const kind = missionKind(m.title);
   const accent = category ? categoryColorVar(category.slug) : null;
   const locked = done && !canReopen(m);
 
   return (
     <li
-      className={`mission-row relative ${
-        stamping ? "fling-out" : "anim-card"
-      } ${highlighted ? "anim-highlight" : ""}`}
-      style={
-        {
-          "--rotation": TILTS[index % TILTS.length],
-          "--delay": `${0.14 + index * 0.05}s`,
-          "--accent": accent ?? "var(--color-yellow)",
-        } as React.CSSProperties
-      }
+      className={`card flex items-start ${completing ? "leaving" : "settle"} ${
+        highlighted ? "highlight" : ""
+      }`}
+      style={{ "--delay": `${0.04 + index * 0.03}s` } as React.CSSProperties}
     >
-      <div
-        style={{
-          filter: `drop-shadow(5px 5px 0 ${
-            done
-              ? "rgb(245 245 240 / 0.22)"
-              : group === "overdue"
-                ? "var(--color-cuerpo)"
-                : (accent ?? "var(--color-bone)")
-          })`,
-        }}
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={checked}
+        aria-label={done ? `Desmarcar: ${m.title}` : `Cumplir: ${m.title}`}
+        title={locked ? "Se cumplió otro día y su XP ya cuenta: se queda hecha." : undefined}
+        disabled={busy || completing || locked}
+        onClick={onToggle}
+        className="grid h-14 w-14 shrink-0 place-items-center"
       >
-        <div className="card-clip flex bg-black">
-          <button
-            type="button"
-            role="checkbox"
-            aria-checked={done || stamping}
-            aria-label={done ? `Desmarcar: ${m.title}` : `Cumplir: ${m.title}`}
-            title={
-              locked
-                ? "Se cumplió otro día y su XP ya cuenta: se queda hecha."
-                : undefined
-            }
-            disabled={busy || stamping || locked}
-            onClick={(e) => onToggle(e.currentTarget)}
-            className="mission-check disabled:cursor-default"
-          >
-            <i />
-            {(done || stamping) && (
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={3.6}
-                strokeLinecap="square"
-                aria-hidden="true"
-              >
-                <path d="m6 12.5 4 4 8-9" />
-              </svg>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={onOpen}
-            className="block min-w-0 flex-1 text-left"
-          >
-            <div className="slam-content py-3 pr-4">
-              <h3
-                className={`relative m-0 font-display text-[15px] leading-tight break-words uppercase ${
-                  done ? "mission-done-title" : "text-bone"
-                }`}
-              >
-                {m.title}
-                {stamping && <span className="mission-slash" />}
-              </h3>
-
-              <Meta mission={m} kind={kind} category={category} />
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {stamping && <span className="stamp-mark">¡HECHA!</span>}
-
-      {gain !== null && (
         <span
-          className="anim-slam pointer-events-none absolute right-4 -bottom-2 z-20 bg-yellow px-1.5 py-0.5 font-display text-[11px] leading-none text-black"
-          style={{ transform: "skewX(-10deg)" }}
+          className={`grid h-6 w-6 place-items-center rounded-full border-[1.5px] transition-colors duration-200 ${
+            checked ? "border-ink bg-ink text-paper" : "border-ink-faint"
+          }`}
         >
-          <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-            +{gain} XP
-          </span>
+          {checked && (
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3.5 w-3.5"
+              aria-hidden="true"
+            >
+              <path d="m6 12.5 4 4 8-9" />
+            </svg>
+          )}
         </span>
-      )}
+      </button>
+
+      <button
+        type="button"
+        onClick={onOpen}
+        className="block min-w-0 flex-1 py-4 pr-5 text-left"
+      >
+        <span
+          className={`block text-[15px] leading-snug font-medium break-words transition-colors duration-200 ${
+            checked ? "text-ink-faint line-through" : ""
+          }`}
+        >
+          {m.title}
+        </span>
+
+        <Meta mission={m} kind={kind} accent={accent} gain={gain} />
+      </button>
     </li>
   );
 }
@@ -143,59 +106,53 @@ export function MissionRow({
 function Meta({
   mission: m,
   kind,
-  category,
+  accent,
+  gain,
 }: {
   mission: Mission;
   kind: ReturnType<typeof missionKind>;
-  category: Category | undefined;
+  accent: string | null;
+  gain: number | null;
 }) {
   const done = m.completedAt !== null;
   const group = missionGroup(m);
 
-  if (!kind && !m.dueDate && !category && !done) return null;
+  if (!kind && !m.dueDate && !accent && !done && gain === null) return null;
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[9.5px] font-bold tracking-[0.1em]">
-      {kind && <MissionKindIcon kind={kind} className="h-4 w-4 text-bone/70" />}
+    <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-ink-soft">
+      {kind && <MissionKindIcon kind={kind} className="h-4 w-4 text-ink-faint" />}
 
       {done ? (
-        <span className="text-bone/55">
-          HECHA {shortRelativeDate(m.completedAt!)}
-        </span>
+        <span>Hecha {shortRelativeDate(m.completedAt!).toLowerCase()}</span>
       ) : (
         m.dueDate && (
           <span
-            className={`px-1.5 py-0.5 ${
+            className={
               group === "overdue"
-                ? "bg-cuerpo text-bone"
+                ? "text-warn"
                 : group === "today"
-                  ? "bg-yellow text-black"
-                  : "border border-bone/40 text-bone/80"
-            }`}
-            style={{ transform: "skewX(-10deg)" }}
+                  ? "font-semibold text-ink"
+                  : undefined
+            }
           >
-            <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-              {group === "overdue"
-                ? `VENCIDA · ${dueLabel(m.dueDate)}`
-                : dueLabel(m.dueDate)}
-            </span>
+            {group === "overdue" ? `Vencida · ${dueLabel(m.dueDate).toLowerCase()}` : dueLabel(m.dueDate)}
           </span>
         )
       )}
 
-      {category && (
-        <span
-          className={`flex items-center gap-1 ${done ? "opacity-55" : ""}`}
-          style={{ color: categoryColorVar(category.slug) }}
-        >
-          <CategoryIcon
-            slug={category.slug}
-            strokeWidth={2.6}
-            className="h-3.5 w-3.5"
-          />
+      {accent && (
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full" style={{ background: accent }} />
           +{MISSION_XP} XP
         </span>
       )}
-    </div>
+
+      {gain !== null && (
+        <span className="gain font-semibold" style={{ color: accent ?? undefined }}>
+          +{gain} XP
+        </span>
+      )}
+    </span>
   );
 }

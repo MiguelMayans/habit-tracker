@@ -7,7 +7,7 @@ import { WorkKindIcon } from "./WorkIcons";
 
 const STATUSES: { status: WorkStatus; label: string }[] = [
   { status: "active", label: "En curso" },
-  { status: "queued", label: "Recámara" },
+  { status: "queued", label: "Para después" },
   { status: "done", label: "Terminado" },
 ];
 
@@ -44,12 +44,11 @@ export function WorkSheet({
   return (
     <DialogFrame
       titleId="work-sheet-title"
-      bandTitle={work ? "Editar" : "A la guarida"}
-      band="var(--color-mente)"
+      title={work ? "Editar" : "Añadir a la guarida"}
       onCancel={onCancel}
     >
       <form
-        className="grid gap-4"
+        className="grid gap-5"
         onSubmit={(e) => {
           e.preventDefault();
           onSave({
@@ -61,108 +60,91 @@ export function WorkSheet({
           });
         }}
       >
-        <div className="grid gap-2">
-          <div className="flex flex-wrap gap-2.5">
+        <div>
+          <span className="field-label">{KIND_LABEL[kind].one}</span>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Tipo">
             {WORK_KINDS.map((k) => (
               <button
                 key={k}
                 type="button"
+                role="radio"
                 className="icon-pick"
-                aria-pressed={kind === k}
+                aria-checked={kind === k}
                 aria-label={KIND_LABEL[k].one}
                 onClick={() => setKind(k)}
-                style={{ "--accent": "var(--color-bone)" } as React.CSSProperties}
               >
                 <WorkKindIcon kind={k} className="h-5 w-5" />
               </button>
             ))}
           </div>
-          <p className="m-0 text-[10px] font-bold tracking-[0.14em] text-bone/75 uppercase">
-            {KIND_LABEL[kind].one}
-          </p>
         </div>
 
-        <div className="field-frame">
-          <input
-            className="field"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Título"
-            aria-label="Título"
-            maxLength={200}
-            autoFocus={!work}
-          />
-        </div>
+        <input
+          className="field"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Título"
+          aria-label="Título"
+          maxLength={200}
+          autoFocus={!work}
+        />
 
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Estado">
           {STATUSES.map((s) => (
             <button
               key={s.status}
               type="button"
-              className="option-chip"
-              aria-pressed={status === s.status}
+              role="radio"
+              className="chip"
+              aria-checked={status === s.status}
               onClick={() => setStatus(s.status)}
             >
-              <span>{s.label}</span>
+              {s.label}
             </button>
           ))}
         </div>
 
         {status === "done" ? (
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-bold tracking-[0.14em] text-bone/75">
-              NOTA
-            </span>
-            <Rating value={rating} onChange={setRating} size={15} />
+            <span className="text-[14px] text-ink-soft">Nota</span>
+            <Rating value={rating} onChange={setRating} size={14} />
           </div>
         ) : (
-          <div className="field-frame">
-            <input
-              className="field"
-              value={progress}
-              onChange={(e) => setProgress(e.target.value)}
-              placeholder={`Progreso: ${PROGRESS_HINT[kind]}`}
-              aria-label="Progreso"
-              maxLength={80}
-            />
-          </div>
+          <input
+            className="field"
+            value={progress}
+            onChange={(e) => setProgress(e.target.value)}
+            placeholder={`Por dónde vas (opcional): ${PROGRESS_HINT[kind]}`}
+            aria-label="Progreso"
+            maxLength={80}
+          />
         )}
 
-        {error && (
-          <p className="anim-slam m-0 bg-cuerpo px-3 py-2 text-[11px] font-bold text-bone">
-            {error}
-          </p>
-        )}
+        {error && <p className="m-0 text-[14px] text-warn">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={busy || title.trim() === ""}
-          className="slam-button mt-1 w-full"
-        >
-          <span>{busy ? "Guardando…" : work ? "Guardar" : "Añadir"}</span>
-        </button>
+        <div className="mt-2 grid gap-3">
+          <button
+            type="submit"
+            disabled={busy || title.trim() === ""}
+            className="btn w-full"
+          >
+            {busy ? "Guardando…" : work ? "Guardar" : "Añadir"}
+          </button>
 
-        {onDelete && (
+          {onDelete && (
+            <button type="button" onClick={onDelete} className="btn btn-danger w-full">
+              Borrar
+            </button>
+          )}
+
           <button
             type="button"
-            onClick={onDelete}
-            className="slam-button w-full"
-            style={{
-              background: "var(--color-cuerpo)",
-              color: "var(--color-bone)",
-            }}
+            onClick={onCancel}
+            className="link-quiet mt-1 justify-self-center"
           >
-            <span>Borrar</span>
+            Cancelar
           </button>
-        )}
-
-        <button
-          type="button"
-          onClick={onCancel}
-          className="mt-1 text-[10px] font-bold tracking-[0.16em] text-bone/60 underline"
-        >
-          CANCELAR
-        </button>
+        </div>
       </form>
     </DialogFrame>
   );

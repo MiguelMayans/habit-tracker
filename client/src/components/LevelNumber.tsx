@@ -1,46 +1,29 @@
 /**
- * A level: the figure in the same lettering as the day on the home's calendar
- * — bone, black outline — but extruded into a solid block, with an "NV" tape
- * to its left in place of a loose "NIVEL" label.
- *
- * Tried and dropped along the way: ransom-note scraps (read worse than a plain
- * figure) and a spiky burst behind the number (too much).
+ * A level, said quietly: "Nivel 3", the word soft and the figure in ink. In
+ * its large form the figure stands on its own, light and big, with the word
+ * as a small caption above it.
  */
 export function LevelNumber({
   value,
-  size,
-  slam = false,
-  tag = true,
+  size = "sm",
   className = "",
 }: {
   value: number;
-  /** Font size in px of the figure. */
-  size: number;
-  /** Slams the figure into place, for a level-up. */
-  slam?: boolean;
-  /** The "NV" tape. Off where it would be too small to read. */
-  tag?: boolean;
+  size?: "sm" | "lg";
   className?: string;
 }) {
-  return (
-    <span
-      className={`level-badge ${className}`}
-      style={{ fontSize: size }}
-      role="img"
-      aria-label={`Nivel ${value}`}
-    >
-      <b
-        className={`level-figure ${slam ? "anim-level-drop" : ""}`}
-        aria-hidden="true"
-      >
-        {value}
-      </b>
+  if (size === "lg") {
+    return (
+      <span className={`inline-grid justify-items-end ${className}`}>
+        <span className="text-[12px] font-medium text-ink-soft">Nivel</span>
+        <b className="text-[34px] leading-none font-semibold">{value}</b>
+      </span>
+    );
+  }
 
-      {tag && (
-        <span className="level-tag" aria-hidden="true">
-          <span>NV</span>
-        </span>
-      )}
+  return (
+    <span className={`text-[13px] whitespace-nowrap text-ink-soft ${className}`}>
+      Nivel <b className="font-semibold text-ink">{value}</b>
     </span>
   );
 }

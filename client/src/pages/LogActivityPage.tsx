@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   createActivity,
   deleteActivity,
@@ -13,19 +13,14 @@ import {
 } from "../api/client";
 import { playSound } from "../lib/sound";
 import { categoryColorVar } from "../lib/categoryColor";
-import { categoryWordmark } from "../lib/categoryWordmark";
-import { useScreenReady } from "../lib/screenReady";
 import { orderByLineage } from "../lib/focusLineage";
-import { useLight } from "../lib/useLight";
 import { INTENSITY_LABEL, XP_BY_INTENSITY } from "../lib/intensity";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ResultModal } from "../components/ResultModal";
+import { CategoryIcon } from "../components/CategoryIcon";
+import { BackLink } from "../components/Layout";
 
-const INTENSITIES: { value: Intensity; tilt: string }[] = [
-  { value: "chispa", tilt: "-1.4deg" },
-  { value: "impulso", tilt: "0.9deg" },
-  { value: "all_out", tilt: "-1deg" },
-];
+const INTENSITIES: Intensity[] = ["chispa", "impulso", "all_out"];
 
 /**
  * "Now", in the local format datetime-local expects. Logging is always
@@ -45,49 +40,40 @@ function intParam(params: URLSearchParams, name: string): string {
   return value !== null && /^\d+$/.test(value) ? value : "";
 }
 
-/**
- * One category, as a tile with its drawn wordmark. Picked, it lights up in
- * its colour, the way the category's own screen does.
- */
+/** One category, as a tile with its icon. Picked, it fills with its colour. */
 function CategoryPick({
   category: c,
   selected,
   onPick,
-  className = "",
 }: {
   category: Category;
   selected: boolean;
   onPick: () => void;
-  className?: string;
 }) {
-  const wordmark = categoryWordmark(c.slug);
-
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
-      aria-label={`${c.name}, nivel ${c.level}`}
       onClick={onPick}
-      className={`category-pick ${className}`}
-      data-selected={selected}
+      className={`flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left transition-colors ${
+        selected ? "border-transparent text-paper" : "border-line bg-paper"
+      }`}
       style={
-        { "--accent": categoryColorVar(c.slug) } as React.CSSProperties
+        {
+          "--accent": categoryColorVar(c.slug),
+          background: selected ? "var(--accent)" : undefined,
+        } as React.CSSProperties
       }
     >
-      {wordmark ? (
-        <img
-          src={wordmark.src}
-          alt=""
-          width={wordmark.width}
-          height={wordmark.height}
-          className="category-pick-mark"
-        />
-      ) : (
-        <span className="text-sign-fine font-display text-[17px] text-bone uppercase">
-          {c.name}
-        </span>
-      )}
+      <span
+        className={`grid h-8 w-8 place-items-center rounded-full ${
+          selected ? "bg-paper/20 text-paper" : "icon-disc"
+        }`}
+      >
+        <CategoryIcon slug={c.slug} strokeWidth={1.8} className="h-4 w-4" />
+      </span>
+      <span className="text-[15px] font-medium">{c.name}</span>
     </button>
   );
 }
@@ -128,8 +114,6 @@ export function LogActivityPage() {
 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // The screen wipe holds until the category tiles have something to show.
-  useScreenReady(categories.length > 0 || error !== null);
   const [result, setResult] = useState<RegisterActivityResult | null>(null);
 
   useEffect(() => {
@@ -205,9 +189,7 @@ export function LogActivityPage() {
         date: date === "" ? undefined : new Date(date).toISOString(),
       });
 
-      // The full form has no tile to burst from: the modal is the hit, and
-      // this is its sound.
-      playSound("hit");
+      playSound("earn");
       setResult(res);
       setDescription("");
       setDate("");
@@ -260,99 +242,37 @@ export function LogActivityPage() {
 
   const selected = categories.find((c) => String(c.id) === categoryId);
   const selectedFocus = focuses.find((f) => String(f.id) === focusId);
-  const accent = selected
-    ? categoryColorVar(selected.slug)
-    : "var(--color-yellow)";
-
-  // Choosing a category paints the rays in its colour. While none is chosen
-  // they keep the home's red: they do not pre-empt a decision you have not
-  // made.
-  useLight(selected ? categoryColorVar(selected.slug) : null);
 
   return (
-    <div className="px-4 pt-6 pb-32">
-      <Link
-        to="/"
-        className="anim-row inline-block bg-bone px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-black"
-        style={{ transform: "skewX(-10deg)" }}
-      >
-        <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-          ← CATEGORÍAS
-        </span>
-      </Link>
+    <div className="px-5 pt-6 pb-32">
+      <BackLink />
 
-      {/* The band takes the chosen category's colour: the header responds to
-          what you are filling in. */}
-      <header className="relative mt-7 mb-9">
-        <div
-          className="bleed-band anim-logo top-[-18px] z-0 h-[96px]"
-          style={
-            {
-              "--band-bg": accent,
-              "--band-edge": "var(--color-black)",
-              "--band-tilt": "3deg",
-              transition: "background-color .12s steps(2)",
-            } as React.CSSProperties
-          }
-        />
-        <h1 className="text-sign relative z-10 m-0 font-display text-[34px] leading-[0.92] text-bone uppercase">
-          Registrar
-        </h1>
-      </header>
+      <h1 className="settle mt-6 mb-8 text-[30px] leading-tight font-semibold">
+        Registrar
+      </h1>
 
-      <form onSubmit={onSubmit} className="grid gap-6">
-        {/* Category and focus are picked by tapping, not from native
-            selects: a system dropdown is the one piece of the screen the app
-            cannot style, and it looked like it. The categories are the same
-            drawn wordmarks as on the home, and the focuses the same tabs as
-            the home card's disclosure — so this screen speaks the home's
-            language instead of a form's. */}
-        <div
-          className="anim-row grid gap-2.5"
-          style={{ "--delay": "0.06s" } as React.CSSProperties}
-        >
-          <span className="field-label justify-self-start">
-            <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-              CATEGORÍA
-            </span>
-          </span>
+      <form onSubmit={onSubmit} className="grid gap-7">
+        <div className="settle">
+          <span className="field-label">Categoría</span>
           {categoryLocked && selected ? (
             // Locked because you came from one of its focuses: changing it
             // would orphan that focus. Shown alone, releasable by hand.
             <div className="flex items-center gap-4">
-              <CategoryPick
-                category={selected}
-                selected
-                onPick={() => {}}
-                className="flex-1"
-              />
-              <button
-                type="button"
-                onClick={unlockCategory}
-                className="on-scene shrink-0 text-[9.5px] font-bold tracking-[0.16em] text-yellow underline"
-              >
-                CAMBIAR
+              <div className="flex-1" role="radiogroup" aria-label="Categoría">
+                <CategoryPick category={selected} selected onPick={() => {}} />
+              </div>
+              <button type="button" onClick={unlockCategory} className="link-quiet shrink-0">
+                Cambiar
               </button>
             </div>
           ) : (
-            <div
-              className="grid grid-cols-2 gap-x-3 gap-y-3.5"
-              role="radiogroup"
-              aria-label="Categoría"
-            >
-              {categories.map((c, i) => (
+            <div className="grid grid-cols-2 gap-2.5" role="radiogroup" aria-label="Categoría">
+              {categories.map((c) => (
                 <CategoryPick
                   key={c.id}
                   category={c}
                   selected={String(c.id) === categoryId}
                   onPick={() => onChangeCategory(String(c.id))}
-                  // An odd one out takes the whole last row, centred, rather
-                  // than leaving a hole beside it.
-                  className={
-                    i === categories.length - 1 && categories.length % 2 === 1
-                      ? "col-span-2 w-1/2 justify-self-center"
-                      : ""
-                  }
                 />
               ))}
             </div>
@@ -362,35 +282,19 @@ export function LogActivityPage() {
         {/* No category yet, no focus section: a disabled control is only a
             promise of something you cannot use. */}
         {categoryId !== "" && (
-          <div
-            className="anim-row grid gap-2.5"
-            style={{ "--delay": "0.04s" } as React.CSSProperties}
-          >
-            <span className="field-label justify-self-start">
-              <span
-                className="inline-block"
-                style={{ transform: "skewX(10deg)" }}
-              >
-                FOCO · OPCIONAL
-              </span>
+          <div className="settle">
+            <span className="field-label">
+              Foco <span className="font-normal text-ink-faint">· opcional</span>
             </span>
-            <div
-              className="flex flex-wrap gap-x-2.5 gap-y-3"
-              role="radiogroup"
-              aria-label="Foco"
-              style={{ "--accent": accent } as React.CSSProperties}
-            >
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Foco">
               <button
                 type="button"
                 role="radio"
                 aria-checked={focusId === ""}
                 onClick={() => setFocusId("")}
-                className="focus-tab"
-                data-open={focusId === ""}
+                className="chip"
               >
-                <span className="text-[10px] font-bold tracking-[0.16em]">
-                  SIN FOCO
-                </span>
+                Sin foco
               </button>
               {/* Frozen focuses are left out: they take no activity. */}
               {orderByLineage(focuses.filter((f) => !f.frozen)).map((f) => (
@@ -400,133 +304,88 @@ export function LogActivityPage() {
                   role="radio"
                   aria-checked={String(f.id) === focusId}
                   onClick={() => setFocusId(String(f.id))}
-                  className="focus-tab"
-                  data-open={String(f.id) === focusId}
+                  className="chip"
                 >
-                  <span>
-                    <b className="font-display text-[12px] leading-none font-normal uppercase">
-                      {f.name}
-                    </b>
-                    <span className="text-[9px] font-bold tracking-[0.12em] opacity-75">
-                      NV {f.level}
-                    </span>
-                  </span>
+                  {f.name}
                 </button>
               ))}
             </div>
+
+            {selectedFocus && !selectedFocus.frozen && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCloseError(null);
+                  setClosingFocus(true);
+                }}
+                className="link-quiet mt-3 text-[13px]"
+              >
+                Dar «{selectedFocus.name}» por terminado
+              </button>
+            )}
           </div>
         )}
 
-        {/* Outside the <label> on purpose: a button inside a label also
-            fires the control the label points at. */}
-        {selectedFocus && !selectedFocus.frozen && (
-          <button
-            type="button"
-            onClick={() => {
-              setCloseError(null);
-              setClosingFocus(true);
-            }}
-            className="anim-row -mt-3 justify-self-start bg-black px-1.5 py-0.5 text-[9px] font-bold tracking-[0.16em] text-bone/70 underline"
-            style={{ "--delay": "0.14s" } as React.CSSProperties}
-          >
-            DAR "{selectedFocus.name.toUpperCase()}" POR TERMINADO
-          </button>
-        )}
-
-        <label
-          className="anim-row grid gap-2"
-          style={{ "--delay": "0.18s" } as React.CSSProperties}
-        >
-          <span className="field-label justify-self-start">
-            <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-              QUÉ HICISTE · OPCIONAL
-            </span>
+        <label className="settle block">
+          <span className="field-label">
+            Qué hiciste <span className="font-normal text-ink-faint">· opcional</span>
           </span>
-          <div className="field-frame">
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="Si te apetece contarlo."
-              className="field resize-none"
-            />
-          </div>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="Si te apetece contarlo."
+            className="field"
+          />
         </label>
 
-        {/* Three chips instead of a select: intensity is the weightiest
-            decision in this form and deserves to be seen whole. */}
-        <fieldset
-          className="anim-row m-0 grid gap-2 border-0 p-0"
-          style={{ "--delay": "0.24s" } as React.CSSProperties}
-        >
-          <legend className="field-label mb-2">
-            <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-              INTENSIDAD
-            </span>
-          </legend>
-          <div className="grid grid-cols-3 gap-3">
+        <fieldset className="settle m-0 border-0 p-0">
+          <legend className="field-label">Intensidad</legend>
+          <div className="grid grid-cols-3 gap-2.5">
             {INTENSITIES.map((i) => (
               <button
-                key={i.value}
+                key={i}
                 type="button"
-                aria-pressed={intensity === i.value}
-                onClick={() => setIntensity(i.value)}
-                className="intensity-chip"
-                style={{ "--rotation": i.tilt } as React.CSSProperties}
+                aria-pressed={intensity === i}
+                onClick={() => setIntensity(i)}
+                className={`grid gap-0.5 rounded-2xl border px-2 py-3 transition-colors ${
+                  intensity === i
+                    ? "border-ink bg-ink text-paper"
+                    : "border-line bg-paper"
+                }`}
               >
-                <span className="block">
-                  <span className="block text-[13px] leading-tight">
-                    {INTENSITY_LABEL[i.value]}
-                  </span>
-                  <span className="mt-1 block font-display text-[17px] leading-none">
-                    {XP_BY_INTENSITY[i.value]}
-                    <span className="text-[9px]"> XP</span>
-                  </span>
+                <span className="text-[15px] font-medium">{INTENSITY_LABEL[i]}</span>
+                <span className={`text-[12px] ${intensity === i ? "text-paper/70" : "text-ink-soft"}`}>
+                  +{XP_BY_INTENSITY[i]} XP
                 </span>
               </button>
             ))}
           </div>
         </fieldset>
 
-        <div
-          className="anim-row grid gap-2"
-          style={{ "--delay": "0.3s" } as React.CSSProperties}
-        >
-          <span className="field-label justify-self-start">
-            <span className="inline-block" style={{ transform: "skewX(10deg)" }}>
-              CUÁNDO
-            </span>
-          </span>
-
+        <div className="settle">
+          <span className="field-label">Cuándo</span>
           {date === "" && !editingDate ? (
             // The normal case is logging something you just did, so the
-            // default states "now" rather than planting a date picker that
-            // almost never gets touched.
+            // default states "now" rather than planting a date picker.
             <button
               type="button"
               onClick={() => setEditingDate(true)}
-              className="field-frame flex items-center text-left"
+              className="field flex items-center text-left"
             >
-              <span className="field flex-1" style={{ width: "auto" }}>
-                Ahora
-              </span>
-              <span
-                className="mr-3 shrink-0 text-[9px] font-bold tracking-[0.16em] text-yellow underline"
-                style={{ transform: "skewX(7deg)" }}
-              >
-                OTRO MOMENTO
-              </span>
+              <span className="flex-1">Ahora</span>
+              <span className="text-[14px] text-ink-soft">Otro momento</span>
             </button>
           ) : (
-            <div className="field-frame flex items-center">
+            <div className="flex items-center gap-3">
               <input
                 type="datetime-local"
                 value={date}
                 max={localNow()}
                 autoFocus
                 onChange={(e) => setDate(e.target.value)}
+                aria-label="Fecha y hora"
                 className="field flex-1"
-                style={{ width: "auto" }}
               />
               <button
                 type="button"
@@ -534,30 +393,24 @@ export function LogActivityPage() {
                   setDate("");
                   setEditingDate(false);
                 }}
-                className="mr-3 shrink-0 text-[9px] font-bold tracking-[0.16em] text-yellow underline"
-                style={{ transform: "skewX(7deg)" }}
+                className="link-quiet shrink-0"
               >
-                AHORA
+                Ahora
               </button>
             </div>
           )}
         </div>
 
+        {error && <p className="m-0 text-[14px] text-warn">{error}</p>}
+
         <button
           type="submit"
           disabled={sending || categoryId === ""}
-          className="slam-button anim-row mt-1 w-full"
-          style={{ "--delay": "0.36s" } as React.CSSProperties}
+          className="btn settle w-full"
         >
-          <span>{sending ? "Registrando…" : "Registrar"}</span>
+          {sending ? "Registrando…" : "Registrar"}
         </button>
       </form>
-
-      {error && (
-        <p className="anim-slam mt-6 bg-cuerpo px-4 py-3 text-[12px] font-bold text-bone">
-          {error}
-        </p>
-      )}
 
       {closingFocus && selectedFocus && (
         <ConfirmDialog
@@ -565,19 +418,14 @@ export function LogActivityPage() {
           titleId="close-focus-title"
           busy={closing}
           error={closeError}
-          confirmLabel="Cerrar"
+          confirmLabel="Darlo por terminado"
           busyLabel="Cerrando…"
           onConfirm={onConfirmCloseFocus}
           onCancel={() => setClosingFocus(false)}
         >
-          <p className="m-0 font-display text-[18px] leading-tight text-bone uppercase">
-            {selectedFocus.name}
-          </p>
-          <p className="mt-1 text-[10px] font-bold tracking-[0.14em] text-bone/60">
-            NIVEL {selectedFocus.level} · {selectedFocus.currentXp} XP
-          </p>
-          <p className="mt-4 text-[11.5px] leading-relaxed text-bone/75">
-            Deja de aceptar actividad y pasa a poder engendrar un foco hijo más
+          <p className="m-0 text-[17px] font-semibold">{selectedFocus.name}</p>
+          <p className="mt-3 mb-0 text-[15px] leading-relaxed text-ink-soft">
+            Deja de aceptar actividad y pasa a poder tener un foco hijo más
             especializado. La XP que ganaste no se toca, y puedes reabrirlo
             desde su categoría.
           </p>
@@ -596,4 +444,3 @@ export function LogActivityPage() {
     </div>
   );
 }
-
