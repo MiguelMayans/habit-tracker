@@ -56,3 +56,14 @@ Pasos 1–10 hechos. La base se reseteó a cero para estrenarla.
 - Los 3 hitos narrativos camino del nivel 20, y los hitos de categoría
 - Sesión de balanceo de las curvas de XP (ver arriba)
 - Registrar sin conexión: guardar en el dispositivo y sincronizar al volver
+
+## Rediseño de interfaz (desde 7 nov 2026)
+
+La estética Persona resultó demasiado agresiva para el uso diario. Queda
+archivada, intacta, en la etiqueta `v1.1-persona` y en la rama `persona`
+(mismo commit, `9641839`). Para verla en local: `git checkout v1.1-persona`;
+para volver a publicarla, un sitio de Netlify apuntando a la rama `persona`.
+
+El rediseño es solo de interfaz: mismas reglas de juego, mismo servidor y
+misma base de Turso. Cambian `client/` y la sección «Dirección visual» de
+docs/DESIGN.md.
