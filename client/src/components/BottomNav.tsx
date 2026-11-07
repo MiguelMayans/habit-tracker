@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { getMissions } from "../api/client";
-import { urgentCount } from "../lib/missions";
+import { MISSIONS_CHANGED, urgentCount } from "../lib/missions";
 import { MissionsGlyph } from "./MissionIcons";
 import { HomeGlyph, LairGlyph } from "./WorkIcons";
 import { vtName } from "../lib/viewTransition";
@@ -33,6 +33,13 @@ export function BottomNav() {
       cancelled = true;
     };
   }, [pathname]);
+
+  // A tick on the missions screen updates the badge at once.
+  useEffect(() => {
+    const onChange = (e: Event) => setUrgent((e as CustomEvent<number>).detail);
+    window.addEventListener(MISSIONS_CHANGED, onChange);
+    return () => window.removeEventListener(MISSIONS_CHANGED, onChange);
+  }, []);
 
   const inCategory = pathname.match(/^\/categories\/(\d+)$/);
   const logTarget = inCategory

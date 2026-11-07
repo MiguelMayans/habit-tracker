@@ -12,7 +12,7 @@ import {
   type Intensity,
   type RegisterActivityResult,
 } from "../api/client";
-import { playSound } from "../lib/sound";
+import { cue } from "../lib/sound";
 import { categoryColorVar } from "../lib/categoryColor";
 import { orderByLineage } from "../lib/focusLineage";
 import { INTENSITY_LABEL, XP_BY_INTENSITY } from "../lib/intensity";
@@ -192,7 +192,7 @@ export function LogActivityPage() {
         date: date === "" ? undefined : new Date(date).toISOString(),
       });
 
-      playSound("earn");
+      cue("earn");
       setResult(res);
       setDescription("");
       setDate("");

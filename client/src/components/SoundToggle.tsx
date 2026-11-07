@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { isSoundOn, playSound, setSoundOn } from "../lib/sound";
+import { isSoundOn, cue, setSoundOn } from "../lib/sound";
 
 /**
  * Sound on or off, on the home. Off by default, and remembered on this device
@@ -14,7 +14,7 @@ export function SoundToggle() {
     setSoundOn(next);
     setOn(next);
     // Turning it on answers with a sound, so you know it worked.
-    if (next) playSound("earn");
+    if (next) cue("earn");
   }
 
   return (

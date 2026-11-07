@@ -1,5 +1,8 @@
+import { haptic } from "./haptics";
+
 /**
- * The app's few sounds, synthesised with the Web Audio API.
+ * The app's few cues: a tiny vibration, always, and a sound, if turned on.
+ * The sounds are synthesised with the Web Audio API.
  *
  * Off by default: this app exists to be a quiet corner, and a phone that
  * chimes uninvited is the opposite. Turned on (the speaker on the home), there
@@ -96,7 +99,19 @@ const SOUNDS = {
 
 export type SoundName = keyof typeof SOUNDS;
 
-export function playSound(name: SoundName) {
+/** Each moment's vibration, in ms: a tap, a double tap, a little flourish. */
+const HAPTICS: Record<SoundName, number | number[]> = {
+  earn: 12,
+  done: [8, 50, 8],
+  levelUp: [10, 70, 10, 70, 24],
+};
+
+/**
+ * The cue for a moment: the phone answers with a tiny vibration (silent, so
+ * always on) and, if sounds are on, its note.
+ */
+export function cue(name: SoundName) {
+  haptic(HAPTICS[name]);
   if (!isSoundOn()) return;
   const c = context();
   if (!c || !master) return;

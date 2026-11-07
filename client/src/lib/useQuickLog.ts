@@ -5,7 +5,7 @@ import {
   type Intensity,
   type RegisterActivityResult,
 } from "../api/client";
-import { playSound } from "./sound";
+import { cue } from "./sound";
 
 /**
  * Logging in two taps, wherever a list of focuses is shown.
@@ -60,7 +60,7 @@ export function useQuickLog({
 
     try {
       const res = await createActivity({ categoryId, focusId, intensity });
-      playSound("earn");
+      cue("earn");
       setOpenFocusId(null);
       setGain({ focusId, xp: res.xpGained });
 

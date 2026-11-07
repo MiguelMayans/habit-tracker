@@ -29,6 +29,8 @@ import { useQuickLog } from "../lib/useQuickLog";
 import { ActivityRow } from "../components/ActivityRow";
 import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
+import { StaleNotice } from "../components/StaleNotice";
+import { useOnReturn } from "../lib/useOnReturn";
 import { BackLink, SectionTitle } from "../components/Layout";
 import { ProgressRing } from "../components/ProgressRing";
 import { Collapse } from "../components/Collapse";
@@ -315,6 +317,7 @@ export function CategoryDetailPage() {
         setCategory(cat);
         setFocuses(focs);
         setActivities(acts);
+        setError(null);
 
         // A frozen focus on the home links here with ?parent=<id>: the form
         // opens already set to spawn its child. Once only — this load also
@@ -340,6 +343,11 @@ export function CategoryDetailPage() {
 
   useEffect(() => load(), [load]);
 
+  // Back after a while: the numbers may have moved on elsewhere.
+  useOnReturn(() => {
+    load();
+  });
+
   // Logging in place, the same hook the home cards use. After a log (or its
   // undo) everything is reloaded WITHOUT the loading state: the tiles stay
   // mounted, so their bars travel to the new width instead of being reborn
@@ -349,7 +357,8 @@ export function CategoryDetailPage() {
   // Resetting loading/error lives in the event that causes it (the button),
   // not inside the effect.
   function onRetry() {
-    setLoading(true);
+    // With the category already on screen, retrying keeps it there.
+    if (!category) setLoading(true);
     setError(null);
     load();
   }
@@ -436,7 +445,7 @@ export function CategoryDetailPage() {
         <SkeletonCards n={3} height="96px" />
       </div>
     );
-  if (error)
+  if (error && !category)
     return (
       <div className="px-5 pt-16 pb-32">
         <ErrorPanel message={error} onRetry={onRetry} />
@@ -479,6 +488,8 @@ export function CategoryDetailPage() {
           </span>
         </span>
       </header>
+
+      {error && <StaleNotice message={error} onRetry={onRetry} />}
 
       {/* ---- Focuses ---- */}
       <SectionTitle>Focos</SectionTitle>

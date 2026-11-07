@@ -14,11 +14,13 @@ import {
   type RegisterActivityResult,
 } from "../api/client";
 import {
+  MISSIONS_CHANGED,
+  urgentCount,
   missionGroup,
   MISSION_XP,
   type MissionGroup,
 } from "../lib/missions";
-import { playSound } from "../lib/sound";
+import { cue } from "../lib/sound";
 import { reducedMotion, withViewTransition } from "../lib/viewTransition";
 import { MissionRow } from "../components/MissionRow";
 import { MissionSheet } from "../components/MissionSheet";
@@ -27,6 +29,8 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ResultModal } from "../components/ResultModal";
 import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
+import { StaleNotice } from "../components/StaleNotice";
+import { useOnReturn } from "../lib/useOnReturn";
 import { SectionTitle } from "../components/Layout";
 
 /** How long the tick shows before the row travels down to "done". */
@@ -74,6 +78,7 @@ export function MissionsPage() {
       .then(([ms, cats]) => {
         setMissions(ms);
         setCategories(cats);
+        setError(null);
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
@@ -83,11 +88,23 @@ export function MissionsPage() {
     load();
   }, [load]);
 
+  // Back after a while: due dates and progress may have moved on.
+  useOnReturn(load);
+
   function onRetry() {
-    setLoading(true);
+    // With something already on screen, retrying keeps it there.
+    if (missions.length === 0) setLoading(true);
     setError(null);
     load();
   }
+
+  // The bar's badge follows what happens here (see BottomNav).
+  useEffect(() => {
+    if (loading) return;
+    window.dispatchEvent(
+      new CustomEvent(MISSIONS_CHANGED, { detail: urgentCount(missions) }),
+    );
+  }, [missions, loading]);
 
   const replace = (m: Mission) =>
     setMissions((prev) => prev.map((x) => (x.id === m.id ? m : x)));
@@ -162,7 +179,7 @@ export function MissionsPage() {
 
     markCompleting(m.id, null);
     // One soft note on the tap, XP or not: the tick is the moment.
-    playSound("done");
+    cue("done");
     const settled = new Promise((r) =>
       window.setTimeout(r, reducedMotion() ? 0 : COMPLETE_MS),
     );
@@ -236,7 +253,7 @@ export function MissionsPage() {
         <SkeletonCards n={4} height="72px" />
       </div>
     );
-  if (error)
+  if (error && missions.length === 0)
     return (
       <div className="px-5 pt-16 pb-32">
         <ErrorPanel message={error} onRetry={onRetry} />
@@ -331,6 +348,7 @@ export function MissionsPage() {
         {formError && <p className="m-0 text-[14px] text-warn">{formError}</p>}
       </form>
 
+      {error && <StaleNotice message={error} onRetry={onRetry} />}
       {rowError && <p className="mt-0 mb-6 text-[14px] text-warn">{rowError}</p>}
 
       {pending.length === 0 ? (

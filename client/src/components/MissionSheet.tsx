@@ -45,7 +45,6 @@ export function MissionSheet({
           onChange={(e) => setTitle(e.target.value)}
           aria-label="Título"
           maxLength={200}
-          autoFocus
         />
 
         <WhenPicker value={due} onChange={setDue} />

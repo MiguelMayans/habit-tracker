@@ -15,7 +15,8 @@ import {
   type WorkFields,
   type WorkKind,
 } from "../api/client";
-import { playSound } from "../lib/sound";
+import { cue } from "../lib/sound";
+import { haptic } from "../lib/haptics";
 import { withViewTransition } from "../lib/viewTransition";
 import { KIND_COLOR, KIND_LABEL, WORK_KINDS } from "../lib/works";
 import {
@@ -30,6 +31,8 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ResultModal } from "../components/ResultModal";
 import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
+import { StaleNotice } from "../components/StaleNotice";
+import { useOnReturn } from "../lib/useOnReturn";
 import { SectionTitle } from "../components/Layout";
 
 const MENTE = "var(--color-mente)";
@@ -111,6 +114,7 @@ export function LairPage() {
       .then(([ws, cats]) => {
         setWorks(ws);
         setCategories(cats);
+        setError(null);
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
@@ -120,8 +124,12 @@ export function LairPage() {
     load();
   }, [load]);
 
+  // Back after a while: due dates and progress may have moved on.
+  useOnReturn(load);
+
   function onRetry() {
-    setLoading(true);
+    // With something already on screen, retrying keeps it there.
+    if (works.length === 0) setLoading(true);
     setError(null);
     load();
   }
@@ -150,7 +158,7 @@ export function LairPage() {
     setSessionBusy(true);
     try {
       const res = await logWorkSession(w.id, intensity);
-      playSound("earn");
+      cue("earn");
       replace(res.work);
       setSessionOpen(null);
       setGain({ id: w.id, xp: res.activity.xpGained });
@@ -173,7 +181,7 @@ export function LairPage() {
     setFinishing(w.id);
     try {
       const updated = await updateWork(w.id, { status: "done", rating });
-      playSound("done");
+      cue("done");
       // The card flies to its place on the shelf of finished things.
       withViewTransition(() => replace(updated));
     } catch (err) {
@@ -187,6 +195,7 @@ export function LairPage() {
   // puts the old value back.
   async function onPercent(w: Work, percent: number) {
     setRowError(null);
+    haptic(6);
     replace({ ...w, percent });
     try {
       replace(await updateWork(w.id, { percent }));
@@ -267,7 +276,7 @@ export function LairPage() {
         <SkeletonCards n={3} height="150px" />
       </div>
     );
-  if (error)
+  if (error && works.length === 0)
     return (
       <div className="px-5 pt-16 pb-32">
         <ErrorPanel message={error} onRetry={onRetry} />
@@ -347,6 +356,7 @@ export function LairPage() {
         </div>
       )}
 
+      {error && <StaleNotice message={error} onRetry={onRetry} />}
       {rowError && <p className="mt-0 mb-6 text-[14px] text-warn">{rowError}</p>}
 
       {works.length === 0 && (

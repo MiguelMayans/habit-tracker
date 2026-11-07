@@ -69,7 +69,13 @@ export function missionGroup(m: Mission, today = localDay()): MissionGroup {
   return "upcoming";
 }
 
-/** What the home's button counts: what is due today or already late. */
+/**
+ * Sent when the missions on screen change, with the new urgent count, so the
+ * bottom bar's badge follows a tick at once instead of on the next screen.
+ */
+export const MISSIONS_CHANGED = "missions-changed";
+
+/** What the bar's badge counts: what is due today or already late. */
 export function urgentCount(missions: Mission[], today = localDay()): number {
   return missions.filter((m) => {
     const g = missionGroup(m, today);

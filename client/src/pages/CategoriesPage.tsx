@@ -15,6 +15,8 @@ import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
 import { SoundToggle } from "../components/SoundToggle";
 import { DaypartMark } from "../components/DaypartMark";
+import { StaleNotice } from "../components/StaleNotice";
+import { useOnReturn } from "../lib/useOnReturn";
 import { AutumnLeaves } from "../components/AutumnLeaves";
 import { season } from "../lib/season";
 
@@ -39,6 +41,7 @@ export function CategoriesPage() {
       .then(([cats, acts]) => {
         setCategories(cats);
         setRecent(acts);
+        setError(null);
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
@@ -48,11 +51,16 @@ export function CategoriesPage() {
     load();
   }, [load]);
 
+  // Back after a while (the app left open overnight): fresh date, greeting
+  // and "today".
+  useOnReturn(load);
+
   // Resetting loading/error lives in the event that causes it (the button) and
   // not inside the effect: that way a synchronous setState does not trigger a
   // second cascading render while React is syncing the effect.
   function onRetry() {
-    setLoading(true);
+    // With something already on screen, retrying keeps it there.
+    if (categories.length === 0) setLoading(true);
     setError(null);
     load();
   }
@@ -73,7 +81,7 @@ export function CategoriesPage() {
         <SkeletonCards n={4} />
       </div>
     );
-  if (error)
+  if (error && categories.length === 0)
     return (
       <div className="px-5 pt-14 pb-32">
         <ErrorPanel message={error} onRetry={onRetry} />
@@ -130,6 +138,8 @@ export function CategoriesPage() {
           <span>{greeting(now)}</span>
         </h1>
       </header>
+
+      {error && <StaleNotice message={error} onRetry={onRetry} />}
 
       <RhythmStrip activities={recent} streak={streak} todayXp={todayXp} />
 

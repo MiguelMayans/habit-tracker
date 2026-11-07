@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import type { Category, RegisterActivityResult, XpOutcome } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { isToday } from "../lib/dates";
-import { playSound } from "../lib/sound";
+import { cue } from "../lib/sound";
 import { CategoryIcon } from "./CategoryIcon";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DialogFrame } from "./DialogFrame";
@@ -69,7 +69,7 @@ export function ResultModal({
   const onHit = () => {
     if (sounded.current) return;
     sounded.current = true;
-    playSound("levelUp");
+    cue("levelUp");
   };
 
   async function confirmUndo() {
