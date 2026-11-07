@@ -7,26 +7,29 @@ export const WORK_KINDS: WorkKind[] = [
 
 /**
  * Each kind's colour in the Refuge, drawn from the same earthy family as the
- * categories (plus a slate blue for games, the one hue the categories lack),
- * so a shelf of mixed things reads at a glance.
+ * categories plus two of their own — a brick red for games and a slate blue
+ * for films — so a shelf of mixed things reads at a glance.
  */
 export const KIND_COLOR: Record<WorkKind, string> = {
-  game: "#5b82ad",
+  game: "#c2423c",
   book: "var(--color-disciplina)",
   series: "var(--color-corazon)",
-  movie: "var(--color-cuerpo)",
+  movie: "#5b82ad",
   anime: "var(--color-mente)",
   comic: "var(--color-ingenio)",
 };
 
-/** How each kind is named on screen: singular for a work, plural for a filter. */
+/**
+ * How each kind is named on screen: singular for a work, plural for a
+ * filter. `comic` reads "Manga": that is what ends up on the shelf.
+ */
 export const KIND_LABEL: Record<WorkKind, { one: string; many: string }> = {
   game: { one: "Videojuego", many: "Juegos" },
   book: { one: "Libro", many: "Libros" },
   series: { one: "Serie", many: "Series" },
   movie: { one: "Película", many: "Pelis" },
   anime: { one: "Anime", many: "Anime" },
-  comic: { one: "Manga / cómic", many: "Cómic" },
+  comic: { one: "Manga", many: "Manga" },
 };
 
 /** What a session is called, by kind: "today I played / read / watched". */

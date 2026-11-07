@@ -109,9 +109,11 @@ export function ActiveWorkCard({
 
 /**
  * How far through a work is, as ten dots that fill in its colour, with the
- * figure beside them. Tapping a dot sets it to that tenth (tapping the last
- * filled one steps back one); the sheet has a slider for finer values. The
- * dots fill one after another, so a change flows rather than jumps.
+ * figure beside them. A dot is worth ten, and can be half full for the
+ * "and five": 55 % is five full dots and a half. Tapping the dot at the
+ * edge cycles it — full, half, empty — so every step of five is two taps
+ * away at most; tapping any other dot jumps straight to it. The dots fill one
+ * after another, so a change flows rather than jumps.
  */
 function ProgressDots({
   percent,
@@ -121,21 +123,27 @@ function ProgressDots({
   onSet: (percent: number) => void;
 }) {
   const value = percent ?? 0;
-  const filled = Math.round(value / 10);
+
+  /** What tapping dot `i` sets: full, then half, then empty. */
+  function next(i: number): number {
+    const full = (i + 1) * 10;
+    if (value === full) return i * 10 + 5;
+    if (value === i * 10 + 5) return i * 10;
+    return full;
+  }
 
   return (
     <div className="relative flex items-center gap-3 px-5 pb-3">
       <div className="dots" role="group" aria-label="Cuánto llevas">
         {Array.from({ length: 10 }, (_, i) => {
-          const on = i < filled;
-          const target = i + 1 === filled ? i * 10 : (i + 1) * 10;
+          const fill = value >= (i + 1) * 10 ? "full" : value >= i * 10 + 5 ? "half" : "empty";
           return (
             <button
               key={i}
               type="button"
-              aria-label={`${(i + 1) * 10} %`}
-              data-on={on}
-              onClick={() => onSet(target)}
+              aria-label={`${next(i)} %`}
+              data-fill={fill}
+              onClick={() => onSet(next(i))}
               style={{ "--i": i } as React.CSSProperties}
             />
           );

@@ -8,7 +8,7 @@ import { vtName } from "../lib/viewTransition";
 
 /**
  * The floating bar along the bottom, on every screen: a glass pill with the
- * three places — home, missions, refuge — and, apart from it, the round
+ * three places — missions, home in the middle, refuge — and, apart from it, the round
  * button to log, the main action. Home used to be missing from the bar: from
  * the missions or the refuge the only way back was the phone's own gesture.
  *
@@ -45,11 +45,6 @@ export function BottomNav() {
   return (
     <nav className="bottom-nav" aria-label="Principal" style={vtName("nav")}>
       <div className="nav-pill">
-        <Link to="/" className="nav-tab" aria-current={current("/")}>
-          <HomeGlyph className="h-[22px] w-[22px]" />
-          Inicio
-        </Link>
-
         <Link to="/missions" className="nav-tab" aria-current={current("/missions")}>
           <span className="relative">
             <MissionsGlyph className="h-[22px] w-[22px]" />
@@ -60,6 +55,11 @@ export function BottomNav() {
             )}
           </span>
           Misiones
+        </Link>
+
+        <Link to="/" className="nav-tab" aria-current={current("/")}>
+          <HomeGlyph className="h-[22px] w-[22px]" />
+          Inicio
         </Link>
 
         <Link to="/lair" className="nav-tab" aria-current={current("/lair")}>

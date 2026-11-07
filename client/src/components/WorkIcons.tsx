@@ -73,7 +73,8 @@ const KIND_STROKES: Record<WorkKind, ReactNode> = {
       <path d="M3.5 6 5.6 7.6M20.5 6l-2.1 1.6M12 2.4v1.8" />
     </>
   ),
-  // A comic "bang" burst.
+  // A "bang" burst, as manga and comics draw them. (The kind is still
+  // `comic` in the data; on screen it is "Manga".)
   comic: (
     <>
       <path
