@@ -1,58 +1,88 @@
 import type { ReactNode } from "react";
 import type { WorkKind } from "../api/client";
 
+/** The soft fill under the line: the second tone of the duotone. */
+const TINT = { fill: "currentColor", fillOpacity: 0.2, stroke: "none" } as const;
+
 /**
- * The Lair's icons, stroked on a 24 grid like the category and mission icons:
- * drawn in code, so they inherit colour and add no assets.
+ * The Refuge's kinds, one icon each on a 24 grid, duotone like the category
+ * icons — a line drawing over a soft fill of the same colour — and each a
+ * small idea rather than a stock symbol. Drawn in code, so they inherit
+ * colour and add no assets.
  */
 const KIND_STROKES: Record<WorkKind, ReactNode> = {
-  // A pad: the grips, a cross and two buttons.
+  // A pad with its d-pad and two buttons.
   game: (
     <>
-      <path d="M7 7h10a4.5 4.5 0 0 1 4.4 5.4l-.9 4.4a2.3 2.3 0 0 1-4 1L14.6 16H9.4l-1.9 1.8a2.3 2.3 0 0 1-4-1l-.9-4.4A4.5 4.5 0 0 1 7 7Z" />
-      <path d="M8 10v4M6 12h4" />
-      <circle cx="15.5" cy="11" r=".6" fill="currentColor" />
-      <circle cx="17.2" cy="13" r=".6" fill="currentColor" />
+      <path
+        {...TINT}
+        d="M7 7.5h10a4.5 4.5 0 0 1 4.4 5.5l-.8 3.8a2.3 2.3 0 0 1-4 1L14.8 16H9.2l-1.8 1.8a2.3 2.3 0 0 1-4-1l-.8-3.8A4.5 4.5 0 0 1 7 7.5Z"
+      />
+      <path d="M7 7.5h10a4.5 4.5 0 0 1 4.4 5.5l-.8 3.8a2.3 2.3 0 0 1-4 1L14.8 16H9.2l-1.8 1.8a2.3 2.3 0 0 1-4-1l-.8-3.8A4.5 4.5 0 0 1 7 7.5Z" />
+      <path d="M8 10.3v3.4M6.3 12h3.4" />
+      <circle cx="15.6" cy="11" r="1" fill="currentColor" stroke="none" />
+      <circle cx="17.6" cy="13.2" r="1" fill="currentColor" stroke="none" />
+      <path d="M10.5 4.5c.6-.9 2.4-.9 3 0" />
     </>
   ),
-  // An open book, the spine down the middle.
+  // An open book with its ribbon bookmark hanging out.
   book: (
     <>
-      <path d="M12 6.5C10 5 7 4.6 3.5 5v13c3.5-.4 6.5 0 8.5 1.5 2-1.5 5-1.9 8.5-1.5V5C17 4.6 14 5 12 6.5Z" />
-      <path d="M12 6.5v13" />
+      <path {...TINT} d="M12 6.4C10 5 7 4.6 3.5 5v13c3.5-.4 6.5 0 8.5 1.5Z" />
+      <path d="M12 6.4C10 5 7 4.6 3.5 5v13c3.5-.4 6.5 0 8.5 1.5 2-1.5 5-1.9 8.5-1.5V5C17 4.6 14 5 12 6.4Z" />
+      <path d="M12 6.4v13" />
+      <path {...TINT} fillOpacity={0.6} d="M15.5 5.2v7l1.6-1.3 1.6 1.3V4.9" />
+      <path d="M15.5 5.2v7l1.6-1.3 1.6 1.3V4.9" />
     </>
   ),
-  // An old set with its antenna: series are what you watch on the telly.
+  // An old telly with its antenna and a play mark on the screen.
   series: (
     <>
-      <rect x="3" y="8" width="18" height="12" rx="1.5" />
-      <path d="m8.5 3.5 3.5 4 3.5-4" />
-      <path d="M17.5 11.5v5" />
+      <rect {...TINT} x="3" y="8" width="18" height="12" rx="2.5" />
+      <rect x="3" y="8" width="18" height="12" rx="2.5" />
+      <path d="m8.5 3.5 3.5 4.2 3.5-4.2" />
+      <path
+        d="M10.5 11.4v5.2l4.3-2.6Z"
+        fill="currentColor"
+        fillOpacity={0.55}
+        strokeWidth={1.4}
+      />
+      <path d="M7 20v1.5M17 20v1.5" />
     </>
   ),
-  // A clapperboard.
+  // A striped bucket of popcorn, overflowing.
   movie: (
     <>
-      <path d="M3.5 10h17v10h-17Z" />
-      <path d="m3.2 10-.6-3.6 16.2-2.8.6 3.6Z" />
-      <path d="m7.2 5.6 2.3 2.9M11.6 4.9l2.3 2.8" />
+      <path {...TINT} d="M5 9.5h14l-1.6 11H6.6Z" />
+      <path d="M5 9.5h14l-1.6 11H6.6Z" />
+      <path d="M9.4 9.5 10 20.5M14.6 9.5 14 20.5" />
+      <path d="M5.4 9.5a2.2 2.2 0 0 1 1.5-3.6 2.4 2.4 0 0 1 4.2-1.6 2.4 2.4 0 0 1 3.9.4 2.3 2.3 0 0 1 3.6 2.6 1.6 1.6 0 0 1 .4 2.2" />
     </>
   ),
-  // A big anime eye, with the star in it.
+  // A big anime eye with a star in the iris and a glint.
   anime: (
     <>
-      <path d="M2.5 12.5C5 8 8.3 6 12 6s7 2 9.5 6.5" />
-      <path d="M5 11c.4 4 3.3 7 7 7s6.6-3 7-7" />
-      <path d="m12.6 9.6.7 1.5 1.6.2-1.2 1.1.3 1.6-1.4-.8-1.4.8.3-1.6-1.2-1.1 1.6-.2Z" fill="currentColor" />
-      <path d="M4 5.5 6.5 7M20 5.5 17.5 7" />
+      <path {...TINT} d="M4.5 11.5C6.5 8.2 9 6.8 12 6.8s5.5 1.4 7.5 4.7c-.7 3.9-3.6 6.7-7.5 6.7s-6.8-2.8-7.5-6.7Z" />
+      <path d="M2.8 12.5C5 8 8.2 6 12 6s7 2 9.2 6.5" />
+      <path d="M4.8 11.4c.6 4.2 3.5 7.1 7.2 7.1s6.6-2.9 7.2-7.1" />
+      <path
+        d="m12 9.6.9 1.9 2.1.3-1.5 1.4.4 2-1.9-1-1.9 1 .4-2-1.5-1.4 2.1-.3Z"
+        fill="currentColor"
+        stroke="none"
+      />
+      <path d="M3.5 6 5.6 7.6M20.5 6l-2.1 1.6M12 2.4v1.8" />
     </>
   ),
-  // A spiky comic balloon with a bang.
+  // A comic "bang" burst.
   comic: (
     <>
-      <path d="M4 5.5h16v10.5h-8.5l-5 4 1-4H4Z" />
-      <path d="M12 8v3.8" />
-      <circle cx="12" cy="13.8" r=".5" fill="currentColor" />
+      <path
+        {...TINT}
+        d="m12 2.8 1.8 4.4 4.6-1.6-1.8 4.4 4.6 1.6-4.6 1.6 1.8 4.4-4.6-1.6L12 20.4l-1.8-4.4-4.6 1.6 1.8-4.4L2.8 11.6l4.6-1.6-1.8-4.4 4.6 1.6Z"
+      />
+      <path d="m12 2.8 1.8 4.4 4.6-1.6-1.8 4.4 4.6 1.6-4.6 1.6 1.8 4.4-4.6-1.6L12 20.4l-1.8-4.4-4.6 1.6 1.8-4.4L2.8 11.6l4.6-1.6-1.8-4.4 4.6 1.6Z" />
+      <path d="M12 8.6v3.4" />
+      <circle cx="12" cy="14.3" r=".9" fill="currentColor" stroke="none" />
     </>
   ),
 };
