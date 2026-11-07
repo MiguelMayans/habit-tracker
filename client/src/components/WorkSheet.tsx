@@ -39,6 +39,7 @@ export function WorkSheet({
   const [title, setTitle] = useState(work?.title ?? "");
   const [status, setStatus] = useState<WorkStatus>(work?.status ?? "active");
   const [progress, setProgress] = useState(work?.progress ?? "");
+  const [percent, setPercent] = useState<number | null>(work?.percent ?? null);
   const [rating, setRating] = useState<number | null>(work?.rating ?? null);
 
   return (
@@ -56,6 +57,7 @@ export function WorkSheet({
             title,
             status,
             progress,
+            percent,
             rating: status === "done" ? rating : null,
           });
         }}
@@ -110,14 +112,48 @@ export function WorkSheet({
             <Rating value={rating} onChange={setRating} size={14} />
           </div>
         ) : (
-          <input
-            className="field"
-            value={progress}
-            onChange={(e) => setProgress(e.target.value)}
-            placeholder={`Por dónde vas (opcional): ${PROGRESS_HINT[kind]}`}
-            aria-label="Progreso"
-            maxLength={80}
-          />
+          <>
+            <input
+              className="field"
+              value={progress}
+              onChange={(e) => setProgress(e.target.value)}
+              placeholder={`Por dónde vas (opcional): ${PROGRESS_HINT[kind]}`}
+              aria-label="Progreso"
+              maxLength={80}
+            />
+            <div>
+              <div className="mb-2 flex items-baseline justify-between">
+                <span className="field-label m-0">Cuánto llevas</span>
+                <span className="text-[14px] font-semibold tabular-nums">
+                  {percent === null ? (
+                    <span className="font-normal text-ink-faint">sin marcar</span>
+                  ) : (
+                    <>
+                      {percent} %
+                      <button
+                        type="button"
+                        onClick={() => setPercent(null)}
+                        className="link-quiet ml-3 text-[13px]"
+                      >
+                        Quitar
+                      </button>
+                    </>
+                  )}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={percent ?? 0}
+                onChange={(e) => setPercent(Number(e.target.value))}
+                aria-label="Porcentaje"
+                className="range"
+                style={{ "--value": `${percent ?? 0}%` } as React.CSSProperties}
+              />
+            </div>
+          </>
         )}
 
         {error && <p className="m-0 text-[14px] text-warn">{error}</p>}

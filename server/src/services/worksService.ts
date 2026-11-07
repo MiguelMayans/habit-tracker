@@ -35,6 +35,7 @@ export type EditableWork = {
   title?: string;
   status?: WorkStatus;
   progress?: string | null;
+  percent?: number | null;
   rating?: number | null;
 };
 

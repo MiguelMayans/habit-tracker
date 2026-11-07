@@ -61,6 +61,14 @@ function parseFields(body: Record<string, unknown>): EditableWork | string {
     out.progress = progress === "" ? null : progress;
   }
 
+  if (body.percent !== undefined) {
+    const v = body.percent;
+    if (v !== null && !(Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 100)) {
+      return "percent debe ser un entero de 0 a 100, o null";
+    }
+    out.percent = v as number | null;
+  }
+
   if (body.rating !== undefined) {
     const r = body.rating;
     if (r !== null && !(Number.isInteger(r) && (r as number) >= 1 && (r as number) <= 5)) {

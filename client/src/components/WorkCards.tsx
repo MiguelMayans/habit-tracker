@@ -23,6 +23,7 @@ export function ActiveWorkCard({
   onPick,
   onFinish,
   onOpen,
+  onPercent,
 }: {
   work: Work;
   menteId: number | null;
@@ -36,6 +37,8 @@ export function ActiveWorkCard({
   onPick: (intensity: Intensity) => void;
   onFinish: () => void;
   onOpen: () => void;
+  /** Sets how far through it is, from the dots. */
+  onPercent: (percent: number) => void;
 }) {
   const last = w.lastSessionAt
     ? `Última sesión: ${sinceLastActivity(w.lastSessionAt).text.toLowerCase()}`
@@ -72,6 +75,8 @@ export function ActiveWorkCard({
         )}
       </button>
 
+      <ProgressDots percent={w.percent} onSet={onPercent} />
+
       <div className="relative flex gap-2 px-5 pb-4">
         <button
           type="button"
@@ -99,6 +104,47 @@ export function ActiveWorkCard({
         </div>
       )}
     </li>
+  );
+}
+
+/**
+ * How far through a work is, as ten dots that fill in its colour, with the
+ * figure beside them. Tapping a dot sets it to that tenth (tapping the last
+ * filled one steps back one); the sheet has a slider for finer values. The
+ * dots fill one after another, so a change flows rather than jumps.
+ */
+function ProgressDots({
+  percent,
+  onSet,
+}: {
+  percent: number | null;
+  onSet: (percent: number) => void;
+}) {
+  const value = percent ?? 0;
+  const filled = Math.round(value / 10);
+
+  return (
+    <div className="relative flex items-center gap-3 px-5 pb-3">
+      <div className="dots" role="group" aria-label="Cuánto llevas">
+        {Array.from({ length: 10 }, (_, i) => {
+          const on = i < filled;
+          const target = i + 1 === filled ? i * 10 : (i + 1) * 10;
+          return (
+            <button
+              key={i}
+              type="button"
+              aria-label={`${(i + 1) * 10} %`}
+              data-on={on}
+              onClick={() => onSet(target)}
+              style={{ "--i": i } as React.CSSProperties}
+            />
+          );
+        })}
+      </div>
+      <span className="text-[13px] font-semibold text-ink-soft tabular-nums">
+        {percent === null ? "—" : `${value} %`}
+      </span>
+    </div>
   );
 }
 

@@ -183,6 +183,19 @@ export function LairPage() {
     }
   }
 
+  // The dots answer the tap at once; the request follows, and a failure
+  // puts the old value back.
+  async function onPercent(w: Work, percent: number) {
+    setRowError(null);
+    replace({ ...w, percent });
+    try {
+      replace(await updateWork(w.id, { percent }));
+    } catch (err) {
+      replace(w);
+      setRowError((err as Error).message);
+    }
+  }
+
   const [startingId, setStartingId] = useState<number | null>(null);
 
   async function onStart(w: Work) {
@@ -371,6 +384,7 @@ export function LairPage() {
                 onPick={(intensity) => onSession(w, intensity)}
                 onFinish={() => setToFinish(w)}
                 onOpen={() => openSheet(w)}
+                onPercent={(percent) => onPercent(w, percent)}
               />
             )}
           />

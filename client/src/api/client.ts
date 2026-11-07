@@ -365,6 +365,8 @@ export type Work = {
   status: WorkStatus;
   /** Free text: "T2 · E5", "pág. 140", "final boss". */
   progress: string | null;
+  /** How far through, 0..100, set by hand. Null: not tracked. */
+  percent: number | null;
   /** 1..5, set when it is finished. */
   rating: number | null;
   startedAt: string | null;
@@ -378,6 +380,7 @@ export type WorkFields = {
   title?: string;
   status?: WorkStatus;
   progress?: string | null;
+  percent?: number | null;
   rating?: number | null;
 };
 

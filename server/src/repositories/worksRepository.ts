@@ -18,6 +18,7 @@ export type WorkValues = Partial<
     | "title"
     | "status"
     | "progress"
+    | "percent"
     | "rating"
     | "startedAt"
     | "finishedAt"

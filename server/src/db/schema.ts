@@ -77,7 +77,8 @@ export const missions = sqliteTable("missions", {
  * - `kind` and `status` are stored in English: they are codes, not copy.
  * - `progress` is free text ("T2 · E5", "pág. 140", "final boss"): every kind
  *   measures progress differently, and a structured field per kind would be a
- *   form nobody fills in.
+ *   form nobody fills in. `percent` is the one number that fits them all, set
+ *   by hand, for the dots on the card.
  * - A session on a work logs an activity in Mente (docs/DESIGN.md: Mente is
  *   conscious leisure). `lastSessionAt` remembers the last one, for ordering
  *   and the "last session" line; the XP lives in the activity, as always.
@@ -90,6 +91,8 @@ export const works = sqliteTable("works", {
   title: text("title").notNull(),
   status: text("status", { enum: ["active", "queued", "done"] }).notNull(),
   progress: text("progress"),
+  /** How far through it is, 0..100, set by hand. Null: not tracked. */
+  percent: integer("percent"),
   rating: integer("rating"),
   startedAt: integer("started_at", { mode: "timestamp" }),
   finishedAt: integer("finished_at", { mode: "timestamp" }),
