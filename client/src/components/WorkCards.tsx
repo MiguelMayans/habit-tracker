@@ -4,6 +4,7 @@ import { KIND_COLOR, KIND_LABEL, SESSION_VERB } from "../lib/works";
 import { QuickIntensities } from "./QuickIntensities";
 import { Rating } from "./Rating";
 import { WorkKindIcon } from "./WorkIcons";
+import { vtName } from "../lib/viewTransition";
 
 /**
  * Something in play. The body opens it for editing; "He jugado hoy" unfolds
@@ -29,7 +30,7 @@ export function ActiveWorkCard({
   open: boolean;
   busy: boolean;
   gain: number | null;
-  /** Being finished: it fades out on its way to the shelf. */
+  /** Being finished: its buttons rest while the request runs. */
   finishing: boolean;
   onToggleSession: () => void;
   onPick: (intensity: Intensity) => void;
@@ -42,11 +43,13 @@ export function ActiveWorkCard({
 
   return (
     <li
-      className={`card-color ${finishing ? "leaving" : "settle"}`}
+      className="card-color settle"
       style={
         {
           "--delay": `${0.06 + index * 0.04}s`,
           "--accent": KIND_COLOR[w.kind],
+          // Named, so finishing it flies the card onto the shelf.
+          ...vtName(`work-${w.id}`),
         } as React.CSSProperties
       }
     >
@@ -120,6 +123,7 @@ export function QueuedWorkRow({
         {
           "--delay": `${0.08 + index * 0.03}s`,
           "--accent": KIND_COLOR[w.kind],
+          ...vtName(`work-${w.id}`),
         } as React.CSSProperties
       }
     >
@@ -163,7 +167,11 @@ export function TrophyTile({
     <li
       className="settle"
       style={
-        { "--delay": `${0.1 + index * 0.03}s`, "--accent": KIND_COLOR[w.kind] } as React.CSSProperties
+        {
+          "--delay": `${0.1 + index * 0.03}s`,
+          "--accent": KIND_COLOR[w.kind],
+          ...vtName(`work-${w.id}`),
+        } as React.CSSProperties
       }
     >
       <button

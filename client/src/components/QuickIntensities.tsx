@@ -22,7 +22,7 @@ export function QuickIntensities({
   onPick: (intensity: Intensity) => void;
 }) {
   return (
-    <div className="settle pt-1 pb-2">
+    <div className="pt-1 pb-2">
       <div className="grid grid-cols-3 gap-2">
         {INTENSITIES.map((i) => (
           <button

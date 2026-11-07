@@ -2,19 +2,16 @@ import { daypart } from "../lib/daypart";
 
 /**
  * The little mark beside the greeting: a sun by day, a crescent by night, in
- * terracotta. It turns into place once when the home opens, and then stays
- * still.
+ * terracotta. It turns into place when the home opens, and then breathes,
+ * very slowly.
  */
 export function DaypartMark({ className = "" }: { className?: string }) {
   const part = daypart();
   const night = part === "evening" || part === "night";
 
   return (
-    <svg
-      viewBox="0 0 32 32"
-      className={`sun-in shrink-0 text-cuerpo ${className}`}
-      aria-hidden="true"
-    >
+    <span className={`sun-in inline-grid shrink-0 ${className}`} aria-hidden="true">
+    <svg viewBox="0 0 32 32" className="sun-breathe h-full w-full text-cuerpo">
       {night ? (
         <path
           d="M20.5 5.5a10.5 10.5 0 1 0 6 18.6A12 12 0 0 1 20.5 5.5Z"
@@ -37,5 +34,6 @@ export function DaypartMark({ className = "" }: { className?: string }) {
         </g>
       )}
     </svg>
+    </span>
   );
 }

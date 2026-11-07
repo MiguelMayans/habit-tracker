@@ -4,6 +4,7 @@ import {
   deleteActivity,
   deleteWork,
   getCategories,
+  peek,
   getWorks,
   logWorkSession,
   updateWork,
@@ -15,6 +16,7 @@ import {
   type WorkKind,
 } from "../api/client";
 import { playSound } from "../lib/sound";
+import { withViewTransition } from "../lib/viewTransition";
 import { KIND_COLOR, KIND_LABEL, WORK_KINDS } from "../lib/works";
 import {
   ActiveWorkCard,
@@ -30,12 +32,7 @@ import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
 import { SectionTitle } from "../components/Layout";
 
-/** How long the finish takes to settle before the card moves to the shelf. */
-const FINISH_MS = 800;
 const MENTE = "var(--color-mente)";
-
-const reducedMotion = () =>
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** Newest first; null (never) last. */
 const desc = (a: string | null, b: string | null) =>
@@ -98,9 +95,14 @@ function KindGroups({
  * this screen's accent.
  */
 export function LairPage() {
-  const [works, setWorks] = useState<Work[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Painted from the last answer when there is one, refreshed underneath.
+  const [works, setWorks] = useState<Work[]>(() => peek<Work[]>("/works") ?? []);
+  const [categories, setCategories] = useState<Category[]>(
+    () => peek<Category[]>("/categories") ?? [],
+  );
+  const [loading, setLoading] = useState(
+    () => peek("/works") === undefined || peek("/categories") === undefined,
+  );
   const [error, setError] = useState<string | null>(null);
 
 
@@ -169,14 +171,11 @@ export function LairPage() {
     setRowError(null);
     setSessionOpen(null);
     setFinishing(w.id);
-    playSound("done");
-    const stamped = new Promise((r) =>
-      window.setTimeout(r, reducedMotion() ? 0 : FINISH_MS),
-    );
     try {
       const updated = await updateWork(w.id, { status: "done", rating });
-      await stamped;
-      replace(updated);
+      playSound("done");
+      // The card flies to its place on the shelf of finished things.
+      withViewTransition(() => replace(updated));
     } catch (err) {
       setRowError((err as Error).message);
     } finally {
@@ -190,7 +189,8 @@ export function LairPage() {
     setRowError(null);
     setStartingId(w.id);
     try {
-      replace(await updateWork(w.id, { status: "active" }));
+      const started = await updateWork(w.id, { status: "active" });
+      withViewTransition(() => replace(started));
     } catch (err) {
       setRowError((err as Error).message);
     } finally {
@@ -216,10 +216,11 @@ export function LairPage() {
     setSaving(true);
     try {
       if (editing) {
-        replace(await updateWork(editing.id, fields));
+        const saved = await updateWork(editing.id, fields);
+        withViewTransition(() => replace(saved));
       } else {
         const w = await createWork(fields);
-        setWorks((prev) => [...prev, w]);
+        withViewTransition(() => setWorks((prev) => [...prev, w]));
       }
       setEditing(undefined);
     } catch (err) {
@@ -235,7 +236,9 @@ export function LairPage() {
     setDeleting(true);
     try {
       await deleteWork(toDelete.id);
-      setWorks((prev) => prev.filter((x) => x.id !== toDelete.id));
+      withViewTransition(() =>
+        setWorks((prev) => prev.filter((x) => x.id !== toDelete.id)),
+      );
       setToDelete(null);
       setEditing(undefined);
     } catch (err) {

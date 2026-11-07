@@ -384,12 +384,21 @@ body::after {
     bottom: max(14px, env(safe-area-inset-bottom));
     left: 50%;
     z-index: 40;
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    display: flex;
     align-items: center;
+    gap: 10px;
     width: min(calc(100% - 32px), 400px);
-    padding: 6px;
     translate: -50% 0;
+  }
+
+  /* The three places, on frosted glass: what scrolls beneath shows through,
+     blurred. */
+  .nav-pill {
+    display: grid;
+    flex: 1;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    padding: 5px;
     border-radius: 999px;
     border: 1px solid var(--color-line);
     background: rgb(251 248 242 / 0.62);
@@ -416,7 +425,14 @@ body::after {
     color: var(--color-ink-faint);
     font-size: 11px;
     font-weight: 600;
-    transition: color 0.15s ease;
+    transition:
+      color 0.25s ease,
+      background-color 0.25s ease,
+      transform 0.25s cubic-bezier(0.34, 1.5, 0.64, 1);
+  }
+
+  .nav-tab:active {
+    transform: scale(0.94);
   }
 
   .nav-tab[aria-current="page"] {
@@ -426,18 +442,21 @@ body::after {
 
   .nav-log {
     display: grid;
+    flex-shrink: 0;
     place-items: center;
-    width: 52px;
-    height: 52px;
-    margin: 0 10px;
+    width: 60px;
+    height: 60px;
     border-radius: 999px;
     background: var(--color-ink);
     color: var(--color-paper);
-    transition: transform 0.15s ease;
+    box-shadow: 0 12px 26px -10px rgb(46 42 37 / 0.55);
+    transition:
+      transform 0.25s cubic-bezier(0.34, 1.5, 0.64, 1),
+      opacity 0.2s ease;
   }
 
   .nav-log:active {
-    transform: scale(0.95);
+    transform: scale(0.92);
   }
 
   .nav-log[aria-current="page"] {
@@ -536,18 +555,6 @@ body::after {
     animation: sheet-in 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 
-  /* A done item leaving the list: it fades and folds away. */
-  @keyframes leave {
-    to {
-      opacity: 0;
-      transform: translateX(12px);
-    }
-  }
-
-  .leaving {
-    animation: leave 0.35s 0.45s ease-in forwards;
-  }
-
   /* Marks whatever was just created, so a new row at the end of a list is
      noticed: a soft glow that fades. */
   @keyframes highlight {
@@ -567,6 +574,72 @@ body::after {
 
   .no-scrollbar::-webkit-scrollbar {
     display: none;
+  }
+
+  /* The masthead's hairline: thin ink fading out at both ends, with a small
+     terracotta dot at its centre. */
+  .masthead-rule {
+    position: relative;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(46 42 37 / 0.28) 12%,
+      rgb(46 42 37 / 0.28) calc(50% - 12px),
+      transparent calc(50% - 12px),
+      transparent calc(50% + 12px),
+      rgb(46 42 37 / 0.28) calc(50% + 12px),
+      rgb(46 42 37 / 0.28) 88%,
+      transparent
+    );
+  }
+
+  .masthead-rule > i {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--color-cuerpo);
+    translate: -50% -50%;
+  }
+
+  /* Panels that open by growing to their height and close by folding away
+     (Collapse.tsx), instead of popping in and out. */
+  .collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows 0.38s cubic-bezier(0.2, 0.7, 0.2, 1),
+      opacity 0.25s ease;
+  }
+
+  .collapse[data-open="true"] {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  .collapse > div {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* The greeting's sun breathes, very slowly: the one thing on the home
+     that is alive on its own, like a plant on a desk. */
+  @keyframes breathe-sun {
+    0%,
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+    50% {
+      transform: scale(1.08) rotate(12deg);
+    }
+  }
+
+  .sun-breathe {
+    animation: breathe-sun 7s ease-in-out infinite;
   }
 
   /* The greeting's sun turns into place once, on arrival. */
@@ -741,6 +814,80 @@ body::after {
     user-select: none;
     -webkit-touch-callout: none;
   }
+}
+
+/* ---- Flow: View Transitions (lib/viewTransition.ts) ---- */
+
+/* The page itself: going deeper it drifts in from the right, coming back
+   from the left, between tabs it cross-fades. Short and eased out — a page
+   turning, not a slide show. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.38s;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+html[data-nav="forward"]::view-transition-old(root) {
+  animation-name: page-out-left;
+}
+html[data-nav="forward"]::view-transition-new(root) {
+  animation-name: page-in-right;
+}
+html[data-nav="back"]::view-transition-old(root) {
+  animation-name: page-out-right;
+}
+html[data-nav="back"]::view-transition-new(root) {
+  animation-name: page-in-left;
+}
+
+/* Inside a screen (a mission moving to "done"), the page stays put: only
+   the named elements travel. */
+html[data-nav="list"]::view-transition-old(root),
+html[data-nav="list"]::view-transition-new(root) {
+  animation: none;
+}
+
+@keyframes page-out-left {
+  to {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+@keyframes page-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+@keyframes page-out-right {
+  to {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+@keyframes page-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+/* Named elements — a category card growing into its header, a mission
+   sliding to its new place — glide with a soft landing. */
+::view-transition-group(*) {
+  animation-duration: 0.48s;
+  animation-timing-function: cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* The bottom bar is the same on every screen: it does not move. */
+::view-transition-group(nav) {
+  animation: none;
+}
+
+/* While a transition runs, the entrances are its job: the per-element
+   "settle" would fight the page's own movement. */
+html:active-view-transition .settle {
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

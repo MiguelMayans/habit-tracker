@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { RecentActivity } from "../api/client";
 import { dayKey, shortRelativeDate } from "../lib/dates";
 import { XP_BY_INTENSITY } from "../lib/intensity";
+import { useCountUp } from "../lib/useCountUp";
 
 const DAYS = 30;
 
@@ -37,6 +38,8 @@ export function RhythmStrip({
   todayXp: number;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
+  const shownXp = useCountUp(todayXp);
+  const shownStreak = useCountUp(streak);
 
   const xpByDay = new Map<string, number>();
   const countByDay = new Map<string, number>();
@@ -84,7 +87,7 @@ export function RhythmStrip({
         <div>
           <p className="m-0 text-[12px] font-semibold tracking-wide text-paper/60">Hoy</p>
           <p className="display mt-1 mb-0 text-[36px] leading-none">
-            {todayXp > 0 ? `+${todayXp} XP` : "Aún nada"}
+            {todayXp > 0 ? `+${shownXp} XP` : "Aún nada"}
           </p>
         </div>
         {streak > 0 && (
@@ -96,7 +99,7 @@ export function RhythmStrip({
                   d="M12.6 2.5c.4 3-1.6 4.6-3 6.3C8 10.6 7 12.2 7 14.6A5 5 0 0 0 12 19.5a5 5 0 0 0 5-5c0-2.2-1-3.6-1.8-4.6-.3 1.3-1 2.1-1.9 2.4.6-3.6-.2-6.6-.7-9.8Z"
                 />
               </svg>
-              <b className="display text-[36px] leading-none font-medium">{streak}</b>
+              <b className="display text-[36px] leading-none font-medium">{shownStreak}</b>
             </p>
             <p className="mt-1 mb-0 text-[12px] text-paper/60">
               {streak === 1 ? "día seguido" : "días seguidos"}

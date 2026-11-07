@@ -7,6 +7,8 @@ import {
   getActivitiesByCategory,
   getCategory,
   getFocusesByCategory,
+  peek,
+  peekCategory,
   updateFocus,
   type Activity,
   type Category,
@@ -29,6 +31,8 @@ import { ActivityRow } from "../components/ActivityRow";
 import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
 import { BackLink, SectionTitle } from "../components/Layout";
+import { Collapse } from "../components/Collapse";
+import { vtName } from "../lib/viewTransition";
 
 /** How many activities are listed before cutting off. */
 const VISIBLE_HISTORY = 8;
@@ -137,15 +141,17 @@ function FocusTile({
         </button>
       </div>
 
-      {expanded && !f.frozen && (
-        <div className="px-5 pb-3">
-          <QuickIntensities
-            categoryId={categoryId}
-            focusId={f.id}
-            busy={busy}
-            onPick={onPick}
-          />
-        </div>
+      {!f.frozen && (
+        <Collapse open={expanded}>
+          <div className="px-5 pb-3">
+            <QuickIntensities
+              categoryId={categoryId}
+              focusId={f.id}
+              busy={busy}
+              onPick={onPick}
+            />
+          </div>
+        </Collapse>
       )}
     </li>
   );
@@ -155,9 +161,19 @@ export function CategoryDetailPage() {
   const { id } = useParams();
   const categoryId = Number(id);
 
-  const [category, setCategory] = useState<Category | null>(null);
-  const [focuses, setFocuses] = useState<Focus[]>([]);
-  const [loading, setLoading] = useState(true);
+  // The header paints at once from what the home already knew — which is
+  // also what the card's transition lands on — and the lists follow.
+  const [category, setCategory] = useState<Category | null>(
+    () => peekCategory(categoryId) ?? null,
+  );
+  const [focuses, setFocuses] = useState<Focus[]>(
+    () => peek<Focus[]>(`/categories/${categoryId}/focuses`) ?? [],
+  );
+  const [loading, setLoading] = useState(
+    () =>
+      peek(`/categories/${categoryId}/focuses`) === undefined ||
+      peek(`/categories/${categoryId}/activities`) === undefined,
+  );
   const [error, setError] = useState<string | null>(null);
 
   // From the creation form, kept apart from the loading error so a failure to
@@ -168,7 +184,9 @@ export function CategoryDetailPage() {
   // The newly created focus is flagged in the list for a moment: appearing at
   // the far end of the scroll is indistinguishable from nothing happening.
   const [newFocusId, setNewFocusId] = useState<number | null>(null);
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activities, setActivities] = useState<Activity[]>(
+    () => peek<Activity[]>(`/categories/${categoryId}/activities`) ?? [],
+  );
 
   // Tapping a frozen focus pins it here as the parent; the form below then
   // creates its child instead of a standalone focus.
@@ -411,7 +429,7 @@ export function CategoryDetailPage() {
     return (
       <p className="px-5 py-10 text-warn">El id de la categoría no es válido</p>
     );
-  if (loading)
+  if (loading && !category)
     return (
       <div className="px-5 pt-16 pb-32">
         <div className="skeleton mb-8 h-24" />
@@ -435,17 +453,22 @@ export function CategoryDetailPage() {
     >
       <BackLink />
 
-      <header className="card-color settle mt-5 mb-9 px-5 pt-6 pb-5">
+      <header className="card-color mt-5 mb-9 px-5 pt-6 pb-5" style={vtName(`cat-${category.id}`)}>
         <CategoryIcon slug={category.slug} strokeWidth={1.4} className="watermark !h-[190px] !w-[190px]" />
 
         <div className="relative flex items-start gap-4">
-          <span className="icon-solid h-14 w-14">
+          <span className="icon-solid h-14 w-14" style={vtName(`cat-icon-${category.id}`)}>
             <CategoryIcon slug={category.slug} strokeWidth={1.8} className="h-7 w-7" />
           </span>
-          <h1 className="display m-0 mt-1.5 flex-1 text-[36px] leading-none">
-            {category.name}
-          </h1>
-          <span className="grid justify-items-end">
+          <div className="mt-1.5 flex-1">
+            <h1
+              className="display m-0 w-fit text-[36px] leading-none"
+              style={vtName(`cat-name-${category.id}`)}
+            >
+              {category.name}
+            </h1>
+          </div>
+          <span className="grid justify-items-end" style={vtName(`cat-level-${category.id}`)}>
             <span className="text-[11px] font-medium tracking-wide text-ink-soft">Nivel</span>
             <b className="level-big text-[52px]">{category.level}</b>
           </span>
@@ -469,7 +492,9 @@ export function CategoryDetailPage() {
         <p className="mt-0 mb-4 text-[14px] text-warn">{quick.error}</p>
       )}
 
-      {focuses.length === 0 ? (
+      {loading ? (
+        <SkeletonCards n={2} height="96px" />
+      ) : focuses.length === 0 ? (
         <p className="settle m-0 text-[15px] text-ink-soft">
           Esta categoría todavía no tiene focos.
         </p>
@@ -619,7 +644,9 @@ export function CategoryDetailPage() {
       {/* ---- History ---- */}
       <SectionTitle className="mt-11">Historial</SectionTitle>
 
-      {activities.length === 0 ? (
+      {loading ? (
+        <SkeletonCards n={1} height="180px" />
+      ) : activities.length === 0 ? (
         <p className="settle m-0 text-[15px] text-ink-soft">
           Todavía no has registrado nada en esta categoría.
         </p>

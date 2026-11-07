@@ -15,6 +15,8 @@ import { CategoryIcon } from "./CategoryIcon";
 import { LevelNumber } from "./LevelNumber";
 import { QuickIntensities } from "./QuickIntensities";
 import { ResultModal } from "./ResultModal";
+import { Collapse } from "./Collapse";
+import { vtName } from "../lib/viewTransition";
 
 /**
  * A category on the home: its icon, name, level and a thin bar, and its
@@ -80,25 +82,32 @@ export function CategoryCard({
     <li
       className="card-color settle"
       style={
-        { "--accent": accent, "--delay": `${0.05 + i * 0.05}s` } as React.CSSProperties
+        {
+          "--accent": accent,
+          "--delay": `${0.05 + i * 0.05}s`,
+          // The card grows into its category's header (CategoryDetailPage).
+          ...vtName(`cat-${c.id}`),
+        } as React.CSSProperties
       }
     >
       <CategoryIcon slug={c.slug} strokeWidth={1.4} className="watermark" />
 
       <Link to={`/categories/${c.id}`} className="press-card relative block px-5 pt-5 pb-4">
         <div className="flex items-start gap-3.5">
-          <span className="icon-solid mt-0.5 h-11 w-11">
+          <span className="icon-solid mt-0.5 h-11 w-11" style={vtName(`cat-icon-${c.id}`)}>
             <CategoryIcon slug={c.slug} strokeWidth={1.9} className="h-[22px] w-[22px]" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="display m-0 text-[24px] leading-tight">{c.name}</h2>
+            <h2 className="display m-0 w-fit text-[24px] leading-tight" style={vtName(`cat-name-${c.id}`)}>
+              {c.name}
+            </h2>
             <p
               className={`mt-0.5 mb-0 text-[13px] ${last.cold ? "font-medium text-warn" : "text-ink-soft"}`}
             >
               {last.text}
             </p>
           </div>
-          <span className="grid justify-items-end">
+          <span className="grid justify-items-end" style={vtName(`cat-level-${c.id}`)}>
             <span className="text-[11px] font-medium tracking-wide text-ink-soft">Nivel</span>
             <b className="level-big text-[40px]">{c.level}</b>
           </span>
@@ -145,8 +154,8 @@ export function CategoryCard({
         </button>
       )}
 
-      {isOpen && (
-        <div id={panelId} className="relative px-5 pb-5">
+      <Collapse open={isOpen} id={panelId}>
+        <div className="relative px-5 pb-5">
           {loadingFocuses && (
             <div className="grid gap-3 pt-1" aria-label="Cargando focos">
               <div className="skeleton h-10 rounded-xl" />
@@ -186,7 +195,7 @@ export function CategoryCard({
             </ul>
           )}
         </div>
-      )}
+      </Collapse>
 
       {/* Only appears when the log raised a level: see useQuickLog. */}
       {quick.result &&
@@ -274,13 +283,15 @@ function HomeFocusRow({
         </button>
       )}
 
-      {expanded && !f.frozen && (
-        <QuickIntensities
-          categoryId={categoryId}
-          focusId={f.id}
-          busy={busy}
-          onPick={onPick}
-        />
+      {!f.frozen && (
+        <Collapse open={expanded}>
+          <QuickIntensities
+            categoryId={categoryId}
+            focusId={f.id}
+            busy={busy}
+            onPick={onPick}
+          />
+        </Collapse>
       )}
     </li>
   );

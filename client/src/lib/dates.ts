@@ -74,9 +74,13 @@ const WEEKDAYS = [
   "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado",
 ];
 
-/** The date as the home says it: "Sábado, 7 de noviembre". */
-export function longDate(d: Date): string {
-  return `${WEEKDAYS[d.getDay()]}, ${d.getDate()} de ${MONTHS[d.getMonth()].toLowerCase()}`;
+/** The pieces of a date as the home's masthead sets them. */
+export function dateParts(d: Date): { day: number; weekday: string; month: string } {
+  return {
+    day: d.getDate(),
+    weekday: WEEKDAYS[d.getDay()],
+    month: MONTHS[d.getMonth()].toLowerCase(),
+  };
 }
 
 /**

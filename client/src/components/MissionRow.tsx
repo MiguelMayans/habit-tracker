@@ -9,6 +9,7 @@ import {
   MISSION_XP,
 } from "../lib/missions";
 import { MissionKindIcon } from "./MissionIcons";
+import { vtName } from "../lib/viewTransition";
 
 /**
  * One mission. Two targets, two jobs: the circle on the left ticks it off,
@@ -29,7 +30,7 @@ export function MissionRow({
   mission: Mission;
   category: Category | undefined;
   index: number;
-  /** Being ticked off: the circle fills, the title crosses out, it leaves. */
+  /** Being ticked off: the circle fills and the title crosses out. */
   completing: boolean;
   /** XP just earned, shown for a moment. */
   gain: number | null;
@@ -46,13 +47,15 @@ export function MissionRow({
 
   return (
     <li
-      className={`card flex items-start ${accent ? "card-tinted" : ""} ${
-        completing ? "leaving" : "settle"
-      } ${highlighted ? "highlight" : ""}`}
+      className={`card settle flex items-start ${accent ? "card-tinted" : ""} ${
+        highlighted ? "highlight" : ""
+      }`}
       style={
         {
           "--delay": `${0.04 + index * 0.03}s`,
           "--accent": accent ?? undefined,
+          // Its name lets it glide to its new place when it is ticked off.
+          ...vtName(`mission-${m.id}`),
         } as React.CSSProperties
       }
     >

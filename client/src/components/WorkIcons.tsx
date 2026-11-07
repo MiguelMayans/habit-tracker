@@ -92,8 +92,19 @@ export function WorkKindIcon({
   return <Svg className={className}>{KIND_STROKES[kind]}</Svg>;
 }
 
-/** The Lair in the nav: a cosy den — a house with a rounded doorway. */
+/** The Refuge in the nav: a steaming mug — a quiet while of your own. */
 export function LairGlyph({ className }: { className?: string }) {
+  return (
+    <Svg className={className} strokeWidth={1.8}>
+      <path d="M4.5 10h12v5.5a4.5 4.5 0 0 1-4.5 4.5H9a4.5 4.5 0 0 1-4.5-4.5Z" />
+      <path d="M16.5 11.5h1.2a2.3 2.3 0 0 1 0 4.6h-1.5" />
+      <path d="M8.5 3.5c-.8 1 .8 1.8 0 3M12.5 3.5c-.8 1 .8 1.8 0 3" />
+    </Svg>
+  );
+}
+
+/** Home in the nav: a house. */
+export function HomeGlyph({ className }: { className?: string }) {
   return (
     <Svg className={className} strokeWidth={1.8}>
       <path d="M4 10.5 12 4l8 6.5V20H4Z" />

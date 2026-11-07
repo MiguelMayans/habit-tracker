@@ -30,9 +30,11 @@ export function ActivityRow({
     activity.description !== ""
       ? activity.description
       : (focusName ?? INTENSITY_LABEL[activity.intensity]);
+  // The intensity goes in the detail line unless it is already the title.
+  const titleIsIntensity = activity.description === "" && focusName === null;
   const detail = [
     activity.description !== "" ? focusName : null,
-    INTENSITY_LABEL[activity.intensity],
+    titleIsIntensity ? null : INTENSITY_LABEL[activity.intensity],
     showDate ? shortRelativeDate(activity.date) : null,
   ]
     .filter(Boolean)

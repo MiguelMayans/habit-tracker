@@ -121,6 +121,19 @@ export type UndoActivityResult = {
  * The backend returns errors as { message }. They are rethrown as an Error
  * carrying that text, so the pages can show it verbatim.
  */
+/**
+ * The last answer to every GET, by path. Screens paint from it straight away
+ * and refresh underneath, so going back to a screen shows it at once instead
+ * of a skeleton — and a screen transition has something real to land on.
+ * It lives in memory only: a reload starts clean.
+ */
+const lastGet = new Map<string, unknown>();
+
+/** What the last GET to `path` returned, if any. */
+export function peek<T>(path: string): T | undefined {
+  return lastGet.get(path) as T | undefined;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
 
@@ -167,7 +180,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(body?.message ?? `Error ${response.status} en ${path}`);
   }
 
-  return response.json() as Promise<T>;
+  const data = (await response.json()) as T;
+  if (!init?.method || init.method === "GET") lastGet.set(path, data);
+  return data;
 }
 
 export function getCategories(): Promise<Category[]> {
@@ -176,6 +191,17 @@ export function getCategories(): Promise<Category[]> {
 
 export function getCategory(id: number): Promise<Category> {
   return request<Category>(`/categories/${id}`);
+}
+
+/**
+ * A category as last seen: its own screen's answer, or failing that its row
+ * in the home's list — enough to paint the header while the rest loads.
+ */
+export function peekCategory(id: number): Category | undefined {
+  return (
+    peek<Category>(`/categories/${id}`) ??
+    peek<Category[]>("/categories")?.find((c) => c.id === id)
+  );
 }
 
 export function getFocusesByCategory(categoryId: number): Promise<Focus[]> {

@@ -4,6 +4,7 @@ import {
   createMission,
   deleteMission,
   getCategories,
+  peek,
   getMissions,
   reopenMission,
   updateMission,
@@ -18,6 +19,7 @@ import {
   type MissionGroup,
 } from "../lib/missions";
 import { playSound } from "../lib/sound";
+import { reducedMotion, withViewTransition } from "../lib/viewTransition";
 import { MissionRow } from "../components/MissionRow";
 import { MissionSheet } from "../components/MissionSheet";
 import { CategoryOptions, WhenPicker } from "../components/MissionOptions";
@@ -27,11 +29,8 @@ import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
 import { SectionTitle } from "../components/Layout";
 
-/** How long the tick and the fade take before the row moves to "done". */
-const COMPLETE_MS = 800;
-
-const reducedMotion = () =>
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+/** How long the tick shows before the row travels down to "done". */
+const COMPLETE_MS = 650;
 
 /** The open sections, in order of urgency. Late ones say so in terracotta. */
 const SECTIONS: {
@@ -60,9 +59,14 @@ function byDueThenCreated(a: Mission, b: Mission): number {
  * there (docs/DESIGN.md).
  */
 export function MissionsPage() {
-  const [missions, setMissions] = useState<Mission[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Painted from the last answer when there is one, refreshed underneath.
+  const [missions, setMissions] = useState<Mission[]>(() => peek<Mission[]>("/missions") ?? []);
+  const [categories, setCategories] = useState<Category[]>(
+    () => peek<Category[]>("/categories") ?? [],
+  );
+  const [loading, setLoading] = useState(
+    () => peek("/missions") === undefined || peek("/categories") === undefined,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -106,7 +110,7 @@ export function MissionsPage() {
 
     try {
       const m = await createMission({ title, dueDate: due, categoryId });
-      setMissions((prev) => [...prev, m]);
+      withViewTransition(() => setMissions((prev) => [...prev, m]));
       setNewId(m.id);
       setTitle("");
       setDue(null);
@@ -146,7 +150,8 @@ export function MissionsPage() {
     if (m.completedAt !== null) {
       setBusyId(m.id);
       try {
-        replace((await reopenMission(m.id)).mission);
+        const { mission } = await reopenMission(m.id);
+        withViewTransition(() => replace(mission));
       } catch (err) {
         setRowError((err as Error).message);
       } finally {
@@ -166,7 +171,12 @@ export function MissionsPage() {
       const res = await completeMission(m.id);
       if (res.activity) markCompleting(m.id, res.activity.xpGained);
       await settled;
-      replace(res.mission);
+      // The row glides to its place among the done ones (or out, if that
+      // section is folded) while the rest close the gap.
+      withViewTransition(() => {
+        replace(res.mission);
+        markCompleting(m.id, undefined);
+      });
       // The celebration only where it is earned, as with any quick log.
       if (res.activity?.category.leveledUp) {
         setResult({ res: res.activity, missionId: m.id });
@@ -206,7 +216,9 @@ export function MissionsPage() {
     setDeleting(true);
     try {
       await deleteMission(toDelete.id);
-      setMissions((prev) => prev.filter((x) => x.id !== toDelete.id));
+      withViewTransition(() =>
+        setMissions((prev) => prev.filter((x) => x.id !== toDelete.id)),
+      );
       setToDelete(null);
       setEditing(null);
     } catch (err) {
@@ -352,7 +364,7 @@ export function MissionsPage() {
         <section className="mt-2">
           <button
             type="button"
-            onClick={() => setDoneOpen((o) => !o)}
+            onClick={() => withViewTransition(() => setDoneOpen((o) => !o))}
             aria-expanded={doneOpen}
             className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-ink-soft"
           >

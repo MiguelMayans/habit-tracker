@@ -4,6 +4,7 @@ import {
   createActivity,
   deleteActivity,
   getCategories,
+  peek,
   getFocusesByCategory,
   updateFocus,
   type Category,
@@ -81,7 +82,9 @@ function CategoryPick({
 export function LogActivityPage() {
   const [searchParams] = useSearchParams();
 
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(
+    () => peek<Category[]>("/categories") ?? [],
+  );
   const [focuses, setFocuses] = useState<Focus[]>([]);
 
   // Incoming context: arriving from a category or a focus, they come already
