@@ -15,6 +15,8 @@ import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
 import { SoundToggle } from "../components/SoundToggle";
 import { DaypartMark } from "../components/DaypartMark";
+import { AutumnLeaves } from "../components/AutumnLeaves";
+import { season } from "../lib/season";
 
 // Enough for a streak of months: a streak breaks the moment a day is missing,
 // so fetching more would only serve unrealistically long ones.
@@ -80,6 +82,8 @@ export function CategoriesPage() {
 
   return (
     <div className="px-5 pt-10 pb-32">
+      <AutumnLeaves />
+
       <header className="settle mb-7">
         {/* The masthead: the app's name, small and in italic serif, over a
             hairline with a terracotta dot — a magazine's, not an app bar's. */}
@@ -90,7 +94,16 @@ export function CategoriesPage() {
           <SoundToggle />
         </div>
         <div className="masthead-rule mt-2.5" aria-hidden="true">
-          <i />
+          {season(now) === "autumn" ? (
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M12 2.5C6.5 6 4.6 11.6 6.4 17.6c3.2 2.1 8.6 1.2 11.3-3.4 2-3.6.6-8.4-5.7-11.7Z"
+                fill="var(--color-cuerpo)"
+              />
+            </svg>
+          ) : (
+            <i />
+          )}
         </div>
 
         {/* The date set like a cover line: the day as a big figure, the
@@ -120,9 +133,9 @@ export function CategoriesPage() {
 
       <RhythmStrip activities={recent} streak={streak} todayXp={todayXp} />
 
-      <ul className="m-0 grid list-none gap-4 p-0">
-        {categories.map((c, i) => (
-          <CategoryCard key={c.id} category={c} index={i} onLogged={load} />
+      <ul className="m-0 grid list-none gap-2.5 p-0">
+        {categories.map((c) => (
+          <CategoryCard key={c.id} category={c} onLogged={load} />
         ))}
       </ul>
     </div>

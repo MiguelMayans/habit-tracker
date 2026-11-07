@@ -73,3 +73,4 @@ docs/DESIGN.md.
   Mismas pantallas, mismas reglas. Ver «Dirección visual» en docs/DESIGN.md.
 - [x] Segunda vuelta: tarjetas de color con marca de agua, tarjeta «Hoy» oscura, serif, luz de la hora, confeti al subir de nivel. «Guarida» pasa a «Refugio».
 - [x] Flujo: transiciones entre pantallas (la tarjeta crece hasta su detalle), listas que se reordenan solas, desplegables que crecen, cifras que cuentan. Cabecera de revista en la home, Inicio en la barra, icono nuevo.
+- [x] Tercera vuelta: menos parpadeo (fundido corto, entradas solo al abrir), «Hoy» compacto, categorías en paneles de color con anillo de progreso, iconos a dos tonos, guiño de otoño.

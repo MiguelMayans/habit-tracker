@@ -17,12 +17,11 @@ export const reducedMotion = () =>
 export function withViewTransition(
   update: () => void,
   /**
-   * What kind of change this is, for index.css: a screen going deeper
-   * (`forward`) or back, a swap between tabs (`fade`), or something moving
-   * inside the same screen (`list`), where the page itself stays put and
-   * only the named elements travel.
+   * What kind of change this is, for index.css: a new screen (`page`, the
+   * page cross-fades) or something moving inside the same screen (`list`,
+   * the page stays put and only the named elements travel).
    */
-  kind: "forward" | "back" | "fade" | "list" = "list",
+  kind: "page" | "list" = "list",
 ) {
   if (!("startViewTransition" in document) || reducedMotion()) {
     update();
@@ -32,7 +31,13 @@ export function withViewTransition(
   document.startViewTransition(() => flushSync(update));
 }
 
-/** A `view-transition-name`, as an inline style. */
-export function vtName(name: string): React.CSSProperties {
-  return { viewTransitionName: name } as React.CSSProperties;
+/**
+ * A `view-transition-name`, as an inline style. `row` marks something that
+ * travels within a list and must not be stretched on the way (index.css).
+ */
+export function vtName(name: string, kind?: "row"): React.CSSProperties {
+  return {
+    viewTransitionName: name,
+    ...(kind ? { viewTransitionClass: kind } : {}),
+  } as React.CSSProperties;
 }

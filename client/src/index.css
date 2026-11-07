@@ -605,9 +605,82 @@ body::after {
     translate: -50% -50%;
   }
 
+  /* A category on the home (CategoryCard.tsx): a soft panel in its own
+     colour, no border and no shadow — a band of colour on the page rather
+     than a box sitting on it. */
+  .cat-panel {
+    position: relative;
+    overflow: hidden;
+    padding: 14px 16px;
+    border-radius: 22px;
+    background: linear-gradient(
+      100deg,
+      color-mix(in oklab, var(--accent) 14%, var(--color-sand)),
+      color-mix(in oklab, var(--accent) 6%, var(--color-sand))
+    );
+  }
+
+  /* Its icon, large and faint, peeking out of the bottom corner. */
+  .cat-panel-mark {
+    position: absolute;
+    right: -14px;
+    bottom: -22px;
+    width: 96px;
+    height: 96px;
+    color: var(--accent);
+    opacity: 0.13;
+    rotate: -12deg;
+    pointer-events: none;
+  }
+
+  /* Autumn leaves (AutumnLeaves.tsx): each drifts down from above the
+     screen, swaying and turning, and fades before the bottom. */
+  .leaf {
+    position: absolute;
+    top: -30px;
+    opacity: 0;
+    animation: leaf-fall var(--time) var(--delay) cubic-bezier(0.4, 0, 0.6, 1) forwards;
+  }
+
+  @keyframes leaf-fall {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) rotate(0deg);
+    }
+    10% {
+      opacity: 0.85;
+    }
+    35% {
+      transform: translate(var(--sway), 28vh) rotate(70deg);
+    }
+    65% {
+      transform: translate(calc(var(--sway) * -0.6), 58vh) rotate(150deg);
+    }
+    85% {
+      opacity: 0.6;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(calc(var(--sway) * 0.4), 82vh) rotate(220deg);
+    }
+  }
+
+  /* The masthead's centre in autumn: a small leaf instead of the dot. */
+  .masthead-rule > svg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 13px;
+    height: 13px;
+    translate: -50% -50%;
+    rotate: -30deg;
+  }
+
   /* Panels that open by growing to their height and close by folding away
-     (Collapse.tsx), instead of popping in and out. */
-  .collapse {
+     (Collapse.tsx), instead of popping in and out. Not called `.collapse`:
+     Tailwind ships a `collapse` utility (visibility: collapse) that wins
+     over this layer and hid the panel even when open. */
+  .fold {
     display: grid;
     grid-template-rows: 0fr;
     opacity: 0;
@@ -616,12 +689,12 @@ body::after {
       opacity 0.25s ease;
   }
 
-  .collapse[data-open="true"] {
+  .fold[data-open="true"] {
     grid-template-rows: 1fr;
     opacity: 1;
   }
 
-  .collapse > div {
+  .fold > div {
     min-height: 0;
     overflow: hidden;
   }
@@ -818,26 +891,13 @@ body::after {
 
 /* ---- Flow: View Transitions (lib/viewTransition.ts) ---- */
 
-/* The page itself: going deeper it drifts in from the right, coming back
-   from the left, between tabs it cross-fades. Short and eased out — a page
-   turning, not a slide show. */
+/* The page itself: a short cross-fade, nothing more. It used to drift in
+   from the side as well, and with every line of text sliding on every
+   screen change the app felt jittery rather than calm. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.38s;
-  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-
-html[data-nav="forward"]::view-transition-old(root) {
-  animation-name: page-out-left;
-}
-html[data-nav="forward"]::view-transition-new(root) {
-  animation-name: page-in-right;
-}
-html[data-nav="back"]::view-transition-old(root) {
-  animation-name: page-out-right;
-}
-html[data-nav="back"]::view-transition-new(root) {
-  animation-name: page-in-left;
+  animation-duration: 0.22s;
+  animation-timing-function: ease-out;
 }
 
 /* Inside a screen (a mission moving to "done"), the page stays put: only
@@ -845,31 +905,6 @@ html[data-nav="back"]::view-transition-new(root) {
 html[data-nav="list"]::view-transition-old(root),
 html[data-nav="list"]::view-transition-new(root) {
   animation: none;
-}
-
-@keyframes page-out-left {
-  to {
-    opacity: 0;
-    transform: translateX(-28px);
-  }
-}
-@keyframes page-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(28px);
-  }
-}
-@keyframes page-out-right {
-  to {
-    opacity: 0;
-    transform: translateX(28px);
-  }
-}
-@keyframes page-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-28px);
-  }
 }
 
 /* Named elements — a category card growing into its header, a mission
@@ -884,9 +919,24 @@ html[data-nav="list"]::view-transition-new(root) {
   animation: none;
 }
 
-/* While a transition runs, the entrances are its job: the per-element
-   "settle" would fight the page's own movement. */
-html:active-view-transition .settle {
+/* Rows that travel (a mission, a work) keep their text at its real size:
+   the snapshot is clipped to the moving box instead of being stretched to
+   it, and the two pictures cross-fade inside. */
+::view-transition-old(*.row),
+::view-transition-new(*.row) {
+  height: 100%;
+  object-fit: none;
+  object-position: left top;
+}
+
+::view-transition-image-pair(*.row) {
+  overflow: hidden;
+}
+
+/* The staggered entrances play once, when the app opens. After that
+   (data-booted, set in App.tsx) screens change with the transition alone:
+   replaying them on every screen made all the text move twice. */
+html[data-booted] .settle {
   animation: none;
 }
 

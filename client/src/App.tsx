@@ -22,6 +22,15 @@ function App() {
     return () => window.removeEventListener(LOCKED_EVENT, lock);
   }, []);
 
+  // The staggered entrances belong to opening the app, not to every screen
+  // change (index.css, data-booted).
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      document.documentElement.dataset.booted = "";
+    }, 1500);
+    return () => window.clearTimeout(t);
+  }, []);
+
   // The light of the hour behind everything (see index.css). Checked again
   // whenever the app comes back to the foreground: a PWA left open in the
   // morning is still around at night.

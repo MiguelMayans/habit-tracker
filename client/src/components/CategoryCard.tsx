@@ -11,6 +11,7 @@ import { categoryColorVar } from "../lib/categoryColor";
 import { sinceLastActivity } from "../lib/dates";
 import { useQuickLog } from "../lib/useQuickLog";
 import { orderByLineage } from "../lib/focusLineage";
+import { ProgressRing } from "./ProgressRing";
 import { CategoryIcon } from "./CategoryIcon";
 import { LevelNumber } from "./LevelNumber";
 import { QuickIntensities } from "./QuickIntensities";
@@ -19,20 +20,20 @@ import { Collapse } from "./Collapse";
 import { vtName } from "../lib/viewTransition";
 
 /**
- * A category on the home: its icon, name, level and a thin bar, and its
- * focuses folded underneath.
+ * A category on the home: its icon in a progress ring, the name in serif,
+ * when you last did something, and the level as a figure in its colour, on a
+ * soft panel tinted with that colour — between the old loud cards and bare
+ * rows: present, but without a box's border or shadow. The category's icon,
+ * large and faint, sits in the corner. The focuses fold out underneath.
  *
- * The link to the detail does not wrap the whole card: the focus toggle is a
- * button, and a button inside a link is not valid HTML. So the link covers
- * the head and the bar, and the focuses are its siblings.
+ * The link to the detail does not wrap the focus toggle: a button inside a
+ * link is not valid HTML.
  */
 export function CategoryCard({
   category: c,
-  index: i,
   onLogged,
 }: {
   category: Category;
-  index: number;
   /** Refreshes the home's data after logging from inside the card. */
   onLogged: () => void;
 }) {
@@ -79,54 +80,36 @@ export function CategoryCard({
   }
 
   return (
-    <li
-      className="card-color settle"
-      style={
-        {
-          "--accent": accent,
-          "--delay": `${0.05 + i * 0.05}s`,
-          // The card grows into its category's header (CategoryDetailPage).
-          ...vtName(`cat-${c.id}`),
-        } as React.CSSProperties
-      }
-    >
-      <CategoryIcon slug={c.slug} strokeWidth={1.4} className="watermark" />
-
-      <Link to={`/categories/${c.id}`} className="press-card relative block px-5 pt-5 pb-4">
-        <div className="flex items-start gap-3.5">
-          <span className="icon-solid mt-0.5 h-11 w-11" style={vtName(`cat-icon-${c.id}`)}>
-            <CategoryIcon slug={c.slug} strokeWidth={1.9} className="h-[22px] w-[22px]" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 className="display m-0 w-fit text-[24px] leading-tight" style={vtName(`cat-name-${c.id}`)}>
-              {c.name}
-            </h2>
-            <p
-              className={`mt-0.5 mb-0 text-[13px] ${last.cold ? "font-medium text-warn" : "text-ink-soft"}`}
-            >
-              {last.text}
-            </p>
-          </div>
-          <span className="grid justify-items-end" style={vtName(`cat-level-${c.id}`)}>
-            <span className="text-[11px] font-medium tracking-wide text-ink-soft">Nivel</span>
-            <b className="level-big text-[40px]">{c.level}</b>
-          </span>
+    <li className="cat-panel" style={{ "--accent": accent } as React.CSSProperties}>
+      <CategoryIcon slug={c.slug} strokeWidth={1.3} className="cat-panel-mark" />
+      <Link to={`/categories/${c.id}`} className="press relative flex items-center gap-4">
+        {/* The ring is the one thing that travels to the category's screen. */}
+        <ProgressRing
+          slug={c.slug}
+          progress={c.progress}
+          size={56}
+          style={vtName(`cat-ring-${c.id}`)}
+        />
+        <div className="min-w-0 flex-1">
+          <h2 className="display m-0 text-[22px] leading-tight">{c.name}</h2>
+          <p className="mt-0.5 mb-0 text-[13px] text-ink-soft">
+            <span className={last.cold ? "font-medium text-warn" : undefined}>{last.text}</span>
+            {" · "}
+            {c.atMaxLevel ? "nivel máximo" : `${c.xpToNextLevel} XP para el ${c.level + 1}`}
+          </p>
         </div>
-
-        <div className="progress mt-4 h-2">
-          <i style={{ width: `${Math.round(c.progress * 100)}%` }} />
-        </div>
-        <p className="mt-2 mb-0 text-[12px] text-ink-soft">
-          {c.atMaxLevel
-            ? "Nivel máximo"
-            : `${c.xpToNextLevel} XP para el nivel ${c.level + 1}`}
-        </p>
+        <span className="grid justify-items-center">
+          <b className="level-big text-[34px]">{c.level}</b>
+          <span className="mt-0.5 text-[10px] font-semibold tracking-[0.14em] text-ink-faint uppercase">
+            Nivel
+          </span>
+        </span>
       </Link>
 
       {c.focusCount === 0 ? (
         <Link
           to={`/categories/${c.id}?new=focus`}
-          className="relative flex items-center gap-1.5 border-t border-ink/8 px-5 py-3.5 text-[14px] font-medium text-ink-soft"
+          className="mt-2 ml-[72px] inline-flex items-center gap-1 text-[13px] font-medium text-ink-soft"
         >
           <span className="text-[17px] leading-none">+</span> Añadir un foco
         </Link>
@@ -136,7 +119,7 @@ export function CategoryCard({
           onClick={onToggle}
           aria-expanded={isOpen}
           aria-controls={panelId}
-          className="relative flex w-full items-center gap-2 border-t border-ink/8 px-5 py-3.5 text-left text-[14px] font-medium text-ink-soft"
+          className="mt-2 ml-[72px] inline-flex items-center gap-1 text-[13px] font-medium text-ink-soft"
         >
           {c.focusCount} {c.focusCount === 1 ? "foco" : "focos"}
           <svg
@@ -146,7 +129,7 @@ export function CategoryCard({
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={`ml-auto h-4 w-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            className={`h-3.5 w-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
             aria-hidden="true"
           >
             <path d="m6 9 6 6 6-6" />
@@ -155,7 +138,7 @@ export function CategoryCard({
       )}
 
       <Collapse open={isOpen} id={panelId}>
-        <div className="relative px-5 pb-5">
+        <div className="ml-[72px] pt-2">
           {loadingFocuses && (
             <div className="grid gap-3 pt-1" aria-label="Cargando focos">
               <div className="skeleton h-10 rounded-xl" />

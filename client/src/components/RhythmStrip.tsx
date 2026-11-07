@@ -72,54 +72,45 @@ export function RhythmStrip({
           ? "sin actividad"
           : `${open.count} ${open.count === 1 ? "actividad" : "actividades"}, +${open.xp} XP`
       }`
-    : "Últimos 30 días";
+    : "";
 
   return (
-    <section className="card-ink settle mb-8 px-5 py-5">
+    <section className="card-ink mb-8 px-4 pt-3.5 pb-4">
       {/* The light of the hour, caught in the dark card's corner. */}
       <div
-        className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full opacity-30 blur-2xl"
+        className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full opacity-25 blur-2xl"
         style={{ background: "var(--glow)" }}
         aria-hidden="true"
       />
 
-      <div className="relative flex items-end justify-between gap-4">
-        <div>
-          <p className="m-0 text-[12px] font-semibold tracking-wide text-paper/60">Hoy</p>
-          <p className="display mt-1 mb-0 text-[36px] leading-none">
-            {todayXp > 0 ? `+${shownXp} XP` : "Aún nada"}
-          </p>
-        </div>
+      <div className="relative flex items-baseline justify-between gap-4">
+        <p className="m-0 flex items-baseline gap-2">
+          <span className="text-[12px] font-semibold text-paper/60">Hoy</span>
+          <span className="display text-[22px] leading-none">
+            {todayXp > 0 ? `+${shownXp} XP` : "aún nada"}
+          </span>
+        </p>
         {streak > 0 && (
-          <div className="text-right">
-            <p className="m-0 flex items-center justify-end gap-1.5">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 text-[#f6cf86]" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M12.6 2.5c.4 3-1.6 4.6-3 6.3C8 10.6 7 12.2 7 14.6A5 5 0 0 0 12 19.5a5 5 0 0 0 5-5c0-2.2-1-3.6-1.8-4.6-.3 1.3-1 2.1-1.9 2.4.6-3.6-.2-6.6-.7-9.8Z"
-                />
-              </svg>
-              <b className="display text-[36px] leading-none font-medium">{shownStreak}</b>
-            </p>
-            <p className="mt-1 mb-0 text-[12px] text-paper/60">
-              {streak === 1 ? "día seguido" : "días seguidos"}
-            </p>
-          </div>
+          <p className="m-0 flex items-center gap-1 text-[12px] text-paper/60">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-[#f6cf86]" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M12.6 2.5c.4 3-1.6 4.6-3 6.3C8 10.6 7 12.2 7 14.6A5 5 0 0 0 12 19.5a5 5 0 0 0 5-5c0-2.2-1-3.6-1.8-4.6-.3 1.3-1 2.1-1.9 2.4.6-3.6-.2-6.6-.7-9.8Z"
+              />
+            </svg>
+            <b className="display text-[18px] leading-none font-medium text-paper">
+              {shownStreak}
+            </b>
+            {streak === 1 ? "día" : "días"}
+          </p>
         )}
       </div>
 
-      <p aria-live="polite" className="relative mt-6 mb-2.5 text-[12px] text-paper/60">
-        {caption}
-      </p>
-      <ul className="relative m-0 flex list-none gap-[3px] p-0">
-        {days.map((d, i) => {
+      <ul className="relative m-0 mt-3 flex list-none gap-[3px] p-0" aria-label="Últimos 30 días">
+        {days.map((d) => {
           const label = `${shortRelativeDate(d.date.toISOString())}: ${d.xp} XP`;
           return (
-            <li
-              key={d.key}
-              className="settle flex-1"
-              style={{ "--delay": `${0.2 + i * 0.015}s` } as React.CSSProperties}
-            >
+            <li key={d.key} className="flex-1">
               <button
                 type="button"
                 title={label}
@@ -143,6 +134,12 @@ export function RhythmStrip({
           );
         })}
       </ul>
+      {/* What a tapped day holds, only when you ask. */}
+      {open && (
+        <p aria-live="polite" className="relative mt-2.5 mb-0 text-[12px] text-paper/70">
+          {caption}
+        </p>
+      )}
     </section>
   );
 }

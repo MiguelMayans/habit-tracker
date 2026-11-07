@@ -1,3 +1,5 @@
+import { season } from "./season";
+
 /** Whose app this is: the greeting speaks to him by name. */
 const NAME = "Miguel";
 
@@ -36,13 +38,23 @@ const PHRASES: Record<Daypart, string[]> = {
   night: [`Es tarde, ${NAME}. Descansa`, `Noche tranquila, ${NAME}`],
 };
 
+/** A few more for autumn, the season's own wink, mixed in with the rest. */
+const AUTUMN: Record<Daypart, string[]> = {
+  morning: [`Mañana fresca, ${NAME}`],
+  afternoon: [`Tarde de otoño, ${NAME}`, `Tarde de manta y algo bueno, ${NAME}`],
+  evening: [`Noche de otoño, ${NAME}`],
+  night: [],
+};
+
 /**
  * The greeting for right now. Picked by date and part of day, not at random:
  * it stays the same each time you come back to the home that afternoon, and
  * changes tomorrow.
  */
 export function greeting(d = new Date()): string {
-  const list = PHRASES[daypart(d)];
+  const part = daypart(d);
+  const list =
+    season(d) === "autumn" ? [...PHRASES[part], ...AUTUMN[part]] : PHRASES[part];
   const seed = d.getFullYear() * 400 + d.getMonth() * 31 + d.getDate();
   return list[seed % list.length];
 }

@@ -1,68 +1,91 @@
 import type { CSSProperties, ReactNode } from "react";
 
+/** The soft fill under the line: the second tone of the duotone. */
+const TINT = { fill: "currentColor", fillOpacity: 0.2, stroke: "none" } as const;
+
 /**
- * One icon per category, as stroked SVG on a 24 grid.
+ * One icon per category, as duotone SVG on a 24 grid: a line drawing over a
+ * soft fill of the same colour, the way a riso print overlaps two inks.
  *
- * These are not generic interface icons: each one carries a gesture of its own
- * — flames, rays, sparks — so they have character instead of looking pulled
- * from a library. The flourish is always kept apart from the main shape, so it
- * does not smudge at 26px.
+ * Each one is a little scene with an idea of its own rather than the symbol
+ * any app would use: a sneaker mid-stride, a lotus, two hearts, a flag on a
+ * summit, a bulb with a spark. The flourish is always kept apart from the
+ * main shape, so it does not smudge when small.
  *
  * Drawn here rather than shipped as images: they scale without pixelating,
- * inherit colour through `currentColor`, and add no assets to maintain — the
- * same reasoning as the textures.
+ * inherit colour through `currentColor`, and add no assets to maintain.
  *
  * The keys are category slugs, which are database values and stay in Spanish.
  */
 const STROKES: Record<string, ReactNode> = {
-  // Cuerpo → a dumbbell, level: two plates on each side of a short bar.
-  // Strokes only, in the same line weight as the rest of the set.
+  // Cuerpo → a sneaker mid-stride, with two speed lines behind it.
   cuerpo: (
     <>
-      <path d="M8 12h8" />
-      <rect x="4.5" y="7" width="3.5" height="10" rx="1.4" />
-      <rect x="16" y="7" width="3.5" height="10" rx="1.4" />
-      <path d="M2.5 10v4M21.5 10v4" />
+      <path
+        {...TINT}
+        d="M4.5 9.5c1.6.4 3.3.2 4.6-.8l1.4 2.2c2.8 1.6 6.3 1.6 8.8 2.6 1.5.6 2.2 1.6 2.2 2.9v.6H4.2Z"
+      />
+      <path d="M4.5 9.5c1.6.4 3.3.2 4.6-.8l1.4 2.2c2.8 1.6 6.3 1.6 8.8 2.6 1.5.6 2.2 1.6 2.2 2.9V18H4.2c-.6-2.9-.6-5.7.3-8.5Z" />
+      <path d="M4.3 15.4h17.2" />
+      <path d="M11.6 11.6l1.2-1.5M13.9 12.3l1.1-1.4" />
+      <path d="M1 12.5h1.6M1.6 15.4H3" />
     </>
   ),
 
-  // Mente → an eye waking up, with rays coming off the top.
+  // Mente → a lotus: presence, open and still.
   mente: (
     <>
-      <path d="M2.4 13.6s3.7-5.4 9.6-5.4 9.6 5.4 9.6 5.4-3.7 5.4-9.6 5.4S2.4 13.6 2.4 13.6z" />
-      <circle cx="12" cy="13.6" r="2.9" />
-      <path d="M12 1.9v3.1M5.6 3.4l1.6 2.6M18.4 3.4l-1.6 2.6" />
+      <path {...TINT} d="M12 4.5c2.6 2.4 2.6 7.6 0 11.5-2.6-3.9-2.6-9.1 0-11.5Z" />
+      <path d="M12 4.5c2.6 2.4 2.6 7.6 0 11.5-2.6-3.9-2.6-9.1 0-11.5Z" />
+      <path d="M12 16c-2.8-.2-5.3-2.3-6-6.2 2.3-.1 4.3.8 5.4 2.4" />
+      <path d="M12 16c2.8-.2 5.3-2.3 6-6.2-2.3-.1-4.3.8-5.4 2.4" />
+      <path d="M12 16c-3.5 1.6-7 .9-9-1.4M12 16c3.5 1.6 7 .9 9-1.4" />
+      <path d="M8 19.5h8" />
     </>
   ),
 
-  // Corazón → a burning heart. The flame is the gesture that separates it
-  // from any other heart icon.
+  // Corazón → two hearts, a small one leaning on the big one: it is about
+  // people.
   corazon: (
     <>
-      <path d="M12 21.6s-7.3-4.8-7.3-9.6a4.3 4.3 0 0 1 7.3-2.9 4.3 4.3 0 0 1 7.3 2.9c0 4.8-7.3 9.6-7.3 9.6z" />
-      <path d="M12.5 8.3c2.3-2 2.5-4.5.3-7.2.1 2.1-1 3-2.4 3.8-2.1 1.1-2.4 3.4-.5 5.2" />
+      <path
+        {...TINT}
+        d="M9.5 20.5S3 16.3 3 11.9a3.8 3.8 0 0 1 6.5-2.6 3.8 3.8 0 0 1 6.5 2.6c0 4.4-6.5 8.6-6.5 8.6Z"
+      />
+      <path d="M9.5 20.5S3 16.3 3 11.9a3.8 3.8 0 0 1 6.5-2.6 3.8 3.8 0 0 1 6.5 2.6c0 4.4-6.5 8.6-6.5 8.6Z" />
+      <path
+        {...TINT}
+        fillOpacity={0.45}
+        d="M17.5 11.2s-3.4-2.2-3.4-4.6a2 2 0 0 1 3.4-1.4 2 2 0 0 1 3.4 1.4c0 2.4-3.4 4.6-3.4 4.6Z"
+      />
+      <path d="M17.5 11.2s-3.4-2.2-3.4-4.6a2 2 0 0 1 3.4-1.4 2 2 0 0 1 3.4 1.4c0 2.4-3.4 4.6-3.4 4.6Z" />
     </>
   ),
 
-  // Disciplina → the loop that starts over, with a spark of persistence.
+  // Disciplina → a flag planted on a summit: getting there step by step.
   disciplina: (
     <>
-      <path d="M20.8 13a8.4 8.4 0 1 1-2.5-6" />
-      <path d="M21 3.9v5.2h-5.2" />
-      <path
-        d="M4.2 1.9l1 2.3 2.3 1-2.3 1-1 2.3-1-2.3-2.3-1 2.3-1z"
-        fill="currentColor"
-        stroke="none"
-      />
+      <path {...TINT} d="M2.5 20 9 9.5l3.2 4.6 2.3-3L21.5 20Z" />
+      <path d="M2.5 20 9 9.5l3.2 4.6 2.3-3L21.5 20Z" />
+      <path d="M9 9.5V3" />
+      <path {...TINT} fillOpacity={0.45} d="M9 3.2h5.5l-1.4 1.9 1.4 1.9H9Z" />
+      <path d="M9 3.2h5.5l-1.4 1.9 1.4 1.9H9" />
+      <path d="M7.2 16.2l1.8-1.6 1.6 1.4" />
     </>
   ),
 
-  // Ingenio → the bulb at the instant it lights, with glints.
+  // Ingenio → a bulb that has just lit up, with sparks.
   ingenio: (
     <>
-      <path d="M12 3.6a6 6 0 0 0-3.5 10.9c.6.5 1 1.3 1 2.1h5c0-.8.4-1.6 1-2.1A6 6 0 0 0 12 3.6z" />
-      <path d="M9.5 19.5h5M10.6 21.9h2.8" />
-      <path d="M12 .8v1.7M21.3 7.9l-2.3.8M2.7 7.9l2.3.8" />
+      <path
+        {...TINT}
+        d="M12 3.8a5.8 5.8 0 0 0-3.4 10.5c.6.5.9 1.2.9 2h5c0-.8.3-1.5.9-2A5.8 5.8 0 0 0 12 3.8Z"
+      />
+      <path d="M12 3.8a5.8 5.8 0 0 0-3.4 10.5c.6.5.9 1.2.9 2h5c0-.8.3-1.5.9-2A5.8 5.8 0 0 0 12 3.8Z" />
+      <path d="M9.6 19h4.8M10.6 21.5h2.8" />
+      <path d="M10.4 12.6 12 9.4l1.6 3.2" />
+      <path d="M20.3 3.3l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5Z" fill="currentColor" stroke="none" />
+      <path d="M3 9.5h1.4M4.1 4.6l1 1" />
     </>
   ),
 };

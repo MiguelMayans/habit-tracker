@@ -17,7 +17,6 @@ import {
 } from "../api/client";
 import { categoryColorVar } from "../lib/categoryColor";
 import { orderByLineage } from "../lib/focusLineage";
-import { CategoryIcon } from "../components/CategoryIcon";
 import { LevelNumber } from "../components/LevelNumber";
 import { isToday, shortRelativeDate } from "../lib/dates";
 import { XP_BY_INTENSITY } from "../lib/intensity";
@@ -31,6 +30,7 @@ import { ActivityRow } from "../components/ActivityRow";
 import { SkeletonCards } from "../components/SkeletonCards";
 import { ErrorPanel } from "../components/ErrorPanel";
 import { BackLink, SectionTitle } from "../components/Layout";
+import { ProgressRing } from "../components/ProgressRing";
 import { Collapse } from "../components/Collapse";
 import { vtName } from "../lib/viewTransition";
 
@@ -453,36 +453,31 @@ export function CategoryDetailPage() {
     >
       <BackLink />
 
-      <header className="card-color mt-5 mb-9 px-5 pt-6 pb-5" style={vtName(`cat-${category.id}`)}>
-        <CategoryIcon slug={category.slug} strokeWidth={1.4} className="watermark !h-[190px] !w-[190px]" />
-
-        <div className="relative flex items-start gap-4">
-          <span className="icon-solid h-14 w-14" style={vtName(`cat-icon-${category.id}`)}>
-            <CategoryIcon slug={category.slug} strokeWidth={1.8} className="h-7 w-7" />
-          </span>
-          <div className="mt-1.5 flex-1">
-            <h1
-              className="display m-0 w-fit text-[36px] leading-none"
-              style={vtName(`cat-name-${category.id}`)}
-            >
-              {category.name}
-            </h1>
-          </div>
-          <span className="grid justify-items-end" style={vtName(`cat-level-${category.id}`)}>
-            <span className="text-[11px] font-medium tracking-wide text-ink-soft">Nivel</span>
-            <b className="level-big text-[52px]">{category.level}</b>
-          </span>
+      {/* The same language as the home's rows, larger: the ring is the one
+          that arrives from there. */}
+      <header className="mt-6 mb-9 flex items-center gap-5 border-b border-ink/10 pb-7">
+        <ProgressRing
+          slug={category.slug}
+          progress={category.progress}
+          size={88}
+          stroke={4}
+          style={vtName(`cat-ring-${category.id}`)}
+        />
+        <div className="min-w-0 flex-1">
+          <h1 className="display m-0 text-[36px] leading-none">{category.name}</h1>
+          <p className="mt-2 mb-0 text-[13px] text-ink-soft">
+            {category.currentXp} XP ·{" "}
+            {category.atMaxLevel
+              ? "nivel máximo"
+              : `${category.xpToNextLevel} para el nivel ${category.level + 1}`}
+          </p>
         </div>
-
-        <div className="progress relative mt-6 h-2.5">
-          <i style={{ width: `${Math.round(category.progress * 100)}%` }} />
-        </div>
-        <p className="relative mt-2.5 mb-0 text-[13px] text-ink-soft">
-          {category.currentXp} XP ·{" "}
-          {category.atMaxLevel
-            ? "nivel máximo"
-            : `${category.xpToNextLevel} para el nivel ${category.level + 1}`}
-        </p>
+        <span className="grid justify-items-center">
+          <b className="level-big text-[48px]">{category.level}</b>
+          <span className="mt-1 text-[10px] font-semibold tracking-[0.14em] text-ink-faint uppercase">
+            Nivel
+          </span>
+        </span>
       </header>
 
       {/* ---- Focuses ---- */}

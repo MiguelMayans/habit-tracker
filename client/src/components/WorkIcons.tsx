@@ -103,12 +103,19 @@ export function LairGlyph({ className }: { className?: string }) {
   );
 }
 
-/** Home in the nav: a house. */
+/**
+ * Home in the nav: a cottage — a chimney with a curl of smoke, a round
+ * window and an arched door. A place to come back to, not a "home button".
+ */
 export function HomeGlyph({ className }: { className?: string }) {
   return (
-    <Svg className={className} strokeWidth={1.8}>
-      <path d="M4 10.5 12 4l8 6.5V20H4Z" />
-      <path d="M9.5 20v-4.5a2.5 2.5 0 0 1 5 0V20" />
+    <Svg className={className} strokeWidth={1.7}>
+      <path d="M3.5 11.2 12 4.5l8.5 6.7" />
+      <path d="M5.5 9.7V20h13V9.7" />
+      <path d="M15.8 6.5V4h2.2v4.2" />
+      <path d="M16.6 2.4c.5-.6 1.5-.6 2 0s1.5.6 2 0" />
+      <path d="M10.2 20v-3.4a1.8 1.8 0 0 1 3.6 0V20" />
+      <circle cx="12" cy="11.8" r="1.4" />
     </Svg>
   );
 }

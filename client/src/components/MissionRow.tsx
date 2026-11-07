@@ -55,7 +55,7 @@ export function MissionRow({
           "--delay": `${0.04 + index * 0.03}s`,
           "--accent": accent ?? undefined,
           // Its name lets it glide to its new place when it is ticked off.
-          ...vtName(`mission-${m.id}`),
+          ...vtName(`mission-${m.id}`, "row"),
         } as React.CSSProperties
       }
     >

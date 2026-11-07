@@ -49,7 +49,7 @@ export function ActiveWorkCard({
           "--delay": `${0.06 + index * 0.04}s`,
           "--accent": KIND_COLOR[w.kind],
           // Named, so finishing it flies the card onto the shelf.
-          ...vtName(`work-${w.id}`),
+          ...vtName(`work-${w.id}`, "row"),
         } as React.CSSProperties
       }
     >
@@ -123,7 +123,7 @@ export function QueuedWorkRow({
         {
           "--delay": `${0.08 + index * 0.03}s`,
           "--accent": KIND_COLOR[w.kind],
-          ...vtName(`work-${w.id}`),
+          ...vtName(`work-${w.id}`, "row"),
         } as React.CSSProperties
       }
     >
@@ -170,7 +170,7 @@ export function TrophyTile({
         {
           "--delay": `${0.1 + index * 0.03}s`,
           "--accent": KIND_COLOR[w.kind],
-          ...vtName(`work-${w.id}`),
+          ...vtName(`work-${w.id}`, "row"),
         } as React.CSSProperties
       }
     >
