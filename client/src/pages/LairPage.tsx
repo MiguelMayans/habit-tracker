@@ -16,6 +16,7 @@ import {
   type WorkKind,
 } from "../api/client";
 import { cue } from "../lib/sound";
+import { showToast } from "../lib/toast";
 import { haptic } from "../lib/haptics";
 import { withViewTransition } from "../lib/viewTransition";
 import { KIND_COLOR, KIND_LABEL, WORK_KINDS } from "../lib/works";
@@ -162,7 +163,22 @@ export function LairPage() {
       replace(res.work);
       setSessionOpen(null);
       setGain({ id: w.id, xp: res.activity.xpGained });
-      if (res.activity.category.leveledUp) setResult(res.activity);
+      if (res.activity.category.leveledUp) {
+        setResult(res.activity);
+      } else {
+        const { lastSessionAt } = w;
+        showToast({
+          message: `+${res.activity.xpGained} XP en Mente`,
+          action: {
+            label: "Deshacer",
+            run: async () => {
+              await deleteActivity(res.activity.activity.id);
+              setGain(null);
+              replace(await updateWork(w.id, { lastSessionAt }));
+            },
+          },
+        });
+      }
     } catch (err) {
       setRowError((err as Error).message);
     } finally {
@@ -184,6 +200,16 @@ export function LairPage() {
       cue("done");
       // The card flies to its place on the shelf of finished things.
       withViewTransition(() => replace(updated));
+      showToast({
+        message: "A Terminados",
+        action: {
+          label: "Deshacer",
+          run: async () => {
+            const back = await updateWork(w.id, { status: "active", rating: null });
+            withViewTransition(() => replace(back));
+          },
+        },
+      });
     } catch (err) {
       setRowError((err as Error).message);
     } finally {
@@ -306,7 +332,7 @@ export function LairPage() {
         <div>
           <h1 className="display m-0 text-[34px] leading-tight">Refugio</h1>
           <p className="mt-1 mb-0 text-[14px] text-ink-soft">
-            Lo que juegas, lees y ves. Cada rato suma en Mente.
+            Lo que juegas, lees y ves.
           </p>
         </div>
         <button
@@ -332,10 +358,10 @@ export function LairPage() {
       {/* Filtering by kind only once there is more than one to tell apart:
           with a single kind, a row of chips would filter nothing. */}
       {kindsInUse.size > 1 && (
-        <div className="settle mb-8 flex flex-wrap gap-2">
+        <div className="settle mb-7 flex flex-wrap gap-1.5">
           <button
             type="button"
-            className="chip"
+            className="chip chip-sm"
             aria-pressed={filter === null}
             onClick={() => setFilter(null)}
           >
@@ -345,7 +371,7 @@ export function LairPage() {
             <button
               key={k}
               type="button"
-              className="chip"
+              className="chip chip-sm"
               aria-pressed={filter === k}
               onClick={() => setFilter(filter === k ? null : k)}
             >
@@ -403,20 +429,21 @@ export function LairPage() {
       {queued.length > 0 && (
         <section className="mb-9">
           <SectionTitle count={queued.length} className="mb-4 text-[20px]">Para después</SectionTitle>
-          <KindGroups
-            works={queued}
-            grouped={filter === null}
-            listClassName="m-0 grid list-none gap-2 p-0"
-            render={(w) => (
-              <QueuedWorkRow
-                key={w.id}
-                work={w}
-                busy={startingId === w.id}
-                onStart={() => onStart(w)}
-                onOpen={() => openSheet(w)}
-              />
-            )}
-          />
+          {/* A flat queue: each pill already wears its kind's icon and colour,
+              and sorting keeps the kinds together without a heading per pill. */}
+          <ul className="m-0 grid list-none gap-2 p-0">
+            {[...queued]
+              .sort((a, b) => WORK_KINDS.indexOf(a.kind) - WORK_KINDS.indexOf(b.kind))
+              .map((w) => (
+                <QueuedWorkRow
+                  key={w.id}
+                  work={w}
+                  busy={startingId === w.id}
+                  onStart={() => onStart(w)}
+                  onOpen={() => openSheet(w)}
+                />
+              ))}
+          </ul>
         </section>
       )}
 

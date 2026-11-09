@@ -6,6 +6,7 @@ import {
   type RegisterActivityResult,
 } from "../api/client";
 import { cue } from "./sound";
+import { showToast } from "./toast";
 
 /**
  * Logging in two taps, wherever a list of focuses is shown.
@@ -67,7 +68,21 @@ export function useQuickLog({
       // The celebration is spent only where it is earned. Firing it on every
       // log, including a routine +10 that changes nothing, is what stopped it
       // being a celebration.
-      if (res.focus?.leveledUp || res.category.leveledUp) setResult(res);
+      if (res.focus?.leveledUp || res.category.leveledUp) {
+        setResult(res);
+      } else {
+        showToast({
+          message: `+${res.xpGained} XP registrados`,
+          action: {
+            label: "Deshacer",
+            run: async () => {
+              await deleteActivity(res.activity.id);
+              setGain(null);
+              onAfterChange();
+            },
+          },
+        });
+      }
 
       onAfterChange();
     } catch (e) {

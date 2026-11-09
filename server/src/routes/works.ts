@@ -69,6 +69,19 @@ function parseFields(body: Record<string, unknown>): EditableWork | string {
     out.percent = v as number | null;
   }
 
+  // Only to restore it when a session is undone: logging one sets it.
+  if (body.lastSessionAt !== undefined) {
+    if (body.lastSessionAt === null) {
+      out.lastSessionAt = null;
+    } else {
+      const when = new Date(body.lastSessionAt as string);
+      if (Number.isNaN(when.getTime())) {
+        return "lastSessionAt debe ser una fecha válida, o null";
+      }
+      out.lastSessionAt = when;
+    }
+  }
+
   if (body.rating !== undefined) {
     const r = body.rating;
     if (r !== null && !(Number.isInteger(r) && (r as number) >= 1 && (r as number) <= 5)) {

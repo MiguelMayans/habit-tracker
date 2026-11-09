@@ -12,6 +12,13 @@ export const XP_BY_INTENSITY: Record<Intensity, number> = {
   all_out: 35,
 };
 
+/** What each one means, in a word: the names alone do not say. */
+export const INTENSITY_HINT: Record<Intensity, string> = {
+  chispa: "un rato",
+  impulso: "en serio",
+  all_out: "a tope",
+};
+
 /** How each intensity is named on screen. */
 export const INTENSITY_LABEL: Record<Intensity, string> = {
   chispa: "Chispa",

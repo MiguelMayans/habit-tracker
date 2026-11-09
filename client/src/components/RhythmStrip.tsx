@@ -117,7 +117,7 @@ export function RhythmStrip({
                 aria-label={label}
                 aria-pressed={d.key === selected}
                 onClick={() => setSelected(d.key === selected ? null : d.key)}
-                className="block aspect-square w-full rounded-full"
+                className="day-dot"
                 style={{
                   background: fill(d.xp),
                   // Today is marked even while empty: it is the day you can

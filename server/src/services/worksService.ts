@@ -37,6 +37,7 @@ export type EditableWork = {
   progress?: string | null;
   percent?: number | null;
   rating?: number | null;
+  lastSessionAt?: Date | null;
 };
 
 /**

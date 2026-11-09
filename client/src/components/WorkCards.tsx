@@ -1,6 +1,6 @@
 import type { Intensity, Work } from "../api/client";
 import { sinceLastActivity } from "../lib/dates";
-import { KIND_COLOR, KIND_LABEL, SESSION_VERB } from "../lib/works";
+import { KIND_COLOR, SESSION_VERB } from "../lib/works";
 import { QuickIntensities } from "./QuickIntensities";
 import { Collapse } from "./Collapse";
 import { WorkKindIcon } from "./WorkIcons";
@@ -43,9 +43,11 @@ export function ActiveWorkCard({
   /** Sets how far through it is, from the dots. */
   onPercent: (percent: number) => void;
 }) {
+  // The kind is already said by the group's heading and the colour; what the
+  // top line adds is when you last sat down with it.
   const last = w.lastSessionAt
-    ? sinceLastActivity(w.lastSessionAt).text.toLowerCase()
-    : "sin sesiones";
+    ? `Última vez: ${sinceLastActivity(w.lastSessionAt).text.toLowerCase()}`
+    : "Aún sin sesiones";
 
   return (
     <li
@@ -81,9 +83,7 @@ export function ActiveWorkCard({
         className="relative flex flex-1 flex-col text-left"
         aria-label={`Editar ${w.title}`}
       >
-        <span className="pr-10 text-[10px] font-semibold tracking-[0.16em] text-paper/75 uppercase">
-          {KIND_LABEL[w.kind].one} · {last}
-        </span>
+        <span className="pr-10 text-[12px] text-paper/80">{last}</span>
         <h3 className="display m-0 mt-1.5 pr-14 text-[21px] leading-[1.1] break-words text-paper">
           {w.title}
         </h3>

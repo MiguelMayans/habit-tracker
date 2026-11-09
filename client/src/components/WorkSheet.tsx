@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Work, WorkFields, WorkKind, WorkStatus } from "../api/client";
-import { KIND_LABEL, PROGRESS_HINT, WORK_KINDS } from "../lib/works";
+import { KIND_COLOR, KIND_LABEL, PROGRESS_HINT, WORK_KINDS } from "../lib/works";
 import { DialogFrame } from "./DialogFrame";
 import { Rating } from "./Rating";
 import { WorkKindIcon } from "./WorkIcons";
@@ -63,19 +63,19 @@ export function WorkSheet({
         }}
       >
         <div>
-          <span className="field-label">{KIND_LABEL[kind].one}</span>
-          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Tipo">
+          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Tipo">
             {WORK_KINDS.map((k) => (
               <button
                 key={k}
                 type="button"
                 role="radio"
-                className="icon-pick"
+                className="kind-pick"
                 aria-checked={kind === k}
-                aria-label={KIND_LABEL[k].one}
                 onClick={() => setKind(k)}
+                style={{ "--accent": KIND_COLOR[k] } as React.CSSProperties}
               >
-                <WorkKindIcon kind={k} className="h-5 w-5" />
+                <WorkKindIcon kind={k} className="h-6 w-6" />
+                {KIND_LABEL[k].many}
               </button>
             ))}
           </div>

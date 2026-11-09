@@ -10,6 +10,7 @@ import { BottomNav } from "./components/BottomNav";
 import { ScreenTransition } from "./components/ScreenTransition";
 import { UnlockScreen } from "./components/UnlockScreen";
 import { UpdateBanner } from "./components/UpdateBanner";
+import { Toaster } from "./components/Toaster";
 import { LOCKED_EVENT } from "./lib/apiKey";
 import { daypart } from "./lib/daypart";
 
@@ -81,6 +82,7 @@ function App() {
         </main>
 
         <BottomNav />
+        <Toaster />
         {locked && <UnlockScreen />}
         <UpdateBanner />
       </div>

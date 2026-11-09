@@ -15,7 +15,7 @@ import {
 import { cue } from "../lib/sound";
 import { categoryColorVar } from "../lib/categoryColor";
 import { orderByLineage } from "../lib/focusLineage";
-import { INTENSITY_LABEL, XP_BY_INTENSITY } from "../lib/intensity";
+import { INTENSITY_HINT, INTENSITY_LABEL, XP_BY_INTENSITY } from "../lib/intensity";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { ResultModal } from "../components/ResultModal";
 import { CategoryIcon } from "../components/CategoryIcon";
@@ -359,7 +359,7 @@ export function LogActivityPage() {
               >
                 <span className="text-[15px] font-medium">{INTENSITY_LABEL[i]}</span>
                 <span className={`text-[12px] ${intensity === i ? "text-paper/70" : "text-ink-soft"}`}>
-                  +{XP_BY_INTENSITY[i]} XP
+                  {INTENSITY_HINT[i]} · +{XP_BY_INTENSITY[i]}
                 </span>
               </button>
             ))}
@@ -411,7 +411,11 @@ export function LogActivityPage() {
           disabled={sending || categoryId === ""}
           className="btn settle w-full"
         >
-          {sending ? "Registrando…" : "Registrar"}
+          {sending
+            ? "Registrando…"
+            : categoryId === ""
+              ? "Elige una categoría"
+              : `Registrar · +${XP_BY_INTENSITY[intensity]} XP`}
         </button>
       </form>
 

@@ -21,6 +21,7 @@ import {
   type MissionGroup,
 } from "../lib/missions";
 import { cue } from "../lib/sound";
+import { showToast } from "../lib/toast";
 import { reducedMotion, withViewTransition } from "../lib/viewTransition";
 import { MissionRow } from "../components/MissionRow";
 import { DayPulse } from "../components/DayPulse";
@@ -210,6 +211,20 @@ export function MissionsPage() {
       // The celebration only where it is earned, as with any quick log.
       if (res.activity?.category.leveledUp) {
         setResult({ res: res.activity, missionId: m.id });
+      } else {
+        showToast({
+          message: res.activity
+            ? `Hecha · +${res.activity.xpGained} XP`
+            : "Hecha",
+          action: {
+            label: "Deshacer",
+            run: async () => {
+              const { mission } = await reopenMission(m.id);
+              setJustCleared(false);
+              withViewTransition(() => replace(mission));
+            },
+          },
+        });
       }
     } catch (err) {
       setRowError((err as Error).message);

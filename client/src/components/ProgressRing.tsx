@@ -58,7 +58,7 @@ export function ProgressRing({
         slug={slug}
         strokeWidth={1.8}
         className="relative text-(--accent)"
-        style={{ width: size * 0.42, height: size * 0.42 }}
+        style={{ width: size * 0.54, height: size * 0.54 }}
       />
     </span>
   );

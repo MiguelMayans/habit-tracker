@@ -113,7 +113,7 @@ export function CategoryCard({
       {c.focusCount === 0 ? (
         <Link
           to={`/categories/${c.id}?new=focus`}
-          className="mt-2 ml-[94px] inline-flex items-center gap-1 text-[13px] font-medium text-ink-soft"
+          className="tap-text mt-2 ml-[94px] inline-flex items-center gap-1 text-[13px] font-medium text-ink-soft"
         >
           <span className="text-[17px] leading-none">+</span> Añadir un foco
         </Link>
@@ -123,7 +123,7 @@ export function CategoryCard({
           onClick={onToggle}
           aria-expanded={isOpen}
           aria-controls={panelId}
-          className="mt-2 ml-[94px] inline-flex items-center gap-1 text-[13px] font-medium text-ink-soft"
+          className="tap-text mt-2 ml-[94px] inline-flex items-center gap-1 text-[13px] font-medium text-ink-soft"
         >
           {c.focusCount} {c.focusCount === 1 ? "foco" : "focos"}
           <svg
@@ -181,6 +181,14 @@ export function CategoryCard({
               ))}
             </ul>
           )}
+
+          {/* Not everything belongs to a focus. */}
+          <Link
+            to={`/log-activity?category=${c.id}`}
+            className="tap-text mt-2 inline-block text-[13px] font-medium text-ink-soft"
+          >
+            Registrar sin foco
+          </Link>
         </div>
       </Collapse>
 

@@ -382,6 +382,8 @@ export type WorkFields = {
   progress?: string | null;
   percent?: number | null;
   rating?: number | null;
+  /** Only to restore it when a session is undone: logging one sets it. */
+  lastSessionAt?: string | null;
 };
 
 export function getWorks(): Promise<Work[]> {
